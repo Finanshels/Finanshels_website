@@ -8,21 +8,21 @@ export default {
     extend: {
       colors: {
         brand: {
-          primary: '#6366F1',
-          secondary: '#8B5CF6',
-          accent: '#EC4899',
-          dark: '#0F172A',
-          darker: '#020617',
-          light: '#F8FAFC',
-          grey: '#F1F5F9',
+          primary: '#f16610',
+          secondary: '#ff8a3c',
+          accent: '#ffd19b',
+          dark: '#0f172a',
+          darker: '#05070f',
+          light: '#fff7f0',
+          grey: '#f4e9df',
         }
       },
       fontFamily: {
         sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'SF Pro Display', 'Segoe UI', 'sans-serif'],
       },
       backgroundImage: {
-        'gradient-brand': 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%)',
-        'gradient-dark': 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)',
+        'gradient-brand': 'linear-gradient(135deg, #f16610 0%, #ff8a3c 50%, #ffd19b 100%)',
+        'gradient-dark': 'linear-gradient(135deg, #0f172a 0%, #1c2536 100%)',
       },
       animation: {
         'fade-in': 'fadeIn 0.6s ease-out',
@@ -64,4 +64,3 @@ export default {
   },
   plugins: [],
 }
-

@@ -1,621 +1,552 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Users, MapPin, Zap, Star, Award, TrendingUp, Target, Sparkles, Building, CheckCircle, Calendar, Clock, CheckCircle2, Briefcase } from 'lucide-react'
+import {
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
+  LineChart,
+  Layers,
+  Building2,
+  Wallet,
+  Receipt,
+  Rocket,
+  Users2,
+  Globe2,
+  Target,
+  CheckCircle2,
+  CalendarCheck2,
+  BarChart3
+} from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
-import StatCard from '../components/StatCard'
-import TeamCard from '../components/TeamCard'
-import TestimonialCard from '../components/TestimonialCard'
-import LeadershipCard from '../components/LeadershipCard'
 import AnimatedSection from '../components/AnimatedSection'
 import FloatingCard from '../components/FloatingCard'
 import AnimatedCounter from '../components/AnimatedCounter'
-import { TEAMS } from '../data/jobs'
-import { LEADERSHIP_TEAM, TESTIMONIALS, COMPANY_VALUES } from '../data/team'
+import TestimonialCard from '../components/TestimonialCard'
+import LeadershipCard from '../components/LeadershipCard'
+import { TESTIMONIALS, LEADERSHIP_TEAM, COMPANY_VALUES } from '../data/team'
+
+const HERO_BULLETS = [
+  'Dedicated service lines across accounting, payroll, VAT, tax, and CFO support',
+  'Realtime dashboards, filings, board packs, and variance reviews every month',
+  'Deep MENA expertise with on-ground teams across the GCC and Egypt'
+]
+
+const HERO_STATS = [
+  { value: 900, suffix: '+', label: 'venture-backed founders supported' },
+  { value: 120, suffix: '+', label: 'finance specialists in-house' },
+  { value: 12, suffix: '', label: 'active markets across MENA' }
+]
+
+const CUSTOMER_LOGOS = ['Hub71', 'YAP', 'Baraka', 'Letswork', 'Sarwa', 'Rain']
+
+const VALUE_PROPS = [
+  {
+    icon: Layers,
+    title: 'Unified operating system',
+    description:
+      'Accounting, tax, payroll, and CFO services delivered through one control tower engineered for scaling founders.'
+  },
+  {
+    icon: LineChart,
+    title: 'Board-ready reporting',
+    description:
+      'Rolling forecasts, burn dashboards, margin tracking, and investor-ready rituals shipped every month.'
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Regulatory-grade compliance',
+    description:
+      'UAE corporate tax, VAT, ESR, payroll, banking, and entity management handled by local teams who know every regulation.'
+  }
+]
+
+const PLATFORM_FEATURES = [
+  {
+    icon: Wallet,
+    title: 'Recurring finance service',
+    description:
+      'Controllers, accountants, tax leads, and CFO partners as an always-on managed service with 24/5 availability.'
+  },
+  {
+    icon: Receipt,
+    title: 'Automated bookkeeping',
+    description:
+      'Bank feeds, AR/AP, expenses, reimbursements, and reconciliations automated through our internal product suite.'
+  },
+  {
+    icon: CalendarCheck2,
+    title: 'Regulatory calendar',
+    description:
+      'Every filing, fee, visa, and renewal tracked, prepped, and submitted before the deadline—no more surprises.'
+  },
+  {
+    icon: BarChart3,
+    title: 'Scenario planning',
+    description:
+      'Rolling forecasts, pricing experiments, runway extensions, and board decks handled by our fractional CFO bench.'
+  }
+]
+
+const SERVICE_PILLARS = [
+  {
+    icon: Building2,
+    title: 'Accounting & Reporting',
+    description:
+      'Management reports, board packs, audit prep, AR/AP, and policy design built for venture-backed operators.'
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Tax, VAT & Compliance',
+    description:
+      'Corporate tax, VAT, ESR, payroll, visas, and entity management run by specialists who live and breathe UAE laws.'
+  },
+  {
+    icon: Rocket,
+    title: 'Fractional CFO & Strategy',
+    description:
+      'Fundraising narratives, investor updates, pricing strategy, KPI stewardship, and operating cadences on autopilot.'
+  }
+]
+
+const OPERATING_STACK = [
+  {
+    title: 'Digitize week',
+    metric: 'Day 0 - 7',
+    description:
+      'We ingest your ledgers, banking, payroll, equity, and policy stack while building secure automations and approvals.'
+  },
+  {
+    title: 'Insight week',
+    metric: 'Day 8 - 21',
+    description:
+      'Clean books, dashboards, and compliance trackers go live. Your managed service walks the leadership team through the first operating review.'
+  },
+  {
+    title: 'Command center',
+    metric: 'Day 22+',
+    description:
+      'Monthly board-ready rituals, scenario planning, proactive compliance alerts, and founder support on WhatsApp keep everything in control.'
+  }
+]
+
+const REFERRAL_POINTS = [
+  'Plug in a founder friend to a modern finance service built for the region.',
+  'Earn AED 2,500 for every company that signs up—paid within 48 hours of onboarding.',
+  'Your referral gets white-glove onboarding, lifetime discounts, and a team tailored to their business.'
+]
 
 export default function Home() {
-
   useEffect(() => {
-    const container = document.getElementById("zf_div_jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo")
-    
+    const container = document.getElementById('zf_div_jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo')
+
     if (container && container.querySelector('iframe')) {
       return
     }
-    
+
     const loadForm = () => {
       try {
-        const iframe = document.createElement("iframe")
-        const ifrmSrc = 'https://forms.zohopublic.com/finanshelsllc/form/GetYourFriendAJob/formperma/jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo?zf_rszfm=1'
-        
+        const iframe = document.createElement('iframe')
+        const ifrmSrc =
+          'https://forms.zohopublic.com/finanshelsllc/form/GetYourFriendAJob/formperma/jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo?zf_rszfm=1'
+
         iframe.src = ifrmSrc
-        iframe.style.border = "none"
-        iframe.style.height = "758px"
-        iframe.style.width = "100%"
-        iframe.style.transition = "all 0.5s ease"
-        iframe.setAttribute("aria-label", 'Get Your Friend A Job')
-        
-        const container = document.getElementById("zf_div_jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo")
-        if (container) {
-          container.innerHTML = ''
-          container.appendChild(iframe)
+        iframe.style.border = 'none'
+        iframe.style.height = '758px'
+        iframe.style.width = '100%'
+        iframe.style.transition = 'all 0.5s ease'
+        iframe.setAttribute('aria-label', 'Get Your Friend A Job')
+
+        const target = document.getElementById('zf_div_jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo')
+        if (target) {
+          target.innerHTML = ''
+          target.appendChild(iframe)
         }
-        
+
         const handleMessage = (event) => {
           const evntData = event.data
           if (evntData && evntData.constructor === String) {
-            const zf_ifrm_data = evntData.split("|")
+            const zf_ifrm_data = evntData.split('|')
             if (zf_ifrm_data.length === 2 || zf_ifrm_data.length === 3) {
               const zf_perma = zf_ifrm_data[0]
-              const zf_ifrm_ht_nw = (parseInt(zf_ifrm_data[1], 10) + 15) + "px"
-              const container = document.getElementById("zf_div_jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo")
-              if (container) {
-                const iframe = container.getElementsByTagName("iframe")[0]
-                if (iframe && iframe.src.indexOf('formperma') > 0 && iframe.src.indexOf(zf_perma) > 0) {
-                  const prevIframeHeight = iframe.style.height
+              const zf_ifrm_ht_nw = parseInt(zf_ifrm_data[1], 10) + 15 + 'px'
+              const currentContainer = document.getElementById(
+                'zf_div_jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo'
+              )
+              if (currentContainer) {
+                const iframeEl = currentContainer.getElementsByTagName('iframe')[0]
+                if (iframeEl && iframeEl.src.includes('formperma') && iframeEl.src.includes(zf_perma)) {
+                  const prevIframeHeight = iframeEl.style.height
                   if (prevIframeHeight !== zf_ifrm_ht_nw) {
-                    iframe.style.height = zf_ifrm_ht_nw
+                    iframeEl.style.height = zf_ifrm_ht_nw
                   }
                 }
               }
             }
           }
         }
-        
+
         window.addEventListener('message', handleMessage)
-        
+
         return () => {
           window.removeEventListener('message', handleMessage)
         }
-      } catch(e) {
+      } catch (e) {
         console.error('Error loading Zoho form:', e)
       }
     }
-    
+
     const cleanup = loadForm()
-    
+
     return () => {
       if (cleanup) cleanup()
-      const container = document.getElementById("zf_div_jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo")
-      if (container) {
-        container.innerHTML = ''
+      const target = document.getElementById('zf_div_jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo')
+      if (target) {
+        target.innerHTML = ''
       }
     }
   }, [])
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative pt-40 pb-12 px-6 sm:px-8 lg:px-12 bg-white overflow-hidden">
-        {/* Grid pattern background */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] pointer-events-none"></div>
-        
-        {/* Gradient orbs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-indigo-400/30 to-purple-400/30 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute top-20 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
+    <div className="bg-white text-slate-900">
+      <section className="relative overflow-hidden bg-slate-950 text-white pt-32 pb-24 px-6 sm:px-8 lg:px-12">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(241,102,16,0.18),_transparent_60%)]"></div>
+          <div className="absolute -top-24 -right-24 w-[480px] h-[480px] bg-[#f16610]/20 blur-[140px] rounded-full"></div>
+          <div className="absolute -bottom-32 -left-16 w-[360px] h-[360px] bg-[#ff8a3c]/20 blur-[160px] rounded-full"></div>
+          <div className="absolute inset-0 opacity-[0.15] bg-[linear-gradient(120deg,rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:180px_180px]"></div>
         </div>
 
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="max-w-5xl mx-auto text-center">
-            <AnimatedSection animation="fade-down">
-              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white border border-slate-200 text-sm font-semibold text-slate-700 mb-10 shadow-sm hover:shadow-md transition-all hover:border-slate-300">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
-                We're hiring across all teams
-              </div>
-            </AnimatedSection>
-            
-            <AnimatedSection animation="fade-up" delay={100}>
-              <h1 className="text-6xl sm:text-7xl lg:text-8xl font-extrabold text-slate-900 mb-8 tracking-tighter leading-[0.95]">
-                Build the finance<br/>
-                engine for the{' '}
-                <span className="relative inline-block">
-                  <span className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 blur-2xl opacity-30"></span>
-                  <span className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    Business world
+          <div className="grid lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-7 space-y-8">
+              <AnimatedSection animation="fade-down">
+                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/15 bg-white/5 text-sm uppercase tracking-[0.2em]">
+                  <Sparkles className="text-[#ffd19b]" size={16} />
+                  finanshels • built in dubai for scaling founders
+                </div>
+              </AnimatedSection>
+
+              <AnimatedSection animation="fade-right" delay={50}>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-tight text-balance">
+                  One financial operating system for{' '}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#f16610] via-[#ff8a3c] to-[#ffd19b]">
+                    MENA scale-ups
                   </span>
-                </span>
-              </h1>
-            </AnimatedSection>
-            
-            <AnimatedSection animation="fade-up" delay={200}>
-              <p className="text-xl sm:text-2xl text-slate-600 mb-14 max-w-3xl mx-auto leading-relaxed font-medium">
-                Join Finanshels and help <span className="text-slate-900 font-semibold">2M+ startups</span> across MENA automate their financial operations.{' '}
-                <span className="text-slate-900 font-semibold">Move fast. Build for founders. Ship excellence.</span>
-              </p>
-            </AnimatedSection>
+                </h1>
+                <p className="mt-6 text-lg sm:text-xl text-white/80 max-w-2xl">
+                  Finanshels pairs elite finance talent with powerful automation so founders can run accounting, tax,
+                  payroll, CFO, and compliance from one control center. We obsess over clarity so you can obsess over
+                  growth.
+                </p>
+              </AnimatedSection>
 
-            <AnimatedSection animation="scale" delay={300}>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-                <Link to="/jobs">
-                  <Button size="lg" variant="primary" className="group w-full sm:w-auto text-lg h-14 px-10 shadow-2xl shadow-indigo-500/30 hover:shadow-indigo-500/50">
-                    See open roles
-                    <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={22} />
+              <AnimatedSection animation="fade-right" delay={100}>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    as="a"
+                    href="mailto:hello@finanshels.com"
+                    size="lg"
+                    className="shadow-[#f16610]/40"
+                  >
+                    Book a working session
+                    <ArrowRight size={20} className="ml-2" />
                   </Button>
-                </Link>
-                <Link to="/life">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg h-14 px-10 hover:bg-white hover:text-indigo-600 border-2">
-                    Life at Finanshels
+                  <Button
+                    as={Link}
+                    to="/services"
+                    size="lg"
+                    variant="ghost"
+                    className="border border-white/30 text-white hover:bg-white/10 hover:text-white"
+                  >
+                    Explore services
                   </Button>
-                </Link>
-              </div>
-            </AnimatedSection>
+                </div>
+              </AnimatedSection>
+
+              <AnimatedSection animation="fade-right" delay={150}>
+                <ul className="space-y-3 mt-8">
+                  {HERO_BULLETS.map((item, index) => (
+                    <li key={item} className="flex items-start gap-3 text-lg text-white/80">
+                      <CheckCircle2 className="text-[#ffd19b] mt-1" size={22} />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </AnimatedSection>
+
+              <AnimatedSection animation="fade-up" delay={200}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-10">
+                  {HERO_STATS.map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="rounded-2xl border border-white/15 bg-white/5 backdrop-blur p-5"
+                    >
+                      <div className="text-3xl font-semibold">
+                        <AnimatedCounter end={stat.value} suffix={stat.suffix} />
+                      </div>
+                      <p className="text-sm text-white/60 mt-1">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </AnimatedSection>
+            </div>
+
+            <div className="lg:col-span-5 space-y-5">
+              <AnimatedSection animation="fade-left">
+                <FloatingCard className="bg-white/10 border-white/15 text-white shadow-2xl">
+                  <div className="p-8 space-y-5">
+                    <div className="flex items-center gap-3 text-sm uppercase tracking-[0.3em] text-white/70">
+                      <Users2 size={18} />
+                      finance service
+                    </div>
+                    <h3 className="text-2xl font-semibold leading-tight">
+                      Dedicated controllers, tax experts, payroll leads, and CFO partners for your business.
+                    </h3>
+                    <div className="space-y-3 text-white/80">
+                      <div className="flex items-center gap-3">
+                        <Target size={18} className="text-[#ffd19b]" />
+                        <span>Industry-specific workflows for SaaS, fintech, retail, and services</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Globe2 size={18} className="text-[#ffd19b]" />
+                        <span>Support across UAE, KSA, Qatar, Bahrain, Oman, Kuwait, and Egypt</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <ShieldCheck size={18} className="text-[#ffd19b]" />
+                        <span>Controls, policies, and approvals embedded from day one</span>
+                      </div>
+                    </div>
+                  </div>
+                </FloatingCard>
+              </AnimatedSection>
+              <AnimatedSection animation="fade-left" delay={150}>
+                <Card className="bg-white/95 border-white/20 shadow-2xl backdrop-blur rounded-3xl">
+                  <div className="p-8 space-y-4">
+                    <p className="text-sm font-semibold text-[#f16610] uppercase tracking-[0.3em]">
+                      the finanshels cadence
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-4xl font-bold text-slate-900">24 hrs</p>
+                        <p className="text-slate-500 text-sm font-medium">to spin up your workspace</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-4xl font-bold text-slate-900">30 days</p>
+                        <p className="text-slate-500 text-sm font-medium">to run investor-ready rituals</p>
+                      </div>
+                    </div>
+                    <p className="text-slate-600">
+                      We plug into your banks, ERPs, payroll, and spend tooling to build the most complete picture of your
+                      business finances.
+                    </p>
+                  </div>
+                </Card>
+              </AnimatedSection>
+            </div>
           </div>
         </div>
       </section>
 
-
-      {/* Company Metrics Section */}
-      <section className="py-16 px-6 sm:px-8 lg:px-12 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <AnimatedSection>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-bold text-indigo-700 mb-6">
-                <Sparkles size={16} />
-                Trusted by Thousands
+      <section className="py-16 px-6 sm:px-8 lg:px-12 bg-white border-b border-slate-100">
+        <div className="max-w-6xl mx-auto">
+          <p className="text-sm uppercase tracking-[0.4em] text-slate-500 text-center mb-10">
+            trusted by category-defining teams
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-center text-slate-400 text-sm font-semibold uppercase tracking-[0.4em]">
+            {CUSTOMER_LOGOS.map((logo) => (
+              <div key={logo} className="py-4 border border-slate-100 rounded-2xl">
+                {logo}
               </div>
-            </AnimatedSection>
-            <AnimatedSection delay={100}>
-              <h2 className="text-5xl sm:text-6xl font-extrabold text-slate-900 mb-6 tracking-tighter">
-                Building the Future of{' '}
-                <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  MENA Fintech
-                </span>
-              </h2>
-            </AnimatedSection>
-            <AnimatedSection delay={200}>
-              <p className="text-2xl text-slate-600 max-w-3xl mx-auto font-medium">
-                A rapidly growing Accounting and Fintech company backed by <span className="text-slate-900 font-bold">top investors</span> and trusted by thousands
-              </p>
-            </AnimatedSection>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <AnimatedSection animation="fade-up" delay={0}>
-              <FloatingCard>
-                <Card className="h-full hover:shadow-2xl transition-all duration-500 border-2 border-slate-100 hover:border-indigo-200 bg-gradient-to-br from-white to-indigo-50/30">
-                  <div className="p-6 text-center">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 mb-3 shadow-lg">
-                      <Users className="text-white" size={24} />
-                    </div>
-                    <div className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                      <AnimatedCounter end={135} duration={2000} />+
-                    </div>
-                    <div className="text-slate-700 font-bold text-sm">Team Members</div>
-                  </div>
-                </Card>
-              </FloatingCard>
-            </AnimatedSection>
-            
-            <AnimatedSection animation="fade-up" delay={100}>
-              <FloatingCard>
-                <Card className="h-full hover:shadow-2xl transition-all duration-500 border-2 border-slate-100 hover:border-purple-200 bg-gradient-to-br from-white to-purple-50/30">
-                  <div className="p-6 text-center">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 mb-3 shadow-lg">
-                      <Building className="text-white" size={24} />
-                    </div>
-                    <div className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-                      <AnimatedCounter end={5000} duration={2000} />+
-                    </div>
-                    <div className="text-slate-700 font-bold text-sm">Active Clients</div>
-                  </div>
-                </Card>
-              </FloatingCard>
-            </AnimatedSection>
-            
-            <AnimatedSection animation="fade-up" delay={200}>
-              <FloatingCard>
-                <Card className="h-full hover:shadow-2xl transition-all duration-500 border-2 border-slate-100 hover:border-pink-200 bg-gradient-to-br from-white to-pink-50/30">
-                  <div className="p-6 text-center">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-indigo-600 mb-3 shadow-lg">
-                      <Star className="text-white" size={24} />
-                    </div>
-                    <div className="text-4xl font-extrabold bg-gradient-to-r from-pink-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-                      4.9<span className="text-3xl">/5</span>
-                    </div>
-                    <div className="text-slate-700 font-bold text-sm">Client Rating</div>
-                  </div>
-                </Card>
-              </FloatingCard>
-            </AnimatedSection>
-          </div>
-
-          {/* Backed By Section */}
-          <div className="mt-16">
-            <AnimatedSection>
-              <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200 p-8 shadow-md">
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 mb-6">
-                    <Award size={14} className="text-indigo-600" />
-                    Backed by leading investors
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-12 md:gap-16">
-                    <div className="group cursor-pointer">
-                      <div className="text-2xl md:text-3xl font-black text-slate-300 group-hover:text-slate-900 transition-all duration-300 group-hover:scale-110 transform">
-                        MBRIF
-                      </div>
-                    </div>
-                    <div className="w-px h-8 bg-slate-300"></div>
-                    <div className="group cursor-pointer">
-                      <div className="text-2xl md:text-3xl font-black text-slate-300 group-hover:text-slate-900 transition-all duration-300 group-hover:scale-110 transform">
-                        in5 Tech
-                      </div>
-                    </div>
-                    <div className="w-px h-8 bg-slate-300"></div>
-                    <div className="group cursor-pointer">
-                      <div className="text-2xl md:text-3xl font-black text-slate-300 group-hover:text-slate-900 transition-all duration-300 group-hover:scale-110 transform">
-                        Kube VC
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </AnimatedSection>
-          </div>
-        </div>
-      </section>
-
-      {/* Company Values */}
-      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-gradient-to-b from-white to-brand-light">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
-              What drives us
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Our values aren't just words on a wall - they guide every decision we make
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {COMPANY_VALUES.map((value, idx) => (
-              <Card key={idx} className="hover:shadow-xl hover:border-brand-primary/50 transition-all duration-300 group">
-                <div className="p-8">
-                  <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">
-                    {value.icon}
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
-                    {value.title}
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    {value.description}
-                  </p>
-                </div>
-              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Leadership Team */}
-      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-gradient-to-b from-white to-slate-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <AnimatedSection>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-bold text-indigo-700 mb-6">
-                <Users size={16} />
-                Leadership Team
-              </div>
-            </AnimatedSection>
-            <AnimatedSection delay={100}>
-              <h2 className="text-5xl sm:text-6xl font-extrabold text-slate-900 mb-6 tracking-tighter">
-                Meet our leaders
-              </h2>
-            </AnimatedSection>
-            <AnimatedSection delay={200}>
-              <p className="text-2xl text-slate-600 max-w-3xl mx-auto font-medium">
-                Experienced founders and operators from <span className="text-slate-900 font-bold">world's top companies</span>
-              </p>
-            </AnimatedSection>
-          </div>
+      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-[#fff8f2]">
+        <div className="max-w-6xl mx-auto text-center space-y-6">
+          <AnimatedSection animation="fade-down">
+            <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">why finanshels</p>
+          </AnimatedSection>
+          <AnimatedSection animation="fade-down" delay={80}>
+            <h2 className="text-4xl sm:text-5xl font-semibold text-balance">
+              Finance clarity built for ambitious MENA operators
+            </h2>
+          </AnimatedSection>
+          <AnimatedSection animation="fade-down" delay={160}>
+            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+              We mix deep local expertise with a modern operating system so you never worry about compliance, reporting,
+              or investor conversations again.
+            </p>
+          </AnimatedSection>
+        </div>
 
-          {/* Horizontal Scrolling Leadership Team */}
-          <div className="relative">
-            <div className="overflow-x-auto scrollbar-hide pb-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              <div className="flex gap-6 px-4" style={{ width: 'max-content' }}>
-                {LEADERSHIP_TEAM.map((leader, idx) => (
-                  <div key={leader.name} className="w-[240px] flex-shrink-0">
-                    <Card className="group hover:shadow-xl transition-all duration-500 hover:-translate-y-2 border border-slate-200 hover:border-indigo-300 overflow-hidden h-full">
-                      <div className="p-5 text-center">
-                        <div className="relative mb-3 inline-block">
-                          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl blur-lg opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
-                          <img 
-                            src={leader.image} 
-                            alt={leader.name}
-                            className="w-20 h-20 rounded-2xl mx-auto ring-2 ring-slate-100 group-hover:ring-indigo-200 transition-all duration-500 relative object-cover"
-                          />
-                          <a
-                            href={leader.linkedin}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="absolute -bottom-1 -right-1 p-1.5 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-500/30 hover:scale-110"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                            </svg>
-                          </a>
-                        </div>
-                        
-                        <h3 className="text-sm font-bold text-slate-900 mb-1 leading-tight">
-                          {leader.name}
-                        </h3>
-                        <div className="text-xs text-indigo-600 font-semibold mb-2">
-                          {leader.role}
-                        </div>
-                        <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                          {leader.bio}
-                        </p>
-                      </div>
-                    </Card>
+        <div className="max-w-6xl mx-auto mt-14 grid gap-6 md:grid-cols-3">
+          {VALUE_PROPS.map((item) => (
+            <AnimatedSection key={item.title} animation="fade-up">
+              <Card className="h-full border-2 border-[#ffe1cc] bg-white/80 hover:-translate-y-1 hover:shadow-xl transition-all">
+                <div className="p-8 space-y-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#fff2e7] text-[#f16610] flex items-center justify-center">
+                    <item.icon size={26} />
                   </div>
-                ))}
-              </div>
+                  <h3 className="text-2xl font-semibold">{item.title}</h3>
+                  <p className="text-slate-600">{item.description}</p>
+                </div>
+              </Card>
+            </AnimatedSection>
+          ))}
+        </div>
+      </section>
+
+      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-white">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-3 gap-12">
+          <AnimatedSection animation="fade-right" className="space-y-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">
+              the finanshels platform
+            </p>
+            <h2 className="text-4xl font-semibold leading-tight">
+              One finance stack powering accounting, tax, payroll, and strategy
+            </h2>
+            <p className="text-lg text-slate-600">
+              We pair technology with people. Data flows from your banks, ERP, and SaaS tools into our command center to
+              give you realtime control, automated compliance, and a finance partner who lives inside your business.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <span className="px-4 py-1.5 rounded-full bg-[#fff2e7] text-[#f16610] text-sm font-semibold">
+                Live dashboards
+              </span>
+              <span className="px-4 py-1.5 rounded-full bg-[#fff2e7] text-[#f16610] text-sm font-semibold">
+                WhatsApp support
+              </span>
+              <span className="px-4 py-1.5 rounded-full bg-[#fff2e7] text-[#f16610] text-sm font-semibold">
+                Investor rituals
+              </span>
             </div>
-            {/* Gradient overlays for scroll indication */}
-            <div className="absolute left-0 top-0 bottom-8 w-20 bg-gradient-to-r from-white to-transparent pointer-events-none"></div>
-            <div className="absolute right-0 top-0 bottom-8 w-20 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
+          </AnimatedSection>
+
+          <div className="lg:col-span-2 grid md:grid-cols-2 gap-6">
+            {PLATFORM_FEATURES.map((feature, index) => (
+              <AnimatedSection key={feature.title} animation="fade-up" delay={index * 60}>
+                <Card className="h-full border border-slate-100 hover:border-[#f16610]/30 hover:shadow-xl transition-all">
+                  <div className="p-8 space-y-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[#fff4ec] text-[#f16610] flex items-center justify-center">
+                      <feature.icon size={26} />
+                    </div>
+                    <h3 className="text-xl font-semibold">{feature.title}</h3>
+                    <p className="text-slate-600">{feature.description}</p>
+                  </div>
+                </Card>
+              </AnimatedSection>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-slate-50">
+      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-slate-950 text-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <AnimatedSection>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 border border-indigo-100 text-sm font-bold text-indigo-700 mb-6">
-                <Star size={16} className="fill-indigo-700" />
-                What our team says
-              </div>
-            </AnimatedSection>
-            <AnimatedSection delay={100}>
-              <h2 className="text-5xl sm:text-6xl font-extrabold text-slate-900 mb-6 tracking-tighter">
-                Hear from our people
-              </h2>
-            </AnimatedSection>
-            <AnimatedSection delay={200}>
-              <p className="text-xl text-slate-600 max-w-3xl mx-auto font-medium">
-                Real stories from team members who are <span className="text-slate-900 font-bold">building something special</span>
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10">
+            <AnimatedSection animation="fade-right">
+              <p className="text-sm uppercase tracking-[0.4em] text-white/60 font-semibold">services</p>
+              <h2 className="text-4xl font-semibold mt-4">Teams built for every layer of finance</h2>
+              <p className="text-lg text-white/70 mt-4 max-w-2xl">
+                Founders plug into one partner and get the firepower of an entire finance department backed by product,
+                data, and operators who have built inside the region&apos;s leading companies.
               </p>
+            </AnimatedSection>
+            <AnimatedSection animation="fade-left">
+              <Button
+                as="a"
+                href="mailto:hello@finanshels.com"
+                variant="outline"
+                className="border-white/50 text-white hover:border-white"
+              >
+                Design my finance service
+                <ArrowRight size={18} className="ml-2" />
+              </Button>
             </AnimatedSection>
           </div>
 
-          {/* Horizontal Scrolling Testimonials */}
-          <div className="relative">
-            <div className="overflow-x-auto scrollbar-hide pb-8" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              <div className="flex gap-6 px-4" style={{ width: 'max-content' }}>
-                {TESTIMONIALS.map((testimonial, idx) => (
-                  <div key={idx} className="w-[400px] flex-shrink-0">
-                    <TestimonialCard testimonial={testimonial} />
+          <div className="grid md:grid-cols-3 gap-6 mt-12">
+            {SERVICE_PILLARS.map((pillar) => (
+              <AnimatedSection key={pillar.title} animation="fade-up">
+                <Card className="h-full bg-white/5 border border-white/10 backdrop-blur">
+                  <div className="p-8 space-y-4">
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 text-white flex items-center justify-center">
+                      <pillar.icon size={28} />
+                    </div>
+                    <h3 className="text-2xl font-semibold">{pillar.title}</h3>
+                    <p className="text-white/70">{pillar.description}</p>
                   </div>
-                ))}
-              </div>
-            </div>
-            {/* Gradient overlays for scroll indication */}
-            <div className="absolute left-0 top-0 bottom-8 w-20 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none"></div>
-            <div className="absolute right-0 top-0 bottom-8 w-20 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none"></div>
+                </Card>
+              </AnimatedSection>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Dubai Walk-In Banner */}
-      <section className="py-12 px-6 sm:px-8 lg:px-12 bg-slate-900 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto relative z-10">
-          <AnimatedSection animation="fade-up">
-            <Card className="bg-gradient-to-br from-slate-50 to-white border-none shadow-2xl overflow-hidden">
-              <div className="p-6 sm:p-8 lg:p-10">
-                {/* Header */}
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-sm font-bold mb-4">
-                    <MapPin size={16} />
-                    <span>Dubai Walk-In Career Drive</span>
-                  </div>
-                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-3 tracking-tight">
-                    Join Our Team in Dubai
-                  </h2>
-              <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto font-medium">
-                Walk in with your CV • Meet our team face-to-face • 3-step process
-              </p>
+      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-white">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12">
+          <AnimatedSection animation="fade-right">
+            <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">playbook</p>
+            <h2 className="text-4xl font-semibold mt-4">Clarity in 30 days</h2>
+            <p className="text-lg text-slate-600 mt-4">
+              We move with urgency because founders cannot wait. Your team ships clarity in weeks, not quarters, and then
+              keeps the cadence forever.
+            </p>
+            <div className="mt-10 space-y-6">
+              {OPERATING_STACK.map((step) => (
+                <div key={step.title} className="border-l-4 border-[#f16610] pl-6">
+                  <p className="text-sm uppercase tracking-[0.4em] text-slate-500">{step.metric}</p>
+                  <h3 className="text-2xl font-semibold mt-2">{step.title}</h3>
+                  <p className="text-slate-600 mt-2">{step.description}</p>
                 </div>
+              ))}
+            </div>
+          </AnimatedSection>
 
-                {/* Quick Info Bar */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100">
-                    <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
-                      <Calendar className="text-white" size={18} />
+          <AnimatedSection animation="fade-left">
+            <Card className="h-full border-2 border-[#ffe1cc] bg-[#fffaf5]">
+              <div className="p-10 space-y-8">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">
+                    operating cadence
+                  </p>
+                  <h3 className="text-3xl font-semibold mt-4">What founders experience</h3>
+                </div>
+                <div className="space-y-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center text-[#f16610] font-bold">
+                      01
                     </div>
                     <div>
-                      <div className="text-xs text-slate-600 font-semibold uppercase tracking-wide">Date</div>
-                      <div className="font-bold text-slate-900">Saturday, Nov 23</div>
+                      <p className="font-semibold">WhatsApp line to your team</p>
+                      <p className="text-slate-600 text-sm mt-1">
+                        Controllers, tax advisors, payroll managers, and CFO partners available on-demand.
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100">
-                    <div className="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center flex-shrink-0">
-                      <Clock className="text-white" size={18} />
+                  <div className="flex items-start gap-4">
+                    <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center text-[#f16610] font-bold">
+                      02
                     </div>
                     <div>
-                      <div className="text-xs text-slate-600 font-semibold uppercase tracking-wide">Time</div>
-                      <div className="font-bold text-slate-900">10 AM - 5 PM</div>
+                      <p className="font-semibold">Monthly operating review</p>
+                      <p className="text-slate-600 text-sm mt-1">
+                        Burn, runway, CAC/LTV, margins, and compliance checklist benchmarked against the best companies.
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center flex-shrink-0">
-                      <Building className="text-white" size={18} />
+                  <div className="flex items-start gap-4">
+                    <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center text-[#f16610] font-bold">
+                      03
                     </div>
                     <div>
-                      <div className="text-xs text-slate-600 font-semibold uppercase tracking-wide">Venue</div>
-                      <div className="font-bold text-slate-900 text-sm">Dubai Production City</div>
+                      <p className="font-semibold">Board, audit, and fundraising kit</p>
+                      <p className="text-slate-600 text-sm mt-1">
+                        Board decks, investor updates, diligence rooms, and audit requests prepped before you even ask.
+                      </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Main Content */}
-                <div className="mb-6">
-                  {/* Open Positions */}
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                      <div className="w-1.5 h-8 bg-gradient-to-b from-blue-600 to-cyan-600 rounded-full"></div>
-                      Open Positions
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Link to="/dubai-walkin/field-sales-executive" className="block group">
-                        <div className="relative p-6 rounded-2xl bg-gradient-to-br from-white via-blue-50/30 to-white border border-slate-200 hover:border-blue-400 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-cyan-400/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
-                          <div className="relative">
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-all group-hover:scale-110">
-                                  <Target className="text-white" size={24} />
-                                </div>
-                                <div>
-                                  <div className="inline-flex px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold mb-2">
-                                    Sales
-                                  </div>
-                                  <h4 className="font-extrabold text-slate-900 text-lg group-hover:text-blue-600 transition-colors leading-tight">
-                                    Field Sales Executive
-                                  </h4>
-                                </div>
-                              </div>
-                            </div>
-                            <p className="text-slate-600 text-sm mb-4 leading-relaxed">Cold calling & lead generation</p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-slate-700">
-                                <Users size={16} className="text-blue-600" />
-                                <span className="text-sm font-semibold">2 Openings</span>
-                              </div>
-                              <div className="flex items-center gap-1 text-blue-600 font-bold text-sm group-hover:gap-2 transition-all">
-                                Apply Now
-                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-
-                      <Link to="/dubai-walkin/business-development" className="block group">
-                        <div className="relative p-6 rounded-2xl bg-gradient-to-br from-white via-indigo-50/30 to-white border border-slate-200 hover:border-indigo-400 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-400/10 to-purple-400/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
-                          <div className="relative">
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/30 group-hover:shadow-indigo-500/50 transition-all group-hover:scale-110">
-                                  <TrendingUp className="text-white" size={24} />
-                                </div>
-                                <div>
-                                  <div className="inline-flex px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold mb-2">
-                                    Business Development
-                                  </div>
-                                  <h4 className="font-extrabold text-slate-900 text-lg group-hover:text-indigo-600 transition-colors leading-tight">
-                                    Business Development Executive
-                                  </h4>
-                                </div>
-                              </div>
-                            </div>
-                            <p className="text-slate-600 text-sm mb-4 leading-relaxed">Build relationships & close deals</p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-slate-700">
-                                <Users size={16} className="text-indigo-600" />
-                                <span className="text-sm font-semibold">2 Openings</span>
-                              </div>
-                              <div className="flex items-center gap-1 text-indigo-600 font-bold text-sm group-hover:gap-2 transition-all">
-                                Apply Now
-                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                      
-                      <Link to="/dubai-walkin/partnerships-manager" className="block group">
-                        <div className="relative p-6 rounded-2xl bg-gradient-to-br from-white via-amber-50/30 to-white border border-slate-200 hover:border-amber-400 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-400/10 to-orange-400/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
-                          <div className="relative">
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/30 group-hover:shadow-amber-500/50 transition-all group-hover:scale-110">
-                                  <Users className="text-white" size={24} />
-                                </div>
-                                <div>
-                                  <div className="inline-flex px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold mb-2">
-                                    Strategic Partnerships
-                                  </div>
-                                  <h4 className="font-extrabold text-slate-900 text-lg group-hover:text-amber-600 transition-colors leading-tight">
-                                    Partnerships Manager
-                                  </h4>
-                                </div>
-                              </div>
-                            </div>
-                            <p className="text-slate-600 text-sm mb-4 leading-relaxed">Build strategic alliances</p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-slate-700">
-                                <Users size={16} className="text-amber-600" />
-                                <span className="text-sm font-semibold">2 Openings</span>
-                              </div>
-                              <div className="flex items-center gap-1 text-amber-600 font-bold text-sm group-hover:gap-2 transition-all">
-                                Apply Now
-                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                      
-                      <Link to="/dubai-walkin/appointment-setter" className="block group">
-                        <div className="relative p-6 rounded-2xl bg-gradient-to-br from-white via-emerald-50/30 to-white border border-slate-200 hover:border-emerald-400 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-400/10 to-teal-400/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
-                          <div className="relative">
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/30 group-hover:shadow-emerald-500/50 transition-all group-hover:scale-110">
-                                  <Briefcase className="text-white" size={24} />
-                                </div>
-                                <div>
-                                  <div className="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold mb-2">
-                                    Sales Support
-                                  </div>
-                                  <h4 className="font-extrabold text-slate-900 text-lg group-hover:text-emerald-600 transition-colors leading-tight">
-                                    Appointment Setter
-                                  </h4>
-                                </div>
-                              </div>
-                            </div>
-                            <p className="text-slate-600 text-sm mb-4 leading-relaxed">Schedule & qualify leads</p>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-slate-700">
-                                <Users size={16} className="text-emerald-600" />
-                                <span className="text-sm font-semibold">2 Openings</span>
-                              </div>
-                              <div className="flex items-center gap-1 text-emerald-600 font-bold text-sm group-hover:gap-2 transition-all">
-                                Apply Now
-                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* CTA */}
-                <div className="text-center pt-6 border-t-2 border-slate-200">
-                  <Link to="/dubai-walkin">
-                    <Button size="lg" className="group shadow-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white">
-                      View Full Details & Register
-                      <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
-                    </Button>
-                  </Link>
-                  <p className="text-sm text-slate-500 mt-4">Walk-ins welcome • Bring your CV and ID</p>
                 </div>
               </div>
             </Card>
@@ -623,97 +554,135 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Referral Section */}
-      <section className="py-10 px-6 sm:px-8 lg:px-12 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff15_1px,transparent_1px),linear-gradient(to_bottom,#ffffff15_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-        
-        <div className="max-w-7xl mx-auto relative z-10">
-          <AnimatedSection animation="scale">
-            <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold mb-4 shadow-lg">
-                    💰 Referral Program
+      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-[#fff4ec]">
+        <div className="max-w-7xl mx-auto">
+          <AnimatedSection animation="fade-down">
+            <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold text-center">
+              what our team says
+            </p>
+            <h2 className="text-4xl font-semibold text-center mt-4">Culture built on radical ownership</h2>
+            <p className="text-lg text-slate-600 text-center max-w-3xl mx-auto mt-4">
+              We obsess over people as much as we obsess over customers. Hear from the builders behind Finanshels.
+            </p>
+          </AnimatedSection>
+
+          <div className="grid md:grid-cols-3 gap-6 mt-12">
+            {TESTIMONIALS.slice(0, 3).map((testimonial, index) => (
+              <AnimatedSection key={testimonial.name} animation="fade-up" delay={index * 80}>
+                <TestimonialCard testimonial={testimonial} />
+              </AnimatedSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <AnimatedSection animation="fade-down">
+            <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold text-center">
+              leadership
+            </p>
+            <h2 className="text-4xl font-semibold text-center mt-4">People building the finance OS</h2>
+            <p className="text-lg text-slate-600 text-center max-w-3xl mx-auto mt-4">
+              Operators who have scaled finance, operations, and technology teams across MENA lead every engagement.
+            </p>
+          </AnimatedSection>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+            {LEADERSHIP_TEAM.slice(0, 6).map((leader, index) => (
+              <AnimatedSection key={leader.name} animation="fade-up" delay={index * 60}>
+                <LeadershipCard leader={leader} />
+              </AnimatedSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-slate-50">
+        <div className="max-w-7xl mx-auto">
+          <AnimatedSection animation="fade-down">
+            <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold text-center">
+              how we work
+            </p>
+            <h2 className="text-4xl font-semibold text-center mt-4">Values that make Finanshels unstoppable</h2>
+          </AnimatedSection>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+            {COMPANY_VALUES.map((value, index) => (
+              <AnimatedSection key={value.title} animation="fade-up" delay={index * 60}>
+                <Card className="h-full border border-slate-100 bg-white">
+                  <div className="p-8 space-y-3">
+                    <div className="text-3xl">{value.icon}</div>
+                    <h3 className="text-2xl font-semibold">{value.title}</h3>
+                    <p className="text-slate-600">{value.description}</p>
                   </div>
-                  <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight leading-tight">
-                    Get Your Friend A Job
-                    <span className="block bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent text-2xl sm:text-3xl mt-1">Earn up to AED 1,000</span>
-                  </h2>
-                  <p className="text-base text-slate-600 mb-6 font-medium leading-relaxed">
-                    Know someone who'd be a great fit? <span className="text-slate-900 font-bold">Refer them and earn rewards</span> when they join!
-                  </p>
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2">
-                      <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckCircle className="text-emerald-600" size={14} />
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-900 text-sm">Easy Process</div>
-                        <div className="text-slate-600 text-xs">Fill the form with details</div>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckCircle className="text-emerald-600" size={14} />
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-900 text-sm">Track Status</div>
-                        <div className="text-slate-600 text-xs">Get application updates</div>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckCircle className="text-emerald-600" size={14} />
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-900 text-sm">Earn Rewards</div>
-                        <div className="text-slate-600 text-xs">Get paid when they join</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div 
-                    id="zf_div_jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo"
-                    className="w-full bg-white rounded-xl overflow-hidden"
-                  />
-                </div>
+                </Card>
+              </AnimatedSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-white border-t border-slate-100">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12">
+          <AnimatedSection animation="fade-right">
+            <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">refer a founder</p>
+            <h2 className="text-4xl font-semibold mt-4">Help your friends plug into a world-class finance service</h2>
+            <p className="text-lg text-slate-600 mt-4">
+              Finanshels has scaled to a 120+ person finance powerhouse because operators like you keep referring
+              builders who deserve better finance.
+            </p>
+            <ul className="mt-6 space-y-4">
+              {REFERRAL_POINTS.map((point) => (
+                <li key={point} className="flex items-start gap-3 text-slate-700">
+                  <CheckCircle2 className="text-[#f16610] mt-1" size={22} />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          </AnimatedSection>
+
+          <AnimatedSection animation="fade-left">
+            <div className="rounded-3xl border border-slate-200 shadow-lg overflow-hidden">
+              <div className="bg-gradient-brand text-white p-6">
+                <p className="text-sm uppercase tracking-[0.4em] font-semibold">submit a referral</p>
+                <h3 className="text-2xl font-semibold mt-2">We&apos;ll take care of the rest</h3>
+              </div>
+              <div className="p-6 bg-white">
+                <div id="zf_div_jQBxaOyXvB5vbVEwHYzgDthNbYVadDVpRDKRFkkD_Mo" />
               </div>
             </div>
           </AnimatedSection>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-32 px-6 sm:px-8 lg:px-12 bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff10_1px,transparent_1px),linear-gradient(to_bottom,#ffffff10_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600 rounded-full blur-3xl opacity-20 animate-float"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-600 rounded-full blur-3xl opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
-        </div>
-        
-        <div className="max-w-5xl mx-auto text-center relative z-10">
-          <AnimatedSection>
-            <h2 className="text-5xl sm:text-6xl font-extrabold mb-8 tracking-tighter leading-tight text-white">
-              Ready to make an impact?
+      <section className="py-20 px-6 sm:px-8 lg:px-12 bg-slate-950 text-white">
+        <div className="max-w-5xl mx-auto text-center space-y-6">
+          <AnimatedSection animation="fade-down">
+            <p className="text-sm uppercase tracking-[0.4em] text-white/60 font-semibold">ready?</p>
+            <h2 className="text-4xl sm:text-5xl font-semibold">
+              Build a finance function worthy of your ambition
             </h2>
-          </AnimatedSection>
-          <AnimatedSection delay={100}>
-            <p className="text-2xl sm:text-3xl text-white/90 mb-12 leading-relaxed font-medium max-w-3xl mx-auto">
-              Join Finanshels and help shape the future of finance operations for startups across MENA
+            <p className="text-lg text-white/70 max-w-3xl mx-auto mt-4">
+              Bring Finanshels into your operating room and unlock an unfair advantage in accounting, compliance, and
+              strategic finance.
             </p>
           </AnimatedSection>
-          <AnimatedSection delay={200}>
-            <Link to="/jobs">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="group bg-white/10 backdrop-blur-xl text-white border-2 border-white hover:bg-white hover:text-slate-900 shadow-2xl text-lg h-16 px-12"
-              >
-                View open roles
-                <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={22} />
+          <AnimatedSection animation="fade-up" delay={120}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button as="a" href="mailto:hello@finanshels.com" size="lg">
+                Talk to a finance lead
+                <ArrowRight size={20} className="ml-2" />
               </Button>
-            </Link>
+              <Button
+                as={Link}
+                to="/customers"
+                size="lg"
+                variant="ghost"
+                className="border border-white/30 text-white hover:bg-white/10 hover:text-white"
+              >
+                See customer stories
+              </Button>
+            </div>
           </AnimatedSection>
         </div>
       </section>

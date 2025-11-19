@@ -83,12 +83,12 @@ html {
 }
 
 #khembedjobs .kh-job-card:hover {
-  border-color: #6366F1 !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12) !important;
+  border-color: #f16610 !important;
+  box-shadow: 0 10px 40px rgba(241, 102, 16, 0.2) !important;
 }
 
 #khembedjobs .kh-apply-btn {
-  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%) !important;
+  background: linear-gradient(135deg, #f16610 0%, #ff8a3c 50%, #ffd19b 100%) !important;
   border-radius: 0.75rem !important;
   font-weight: 600 !important;
 }

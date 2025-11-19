@@ -61,35 +61,15 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Quick Links */}
           <div>
-            <h3 className="font-bold text-xl mb-6 text-white">Quick Links</h3>
-            <ul className="space-y-4">
-              <li>
-                <Link to="/" className="text-slate-300 hover:text-white transition-colors font-medium text-base">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link to="/jobs" className="text-slate-300 hover:text-white transition-colors font-medium text-base">
-                  Open Roles
-                </Link>
-              </li>
-              <li>
-                <Link to="/life" className="text-slate-300 hover:text-white transition-colors font-medium text-base">
-                  Life at Finanshels
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="https://finanshels.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-slate-300 hover:text-white transition-colors font-medium text-base"
-                >
-                  Main Website
-                </a>
-              </li>
+            <h3 className="font-bold text-xl mb-6 text-white">Company</h3>
+            <ul className="space-y-3 text-slate-300 font-medium text-base">
+              <li><Link to="/services" className="hover:text-white transition-colors">Services</Link></li>
+              <li><Link to="/solutions" className="hover:text-white transition-colors">Solutions</Link></li>
+              <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+              <li><Link to="/customers" className="hover:text-white transition-colors">Customers</Link></li>
+              <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
             </ul>
           </div>
 
@@ -98,13 +78,13 @@ export default function Footer() {
             <h3 className="font-bold text-xl mb-6 text-white">Get in Touch</h3>
             <ul className="space-y-4 text-slate-300 font-medium text-base">
               <li>
-                <a href="mailto:careers@finanshels.com" className="hover:text-white transition-colors">
-                  talents@finanshels.com
+                <a href="mailto:hello@finanshels.com" className="hover:text-white transition-colors">
+                  hello@finanshels.com
                 </a>
               </li>
-              <li>Dubai, UAE (HQ)</li>
-              <li>Ahmedabad, India (Upcoming)</li>
-              <li>Kerala, India</li>
+              <li>+971 50 717 8156</li>
+              <li>Dubai Internet City, in5 Tech</li>
+              <li>Kerala • Ahmedabad (upcoming)</li>
             </ul>
           </div>
         </div>
