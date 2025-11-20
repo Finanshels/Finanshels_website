@@ -25,15 +25,15 @@ const STORY_POINTS = [
   },
   {
     year: 'Today',
-    title: 'Building the finance OS for operators',
+    title: 'Building the finance partner founders deserve',
     description:
-      'More than 120 finance specialists ship investor-ready clarity every month so founders can focus on building category-defining products.'
+      'More than 135 finance specialists ship investor-ready clarity every month so founders can focus on building category-defining products.'
   }
 ]
 
 const METRICS = [
-  { value: '120+', label: 'finance operators' },
-  { value: '12', label: 'active markets' },
+  { value: '135+', label: 'finance specialists' },
+  { value: '5,000+', label: 'UAE clients' },
   { value: '4.9/5', label: 'avg. customer rating' },
   { value: '30 days', label: 'to run investor rituals' }
 ]
@@ -92,7 +92,7 @@ export default function About() {
           <AnimatedSection animation="fade-down">
             <p className="text-sm uppercase tracking-[0.4em] text-white/70 font-semibold">about finanshels</p>
             <h1 className="text-4xl sm:text-5xl font-semibold mt-4 max-w-3xl leading-tight">
-              Finanshels is the financial operating system powering ambitious MENA teams.
+              Finanshels is the finance partner powering ambitious UAE teams.
             </h1>
             <p className="text-lg text-white/80 max-w-3xl mt-6">
               We are accountants, controllers, tax leads, payroll experts, and CFO partners who live inside your business.
@@ -145,7 +145,7 @@ export default function About() {
         <div className="max-w-6xl mx-auto">
           <AnimatedSection animation="fade-down">
             <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold text-center">our story</p>
-            <h2 className="text-4xl font-semibold text-center mt-4">Our journey from finance team to finance OS</h2>
+            <h2 className="text-4xl font-semibold text-center mt-4">Our journey from finance team to full-stack finance partner</h2>
           </AnimatedSection>
           <div className="mt-12 grid md:grid-cols-2 gap-6">
             {STORY_POINTS.map((story, index) => (
@@ -271,7 +271,7 @@ export default function About() {
           <AnimatedSection animation="fade-down">
             <h2 className="text-4xl font-semibold">Ready to build your finance command center?</h2>
             <p className="text-lg text-white/70 mt-4">
-              Bring Finanshels into your operating room. We’ll map your needs, assemble a team, and get you investor-ready
+              Bring Finanshels into your leadership rhythm. We’ll map your needs, assemble a team, and get you investor-ready
               in 30 days.
             </p>
           </AnimatedSection>

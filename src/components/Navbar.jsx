@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '../lib/utils'
+import { PRODUCT_CATEGORIES } from '../data/products'
 
 const SOLUTIONS_SECTIONS = [
   {
@@ -85,6 +86,16 @@ const RESOURCES_SECTIONS = [
   }
 ]
 
+const PRODUCTS_SECTIONS = PRODUCT_CATEGORIES.map((section) => ({
+  title: section.title,
+  items: section.items.map((item) => ({
+    name: item.name,
+    description: item.description,
+    href: `/products/${item.slug}`,
+    icon: item.icon
+  }))
+}))
+
 export default function Navbar() {
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -102,40 +113,55 @@ export default function Navbar() {
     return location.pathname.startsWith(path)
   }
 
-  const navItems = useMemo(() => [
-    { name: 'Home', path: '/' },
-    { 
-      name: 'Solutions', 
-      dropdown: SOLUTIONS_SECTIONS,
-      cta: {
-        text: 'Need help scoping the right finance services for your business?',
-        primary: { href: 'mailto:hello@finanshels.com', label: 'Book now' },
-        actions: [
-          { href: '/pricing', label: 'Pricing' },
-          { href: 'https://wa.me/971507178156?text=Hi%20Team%20Finanshels%2C%20I%20need%20a%20finance%20consultation.', label: 'Chat to sales' }
-        ]
-      }
-    },
-    { name: 'Pricing', path: '/pricing' },
-    { name: 'Customers', path: '/customers' },
-    { 
-      name: 'Resources', 
-      dropdown: RESOURCES_SECTIONS,
-      cta: {
-        text: 'Deep dives, podcasts, and live sessions for ambitious operators.',
-        primary: { href: 'https://www.finanshels.com/resources', label: 'View library' },
-        actions: [
-          { href: 'https://www.finanshels.com/blog', label: 'Blog' },
-          { href: 'https://www.finanshels.com/careers', label: 'Careers' }
-        ]
-      }
-    },
-    { name: 'Contact', path: '/contact' }
-  ], [])
+  const navItems = useMemo(
+    () => [
+      { name: 'Home', path: '/' },
+      {
+        name: 'Solutions',
+        dropdown: SOLUTIONS_SECTIONS,
+        cta: {
+          text: 'Need help scoping the right finance services for your business?',
+          primary: { href: 'mailto:hello@finanshels.com', label: 'Book now' },
+          actions: [
+            { href: '/pricing', label: 'Pricing' },
+            { href: 'https://wa.me/971507178156?text=Hi%20Team%20Finanshels%2C%20I%20need%20a%20finance%20consultation.', label: 'Chat to sales' }
+          ]
+        }
+      },
+      { name: 'Pricing', path: '/pricing' },
+      { name: 'Customers', path: '/customers' },
+      {
+        name: 'Resources',
+        dropdown: RESOURCES_SECTIONS,
+        cta: {
+          text: 'Deep dives, podcasts, and live sessions for ambitious operators.',
+          primary: { href: 'https://www.finanshels.com/resources', label: 'View library' },
+          actions: [
+            { href: 'https://www.finanshels.com/blog', label: 'Blog' },
+            { href: 'https://www.finanshels.com/careers', label: 'Careers' }
+          ]
+        }
+      },
+      {
+        name: 'Products',
+        dropdown: PRODUCTS_SECTIONS,
+        cta: {
+          text: 'Purpose-built tools for tax, cash, and collaboration.',
+          primary: { href: '/products', label: 'View all products' },
+          actions: [
+            { href: '/solutions', label: 'Pair with services' },
+            { href: 'mailto:hello@finanshels.com?subject=Finanshels%20Products', label: 'Talk to sales' }
+          ]
+        }
+      },
+      { name: 'Contact', path: '/contact' }
+    ],
+    []
+  )
 
   const renderDropdown = (sections, cta) => (
     <div className="absolute left-1/2 top-full mt-0 -translate-x-1/2 w-[1100px] max-w-[calc(100vw-2rem)] rounded-[32px] border border-slate-200/80 bg-white/95 shadow-[0_30px_70px_rgba(10,16,31,0.22)] px-8 py-8">
-      <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-white via-[#fff9f5] to-white opacity-90 pointer-events-none"></div>
+      <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-white via-[#fff9f5] to-white opacity-90 pointer-events-none" />
       <div className="absolute -top-10 right-16 h-24 w-24 rounded-full bg-[#f16610]/25 blur-[60px]" />
       <div className="relative z-10">
         <div className="grid gap-8 md:grid-cols-3">
@@ -162,9 +188,7 @@ export default function Navbar() {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-slate-900">{item.name}</p>
                           {item.badge && (
-                            <span className="rounded-full bg-[#ffe8d8] px-2 py-0.5 text-xs font-semibold text-[#f16610]">
-                              {item.badge}
-                            </span>
+                            <span className="rounded-full bg-[#ffe8d8] px-2 py-0.5 text-xs font-semibold text-[#f16610]">{item.badge}</span>
                           )}
                         </div>
                         {item.description && <p className="text-sm text-slate-600 leading-relaxed">{item.description}</p>}
@@ -215,18 +239,19 @@ export default function Navbar() {
   )
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-2xl border-b border-slate-200/60 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-        <div className="flex items-center justify-between h-20">
-          <Link to="/" className="flex items-center group">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-white/95 via-white/90 to-[#fff6ee]/90 border-b border-white/40 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-2xl">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8">
+        <div className="flex items-center gap-4 h-20">
+          <Link to="/" className="flex items-center gap-2 group">
             <img
               src="/finanshels_logo.png"
               alt="Finanshels"
-              className="h-8 w-auto transition-all duration-300 group-hover:scale-105"
+              className="h-9 w-auto transition-transform duration-200 group-hover:scale-[1.04]"
             />
+            <span className="sr-only">Finanshels</span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex flex-1 items-center justify-center gap-1 rounded-full border border-slate-200/80 bg-white/70 px-4 py-2 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
             {navItems.map((item) =>
               item.dropdown ? (
                 <div
@@ -236,71 +261,67 @@ export default function Navbar() {
                   onMouseLeave={() => setOpenDropdown(null)}
                 >
                   <button
-                    className="flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-semibold uppercase tracking-wide text-slate-700 transition hover:text-[#f16610]"
+                    className="flex items-center gap-1 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-600 transition hover:text-[#f16610]"
                   >
                     {item.name}
-                    <ChevronDown size={16} className={cn('transition-transform', openDropdown === item.name && 'rotate-180')} />
+                    <ChevronDown size={14} className={cn('transition-transform', openDropdown === item.name && 'rotate-180')} />
                   </button>
-                  {openDropdown === item.name &&
-                    renderDropdown(item.dropdown, item.cta)}
+                  {openDropdown === item.name && renderDropdown(item.dropdown, item.cta)}
                 </div>
               ) : (
                 <Link
                   key={item.name}
                   to={item.path}
                   className={cn(
-                    'px-4 py-2 rounded-xl text-sm font-semibold uppercase tracking-wide transition',
-                    isActive(item.path)
-                      ? 'text-[#f16610] bg-[#fff4ec]'
-                      : 'text-slate-700 hover:text-[#f16610]'
+                    'px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.35em] transition',
+                    isActive(item.path) ? 'text-[#f16610] bg-[#fff2ea] shadow-[0_8px_20px_rgba(241,102,16,0.15)]' : 'text-slate-600 hover:text-[#f16610]'
                   )}
                 >
                   {item.name}
                 </Link>
               )
             )}
+          </div>
+
+          <div className="hidden md:flex items-center">
             <a
               href="https://wa.me/971507178156?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
               target="_blank"
               rel="noreferrer"
-              className="ml-2 inline-flex items-center rounded-2xl bg-[#0f5c4f] px-5 py-2.5 font-semibold text-white transition hover:bg-[#0c4a3f]"
+              className="inline-flex items-center gap-2 rounded-[18px] bg-[#0f5c4f] px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(15,92,79,0.45)] hover:bg-[#0c4a3f]"
             >
-              WhatsApp • Speak to us
+              WhatsApp
+              <ArrowUpRight size={16} className="text-white/80" />
             </a>
           </div>
 
           <button
-            className="md:hidden p-3 rounded-xl hover:bg-slate-50 transition-all duration-300"
+            className="md:hidden ml-auto p-3 rounded-xl hover:bg-slate-100 transition"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
           >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
 
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-2xl">
+        <div className="md:hidden border-t border-slate-200 bg-white/98 backdrop-blur-xl">
           <div className="px-6 py-4 space-y-3">
             {navItems.map((item) =>
               item.dropdown ? (
-                <div key={item.name} className="rounded-2xl border border-slate-200">
+                <div key={item.name} className="rounded-2xl border border-slate-200 bg-white">
                   <button
                     className="flex w-full items-center justify-between px-4 py-3 text-left font-semibold text-slate-900"
                     onClick={() => setOpenMobileDropdown((prev) => (prev === item.name ? null : item.name))}
                   >
                     {item.name}
-                    <ChevronDown
-                      size={18}
-                      className={cn('transition-transform', openMobileDropdown === item.name && 'rotate-180')}
-                    />
+                    <ChevronDown size={18} className={cn('transition-transform', openMobileDropdown === item.name && 'rotate-180')} />
                   </button>
                   {openMobileDropdown === item.name && (
                     <div className="px-4 pb-4 space-y-4">
                       {item.dropdown.map((section) => (
                         <div key={section.title}>
-                          <p className="text-xs uppercase tracking-[0.3em] text-[#f16610]/80 font-semibold">
-                            {section.title}
-                          </p>
+                          <p className="text-xs uppercase tracking-[0.3em] text-[#f16610]/80 font-semibold">{section.title}</p>
                           <div className="mt-2 space-y-3">
                             {section.items.map((entry) => {
                               const EntryComponent = entry.href?.startsWith('http') ? 'a' : Link
@@ -314,11 +335,7 @@ export default function Navbar() {
                                   className="block rounded-2xl bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800"
                                 >
                                   {entry.name}
-                                  {entry.description && (
-                                    <span className="mt-1 block text-xs font-normal text-slate-600">
-                                      {entry.description}
-                                    </span>
-                                  )}
+                                  {entry.description && <span className="mt-1 block text-xs font-normal text-slate-600">{entry.description}</span>}
                                 </EntryComponent>
                               )
                             })}
@@ -326,7 +343,7 @@ export default function Navbar() {
                         </div>
                       ))}
                       {item.cta && (
-                        <div className="mt-4 space-y-2 rounded-2xl bg-white p-4">
+                        <div className="mt-4 space-y-2 rounded-2xl bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
                           <p className="text-sm font-semibold text-slate-700">{item.cta.text}</p>
                           {item.cta.primary && (
                             <a
@@ -369,9 +386,7 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'block px-5 py-3.5 rounded-xl font-semibold transition-all duration-300',
-                    isActive(item.path)
-                      ? 'text-[#f16610] bg-[#fff4ec] shadow-sm'
-                      : 'text-slate-700 hover:bg-slate-50'
+                    isActive(item.path) ? 'text-[#f16610] bg-[#fff4ec] shadow-sm' : 'text-slate-700 hover:bg-slate-50'
                   )}
                 >
                   {item.name}
@@ -384,7 +399,7 @@ export default function Navbar() {
               rel="noreferrer"
               className="block text-center px-5 py-3.5 rounded-xl font-semibold border-2 border-[#0f5c4f] text-[#0f5c4f] hover:bg-[#0f5c4f] hover:text-white transition"
             >
-              WhatsApp • Speak to us
+              WhatsApp
             </a>
           </div>
         </div>

@@ -120,7 +120,7 @@ export const RESOURCE_PAGES = {
         title: 'Featured reading',
         description: 'Each guide includes templates, checklists, and automation blueprints.',
         items: [
-          { title: 'Finance OS Playbook', description: 'How to architect teams, rituals, and dashboards across geos.' },
+          { title: 'Finance Command Centre Playbook', description: 'How to architect teams, rituals, and dashboards across geos.' },
           { title: 'Corporate Tax Launch Kit', description: 'Everything a CFO needs to navigate UAE CT with zero penalties.' },
           { title: 'Venture-Ready Reporting', description: 'Board pack templates, investor update flows, and forecasting frameworks.' },
           { title: 'Payroll + People Ops Manual', description: 'Visa, WPS, EOS, and benefits guidelines for distributed teams.' }
@@ -181,7 +181,7 @@ export const RESOURCE_PAGES = {
         description: 'Limited seats to keep conversations tactical.',
         items: [
           { title: 'Corporate Tax Filing AMA', description: 'Walkthrough of GAZT/FTA portals with real datasets.' },
-          { title: 'Designing the finance OS for Series A operators', description: 'Tooling, people, and dashboards in 45 minutes.' },
+          { title: 'Designing a finance command centre for Series A operators', description: 'Tooling, people, and dashboards in 45 minutes.' },
           { title: 'Building a payroll command centre', description: 'From visa renewals to EOS automation.' }
         ]
       },
@@ -211,7 +211,7 @@ export const RESOURCE_PAGES = {
         title: 'Latest stories',
         description: 'Editor picks from the last few weeks.',
         items: [
-          { title: 'Designing a finance OS for multi-entity startups', description: 'Playbooks from teams supporting holding companies.' },
+          { title: 'Designing a finance control room for multi-entity startups', description: 'Playbooks from teams supporting holding companies.' },
           { title: 'Corporate tax penalties to avoid in 2025', description: 'A practical guide with real audit stories.' },
           { title: 'How CFOs use WhatsApp to keep leadership aligned', description: 'Async rituals that work in high-velocity teams.' }
         ]
@@ -235,7 +235,7 @@ export const RESOURCE_PAGES = {
   careers: {
     slug: 'careers',
     heroTag: 'careers',
-    heroTitle: 'Build the finance operating system of MENA',
+    heroTitle: 'Build the finance partner UAE founders rely on',
     heroDescription: 'We hire accountants, controllers, engineers, designers, and creatives who love building with founders.',
     heroCTA: { label: 'See open roles', href: 'https://finanshels.kekahire.com' },
     highlights: [

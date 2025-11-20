@@ -8,54 +8,48 @@ import { SERVICE_PAGES } from '../data/servicePages'
 
 const PLANS = [
   {
-    name: 'Launch',
-    price: '219',
-    currency: 'USD / mo',
-    description: 'Accounting, VAT, payroll, and compliance for early-stage teams up to 25 employees.',
-    cta: 'Start with Launch',
-    features: [
-      'Monthly bookkeeping & reconciliations',
-      'VAT filings & compliance reminders',
-      'Payroll & WPS processing',
-      'WhatsApp support for leadership',
-      'Board-ready reports every month'
-    ]
+    key: 'essential',
+    name: 'Essential Annual Plan',
+    tag: 'Basic',
+    price: '4,999',
+    currency: 'AED / mo',
+    description: 'Cash-basis bookkeeping, VAT, and payroll handled every year for lean UAE businesses.',
+    cta: 'Chat with expert',
+    ctaHref: 'https://wa.me/971507178156?text=I%20need%20the%20Essential%20Plan',
+    limit: 'Up to 100 transactions per year',
+    highlights: ['Cash-basis annual accounting', 'Annual reports & reconciliations', '1 hour tax advisory/year']
   },
   {
-    name: 'Scale',
-    price: '699',
-    currency: 'USD / mo',
-    description: 'Command centre for Series A/B ventures with multi-entity operations.',
-    featured: true,
-    cta: 'Talk to a Strategist',
-    features: [
-      'Weekly revenue & burn dashboards',
-      'Corporate tax & ESR filings',
-      'Fractional CFO office hours',
-      'Multi-entity consolidations',
-      'Scenario modelling & fundraising kits'
-    ]
+    key: 'growth',
+    name: 'Growth Quarterly Plan',
+    tag: 'Popular',
+    price: '9,999',
+    currency: 'AED / mo',
+    description: 'Quarterly accounting, VAT, and tax advisory for teams scaling across the UAE.',
+    cta: 'Chat with expert',
+    ctaHref: 'https://wa.me/971507178156?text=I%20need%20the%20Growth%20Plan',
+    limit: 'Up to 500 transactions per year',
+    highlights: ['Quarterly cash-basis accounting', 'VAT & CT handled quarterly', '2 hours tax advisory/quarter']
   },
   {
-    name: 'Enterprise',
-    price: 'Custom',
-    description: 'Tailored services for conglomerates, regulated fintech, and multi-market operators.',
-    cta: 'Book a custom scope',
-    features: [
-      'Dedicated CFO partner & controllers',
-      'In-house PRO & payroll specialists',
-      'Tooling & ERP migrations',
-      'Advanced internal controls',
-      'On-site support & governance'
-    ]
+    key: 'scale',
+    name: 'Scale Monthly Plan',
+    tag: '2 months free on annual',
+    price: '14,999',
+    currency: 'AED / mo',
+    description: 'Monthly accrual accounting, CFO attention, and expanded compliance for complex operators.',
+    cta: 'Chat with expert',
+    ctaHref: 'https://wa.me/971507178156?text=I%20need%20the%20Scale%20Plan',
+    limit: 'Up to 1,500 transactions per year',
+    highlights: ['Monthly accrual accounting', 'Full VAT + CT + ESR coverage', 'Dedicated CFO touchpoints']
   }
 ]
 
 const VALUE_DRIVERS = [
-  { icon: Sparkles, title: 'Managed service', description: 'No freelance chaos. Finansehls delivers audited processes and SLAs.' },
-  { icon: ShieldCheck, title: 'Regulatory-grade', description: 'Corporate tax, VAT, ESR, payroll, and visas handled under one roof.' },
-  { icon: Zap, title: 'Automation included', description: 'Bank feeds, PSP data, approvals, and dashboards set up as standard.' },
-  { icon: Award, title: 'Executive-level reporting', description: 'Weekly, monthly, and quarterly packs benchmarked against top performers.' }
+  { icon: Sparkles, title: 'Managed service', description: 'An embedded UAE finance team—not freelancers or disparate vendors.' },
+  { icon: ShieldCheck, title: 'Regulatory-first', description: 'Corporate tax, VAT, ESR, payroll, visas, and governance under one roof.' },
+  { icon: Zap, title: 'Automation built-in', description: 'Bank feeds, PSP data, approvals, and dashboards implemented for you.' },
+  { icon: Award, title: 'Executive reporting', description: 'Weekly, monthly, and quarterly packs benchmarked against top performers.' }
 ]
 
 const PROCESS = [
@@ -79,7 +73,7 @@ const PROCESS = [
 const FAQS = [
   {
     q: 'What happens during onboarding?',
-    a: 'Day 0–7 digitisation (books, banking, payroll), day 8–21 insights (dashboards, compliance trackers), day 22+ operating cadence with investor-ready rituals.'
+    a: 'Day 0–7 digitisation (books, banking, payroll), day 8–21 insights (dashboards, compliance trackers), day 22+ finance cadence with investor-ready rituals.'
   },
   {
     q: 'Can you support multi-entity or multi-country companies?',
@@ -91,16 +85,16 @@ const FAQS = [
   },
   {
     q: 'How do we communicate?',
-    a: 'Slack/WhatsApp for quick updates, weekly/bi-weekly operating reviews, monthly board-ready packs, plus quarterly strategic planning.'
+    a: 'Slack/WhatsApp for quick updates, weekly/bi-weekly finance reviews, monthly board-ready packs, plus quarterly strategic planning.'
   }
 ]
 
 const testimonials = TESTIMONIALS.slice(0, 2)
 
 const CAPACITY_OPTIONS = [
-  { label: 'Launch', value: 'launch', description: '0-25 employees / up to $1M ARR', multiplier: 1 },
-  { label: 'Scale', value: 'scale', description: '26-100 employees / up to $20M ARR', multiplier: 1.9 },
-  { label: 'Enterprise', value: 'enterprise', description: '100+ employees / multi-entity', multiplier: 3.2 }
+  { label: 'Essential', value: 'essential', description: 'Up to 100 transactions/year', multiplier: 1 },
+  { label: 'Growth', value: 'growth', description: 'Up to 500 transactions/year', multiplier: 1.9 },
+  { label: 'Scale', value: 'scale', description: 'Up to 1,500 transactions/year', multiplier: 2.8 }
 ]
 
 const INDUSTRIES = [
@@ -117,6 +111,25 @@ const MODULES = [
   { id: 'cfo', label: 'Fractional CFO', description: 'Scenario planning, fundraising, pricing', multiplier: 0.4 }
 ]
 
+const PLAN_MATRIX = [
+  { feature: 'Bookkeeping', essential: 'Up to 100 txn/yr', growth: 'Up to 500 txn/yr', scale: 'Up to 1,500 txn/yr' },
+  { feature: 'Accounting type', essential: 'Cash-basis (annual)', growth: 'Cash-basis (quarterly)', scale: 'Accrual-basis (monthly)' },
+  { feature: 'Management reports', essential: 'Annual', growth: 'Quarterly', scale: 'Monthly' },
+  { feature: 'Bank reconciliation', essential: 'Annual', growth: 'Quarterly', scale: 'Monthly' },
+  { feature: 'Card reconciliation', essential: 'Annual', growth: 'Quarterly', scale: 'Monthly' },
+  { feature: 'Free tax advisory', essential: '1 hr / year', growth: '2 hrs / quarter', scale: '1 hr / month' },
+  { feature: 'Corporate tax registration', essential: true, growth: true, scale: true },
+  { feature: 'Corporate tax filing', essential: true, growth: true, scale: true },
+  { feature: 'Unlimited email & chat support', essential: true, growth: true, scale: true },
+  { feature: 'VAT registration', essential: false, growth: true, scale: true },
+  { feature: 'Quarterly VAT filing', essential: false, growth: true, scale: true },
+  { feature: 'Receivables summary', essential: false, growth: false, scale: true },
+  { feature: 'Payables summary', essential: false, growth: false, scale: true },
+  { feature: 'Schedule preparation', essential: false, growth: false, scale: true }
+]
+
+const PLAN_KEYS = ['essential', 'growth', 'scale']
+
 const SERVICE_LIST = Object.entries(SERVICE_PAGES).map(([slug, details]) => ({
   slug,
   title: details.title,
@@ -125,26 +138,28 @@ const SERVICE_LIST = Object.entries(SERVICE_PAGES).map(([slug, details]) => ({
 }))
 
 export default function Pricing() {
-  const [stage, setStage] = useState('launch')
-  const [headcount, setHeadcount] = useState(25)
+  const [stage, setStage] = useState('essential')
+  const [transactions, setTransactions] = useState(100)
   const [industry, setIndustry] = useState('saas')
-  const [currency, setCurrency] = useState('usd')
+  const [currency, setCurrency] = useState('aed')
   const [modules, setModules] = useState(() => MODULES.map((m) => m.id))
 
   const estimate = useMemo(() => {
-    const baseMap = { launch: 219, scale: 699, enterprise: 1200 }
-    const base = baseMap[stage] || 219
+    const baseMap = { essential: 4999, growth: 9999, scale: 14999 }
+    const base = baseMap[stage] || 4999
     const moduleMultiplier = modules.reduce((acc, id) => {
       const module = MODULES.find((m) => m.id === id)
       return acc + (module ? module.multiplier : 0)
     }, 1)
-    const headMultiplier = Math.max(headcount / 25, 1)
-    const currencyRate = currency === 'usd' ? 1 : 3.67
-    const amount = base * moduleMultiplier * headMultiplier * currencyRate
+    const txnMultiplier = Math.max(transactions / 100, 1)
+    const currencyRate = currency === 'usd' ? 1 / 3.67 : 1
+    const amount = base * moduleMultiplier * txnMultiplier * currencyRate
     const min = Math.round((amount * 0.9) / 10) * 10
     const max = Math.round((amount * 1.2) / 10) * 10
     return { min, max }
-  }, [stage, headcount, modules, currency])
+  }, [stage, transactions, modules, currency])
+
+  const currencyLabel = currency === 'usd' ? '$' : 'AED '
 
   const toggleModule = (id) => {
     setModules((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
@@ -159,8 +174,7 @@ export default function Pricing() {
             <p className="text-sm uppercase tracking-[0.4em] text-white/70 font-semibold">pricing</p>
             <h1 className="text-4xl sm:text-5xl font-semibold">Finance services tailored to your stage</h1>
             <p className="text-lg text-white/70 mt-4">
-              Accounting, tax, payroll, compliance, and CFO services delivered as a single managed service. No hidden fees, no
-              unexpected hires.
+              Transparent AED pricing for accounting, tax, payroll, compliance, and CFO services—delivered as one managed partner with no hidden fees.
             </p>
           </AnimatedSection>
           <AnimatedSection animation="fade-up" delay={80}>
@@ -180,6 +194,47 @@ export default function Pricing() {
               </Button>
             </div>
           </AnimatedSection>
+        </div>
+      </section>
+
+      <section className="py-12 px-6 sm:px-10 lg:px-16 bg-white">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <AnimatedSection animation="fade-down">
+            <div className="flex flex-col gap-2">
+              <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">Plan comparison</p>
+              <h2 className="text-3xl font-semibold">What you get on every plan</h2>
+            </div>
+          </AnimatedSection>
+          <div className="overflow-x-auto rounded-[32px] border border-slate-200 bg-white">
+            <table className="w-full text-sm text-slate-700">
+              <thead>
+                <tr className="border-b border-slate-200 text-left">
+                  <th className="py-4 px-4 font-semibold text-slate-500 text-xs uppercase tracking-[0.3em]">Feature</th>
+                  {PLAN_KEYS.map((key, index) => (
+                    <th key={key} className="py-4 px-4 font-semibold text-slate-500 text-xs uppercase tracking-[0.3em]">
+                      {PLANS[index].name.replace(' Plan', '')}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {PLAN_MATRIX.map((row) => (
+                  <tr key={row.feature} className="border-b border-slate-100">
+                    <td className="py-4 px-4 font-semibold text-slate-900">{row.feature}</td>
+                    {PLAN_KEYS.map((key) => (
+                      <td key={key} className="py-4 px-4 text-center">
+                        {typeof row[key] === 'boolean' ? (
+                          row[key] ? <CheckCircle2 className="inline text-[#0f5c4f]" size={18} /> : <span className="text-slate-300">—</span>
+                        ) : (
+                          <span className="text-slate-600">{row[key]}</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -213,20 +268,20 @@ export default function Pricing() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-[#f16610]/70 font-semibold mb-3">headcount</p>
+                  <p className="text-xs uppercase tracking-[0.4em] text-[#f16610]/70 font-semibold mb-3">transactions per year</p>
                   <input
                     type="range"
-                    min="10"
-                    max="250"
-                    step="5"
-                    value={headcount}
-                    onChange={(e) => setHeadcount(Number(e.target.value))}
+                    min="50"
+                    max="1800"
+                    step="50"
+                    value={transactions}
+                    onChange={(e) => setTransactions(Number(e.target.value))}
                     className="w-full accent-[#f16610]"
                   />
                   <div className="flex justify-between text-sm text-slate-600 mt-2">
-                    <span>10</span>
-                    <span>{headcount} people</span>
-                    <span>250+</span>
+                    <span>50</span>
+                    <span>{transactions} txns/yr</span>
+                    <span>1,800+</span>
                   </div>
                 </div>
                 <div>
@@ -264,14 +319,6 @@ export default function Pricing() {
                 </div>
                 <div className="flex flex-wrap gap-3 items-center">
                   <button
-                    onClick={() => setCurrency('usd')}
-                    className={`rounded-2xl border px-4 py-2 text-sm font-semibold ${
-                      currency === 'usd' ? 'border-[#f16610] bg-[#fff4ec]' : 'border-slate-200'
-                    }`}
-                  >
-                    USD
-                  </button>
-                  <button
                     onClick={() => setCurrency('aed')}
                     className={`rounded-2xl border px-4 py-2 text-sm font-semibold ${
                       currency === 'aed' ? 'border-[#f16610] bg-[#fff4ec]' : 'border-slate-200'
@@ -279,12 +326,20 @@ export default function Pricing() {
                   >
                     AED
                   </button>
+                  <button
+                    onClick={() => setCurrency('usd')}
+                    className={`rounded-2xl border px-4 py-2 text-sm font-semibold ${
+                      currency === 'usd' ? 'border-[#f16610] bg-[#fff4ec]' : 'border-slate-200'
+                    }`}
+                  >
+                    USD
+                  </button>
                 </div>
                 <div className="rounded-[28px] border border-slate-100 bg-[#f8fafc] p-6 text-center space-y-2">
                   <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">estimated monthly fee</p>
                   <p className="text-4xl font-semibold">
-                    {currency === 'usd' ? '$' : 'AED '}
-                    {estimate.min.toLocaleString()} – {currency === 'usd' ? '$' : 'AED '}
+                    {currencyLabel}
+                    {estimate.min.toLocaleString()} – {currencyLabel}
                     {estimate.max.toLocaleString()}
                   </p>
                   <p className="text-xs text-slate-500">Detailed proposals depend on your tool stack, transaction volume, and add-ons.</p>
@@ -292,47 +347,6 @@ export default function Pricing() {
               </div>
             </Card>
           </AnimatedSection>
-        </div>
-      </section>
-
-      <section className="py-20 px-6 sm:px-10 lg:px-16">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
-          {PLANS.map((plan) => (
-            <AnimatedSection key={plan.name} animation="fade-up">
-              <Card
-                className={`h-full border-2 ${plan.featured ? 'border-[#f16610]' : 'border-slate-100'} ${
-                  plan.featured ? 'shadow-2xl' : ''
-                } rounded-[28px]`}
-              >
-                <div className="p-8 space-y-5">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.4em] text-slate-500">{plan.name}</p>
-                    <div className="flex items-baseline gap-2 mt-2">
-                      <span className="text-4xl font-semibold">{plan.price}</span>
-                      {plan.currency && <span className="text-slate-500">{plan.currency}</span>}
-                    </div>
-                    <p className="text-slate-600 mt-2">{plan.description}</p>
-                  </div>
-                  <ul className="space-y-3">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2 text-sm text-slate-700">
-                        <CheckCircle2 className="text-[#f16610]" size={18} />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    as="a"
-                    href="mailto:hello@finanshels.com"
-                    variant={plan.featured ? 'primary' : 'outline'}
-                    className="w-full"
-                  >
-                    {plan.cta}
-                  </Button>
-                </div>
-              </Card>
-            </AnimatedSection>
-          ))}
         </div>
       </section>
 
@@ -371,7 +385,7 @@ export default function Pricing() {
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           <AnimatedSection animation="fade-right">
             <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">what&apos;s included</p>
-            <h2 className="text-4xl font-semibold mt-4">Every plan includes the Finanshels control centre</h2>
+            <h2 className="text-4xl font-semibold mt-4">Every plan includes the Finanshels finance desk</h2>
             <p className="text-lg text-slate-600 mt-4">
               Compliance tracking, reporting cadences, stakeholder updates, and automation rollouts are not add-ons—they ship by
               default. You focus on building; we make sure finance runs.
@@ -382,7 +396,7 @@ export default function Pricing() {
               <div className="p-8 space-y-5 text-sm text-slate-600">
                 {[
                   { label: 'Finance service', value: 'Accounting, tax, payroll, compliance, CFO' },
-                  { label: 'Cadence', value: 'Weekly syncs, monthly operating reviews, quarterly boards' },
+                  { label: 'Cadence', value: 'Weekly syncs, monthly finance reviews, quarterly boards' },
                   { label: 'Compliance', value: 'VAT, corporate tax, ESR, payroll, visa, entity filings' },
                   { label: 'Automation', value: 'Bank feeds, PSP data, ERP workflows, approvals' },
                   { label: 'Support', value: 'WhatsApp, email, scheduled reviews with SLAs' }
@@ -407,7 +421,7 @@ export default function Pricing() {
             <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold text-center">
               why operators choose finanshels
             </p>
-            <h2 className="text-4xl font-semibold text-center mt-4">More than a vendor. A finance operating system.</h2>
+            <h2 className="text-4xl font-semibold text-center mt-4">More than a vendor. A finance co-pilot.</h2>
           </AnimatedSection>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
             {VALUE_DRIVERS.map((driver) => (

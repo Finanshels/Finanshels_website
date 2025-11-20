@@ -292,7 +292,7 @@ export const SERVICE_PAGES = {
     ],
     caseStudy: {
       logo: 'Baraka',
-      headline: 'Board loved the new finance OS',
+      headline: 'Board loved the new finance control room',
       result: 'Raised subsequent rounds with predictable reporting cadence.'
     }
   },
@@ -343,4 +343,3 @@ export const SERVICE_PAGES = {
     }
   }
 }
-

@@ -12,6 +12,9 @@ import ResourcePage from './pages/resources/ResourcePage'
 import { RESOURCE_PAGES } from './data/resources'
 import ServiceDetailPage from './pages/services/ServiceDetailPage'
 import { SERVICE_PAGES } from './data/servicePages'
+import Products from './pages/Products'
+import ProductDetailPage from './pages/products/ProductDetailPage'
+import { PRODUCT_PAGES } from './data/products'
 
 function App() {
   return (
@@ -27,6 +30,7 @@ function App() {
             <Route path="/customers" element={<Customers />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/products" element={<Products />} />
             <Route path="/resources/tools" element={<ResourcePage page={RESOURCE_PAGES.tools} />} />
             <Route path="/resources/glossary" element={<ResourcePage page={RESOURCE_PAGES.glossary} />} />
             <Route path="/resources/faqs" element={<ResourcePage page={RESOURCE_PAGES.faqs} />} />
@@ -49,6 +53,13 @@ function App() {
             <Route path="/solutions/startups" element={<ServiceDetailPage page={SERVICE_PAGES.startups} />} />
             <Route path="/solutions/ecommerce" element={<ServiceDetailPage page={SERVICE_PAGES.ecommerce} />} />
             <Route path="/solutions/smes" element={<ServiceDetailPage page={SERVICE_PAGES.smes} />} />
+            {Object.entries(PRODUCT_PAGES).map(([slug, product]) => (
+              <Route
+                key={slug}
+                path={`/products/${slug}`}
+                element={<ProductDetailPage product={product} />}
+              />
+            ))}
           </Routes>
         </main>
         <Footer />

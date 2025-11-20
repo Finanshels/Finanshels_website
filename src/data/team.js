@@ -80,45 +80,35 @@ export const LEADERSHIP_TEAM = [
 
 export const TESTIMONIALS = [
   {
-    name: "Shabana Nazeer",
-    role: "HR - Operations",
-    image: "https://api.dicebear.com/7.x/shapes/svg?seed=ShabanaNazeer&backgroundColor=6366f1",
-    quote: "Finanshels has given me the opportunity to shape HR operations from the ground up. The team's commitment to employee growth and well-being is truly inspiring.",
+    name: "Ranya Al Suwaidi",
+    role: "Founder, Bloom Cafe UAE",
+    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ranya&backgroundColor=fef3c7",
+    quote:
+      "Finanshels turned our messy books into a CFO-grade finance function in a week. VAT, payroll, and board decks now run like clockwork while I stay focused on new stores.",
     rating: 5
   },
   {
-    name: "Tanish Khandelwal",
-    role: "Full Stack Software Developer",
-    image: "https://api.dicebear.com/7.x/shapes/svg?seed=TanishKhandelwal&backgroundColor=8b5cf6",
-    quote: "Building full-stack fintech solutions at Finanshels is incredibly exciting. The modern tech stack and the chance to work on scalable systems that serve thousands of businesses keeps me motivated every day.",
+    name: "Sami Khan",
+    role: "CEO, desertcart.ae",
+    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sami&backgroundColor=fee2e2",
+    quote:
+      "Having controllers, tax leads, and a fractional CFO in one WhatsApp group changed how we operate. Collections, PSP reconciliations, and CT filings are proactive instead of reactive.",
     rating: 5
   },
   {
-    name: "Vasudha Tucker",
-    role: "Talent Acquisition",
-    image: "https://api.dicebear.com/7.x/shapes/svg?seed=VasudhaTucker&backgroundColor=ec4899",
-    quote: "Finding and bringing exceptional talent to Finanshels is incredibly rewarding. We're building a team that's diverse, passionate, and ready to change the fintech landscape.",
+    name: "Leena Kurian",
+    role: "Co-founder, Atlas Clinics",
+    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Leena&backgroundColor=ede9fe",
+    quote:
+      "Our investors demanded monthly packs and compliance proof. Finanshels gave us both—clean numbers, scenario planning, and a tax desk that understands UAE healthcare regulations.",
     rating: 5
   },
   {
-    name: "Aman Sheikh",
-    role: "Sr Engineer",
-    image: "https://api.dicebear.com/7.x/shapes/svg?seed=AmanSheikh&backgroundColor=06b6d4",
-    quote: "The technical challenges at Finanshels are next-level. Working on scalable fintech solutions that impact thousands of startups makes every day exciting and meaningful.",
-    rating: 5
-  },
-  {
-    name: "Godwin Thomas",
-    role: "Account Manager",
-    image: "https://api.dicebear.com/7.x/shapes/svg?seed=GodwinThomas&backgroundColor=10b981",
-    quote: "Building lasting relationships with our clients and helping them succeed is what drives me. At Finanshels, we're not just service providers - we're trusted partners.",
-    rating: 5
-  },
-  {
-    name: "Ashish Yadav",
-    role: "Sales Team Lead",
-    image: "https://api.dicebear.com/7.x/shapes/svg?seed=AshishYadav&backgroundColor=a855f7",
-    quote: "Leading the sales team here is a dream. We're not just selling software; we're empowering startups to manage their finances better. The impact is real and measurable.",
+    name: "Hussein Ali",
+    role: "Managing Partner, Khaleej Capital",
+    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Hussein&backgroundColor=ecfccb",
+    quote:
+      "Portfolio visibility jumped overnight. Finanshels runs bookkeeping and compliance for multiple SPVs and reports back with insights we can trust during board meetings.",
     rating: 5
   }
 ]
@@ -155,4 +145,3 @@ export const COMPANY_VALUES = [
     description: "We're building for our region, understanding local nuances, regulations, and culture. Global quality, local expertise."
   }
 ]
-

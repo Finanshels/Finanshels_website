@@ -209,7 +209,7 @@ export default function Solutions() {
       <section className="py-20 px-6 sm:px-10 lg:px-16 bg-slate-950 text-white text-center">
         <div className="max-w-4xl mx-auto space-y-6">
           <AnimatedSection animation="fade-down">
-            <h2 className="text-4xl font-semibold">Bring Finanshels into your operating room</h2>
+            <h2 className="text-4xl font-semibold">Bring Finanshels into your finance stack</h2>
             <p className="text-lg text-white/70">
               Share your industry, stage, and tool stack—we&apos;ll send a bespoke playbook in under 48 hours.
             </p>
