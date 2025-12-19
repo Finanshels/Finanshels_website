@@ -160,13 +160,20 @@ export default function Navbar() {
   )
 
   const renderDropdown = (sections, cta) => (
-    <div className="absolute left-1/2 top-full mt-0 -translate-x-1/2 w-[1100px] max-w-[calc(100vw-2rem)] rounded-[32px] border border-slate-200/80 bg-white/95 shadow-[0_30px_70px_rgba(10,16,31,0.22)] px-8 py-8">
-      <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-white via-[#fff9f5] to-white opacity-90 pointer-events-none" />
-      <div className="absolute -top-10 right-16 h-24 w-24 rounded-full bg-[#f16610]/25 blur-[60px]" />
-      <div className="relative z-10">
-        <div className="grid gap-8 md:grid-cols-3">
+    <div 
+      className="fixed left-1/2 top-20 -translate-x-1/2 w-full max-w-[1100px] px-4 sm:px-8 z-50"
+      onMouseEnter={() => setOpenDropdown(openDropdown)}
+      onMouseLeave={() => setOpenDropdown(null)}
+    >
+      {/* Invisible bridge to prevent dropdown from closing */}
+      <div className="absolute -top-20 left-0 right-0 h-20" />
+      <div className="relative rounded-[32px] border border-slate-200/80 bg-white/95 shadow-[0_30px_70px_rgba(10,16,31,0.22)] px-6 py-8 lg:px-8">
+        <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-white via-[#fff9f5] to-white opacity-90 pointer-events-none" />
+        <div className="absolute -top-10 right-16 h-24 w-24 rounded-full bg-[#f16610]/25 blur-[60px]" />
+        <div className="relative z-10">
+        <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {sections.map((section) => (
-            <div key={section.title} className="space-y-4">
+            <div key={section.title} className="space-y-4 min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.45em] text-[#f16610]/80">{section.title}</p>
               <div className="space-y-3">
                 {section.items.map((item) => {
@@ -179,19 +186,20 @@ export default function Navbar() {
                     <ItemComponent
                       key={item.name}
                       {...componentProps}
-                      className="group flex items-start gap-4 rounded-3xl border border-transparent bg-white/60 p-4 transition-all hover:-translate-y-0.5 hover:border-[#ffd7c0] hover:bg-white"
+                      className="group flex items-start gap-3 rounded-3xl border border-transparent bg-white/60 p-3.5 lg:p-4 transition-all hover:-translate-y-0.5 hover:border-[#ffd7c0] hover:bg-white min-w-0"
                     >
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1e3] text-[#f16610] shadow-inner">
-                        <Icon size={22} />
+                      <div className="flex h-10 w-10 lg:h-11 lg:w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-[#fff1e3] text-[#f16610] shadow-inner">
+                        <Icon size={20} className="lg:hidden" />
+                        <Icon size={22} className="hidden lg:block" />
                       </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-slate-900">{item.name}</p>
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-slate-900 text-sm lg:text-base">{item.name}</p>
                           {item.badge && (
-                            <span className="rounded-full bg-[#ffe8d8] px-2 py-0.5 text-xs font-semibold text-[#f16610]">{item.badge}</span>
+                            <span className="rounded-full bg-[#ffe8d8] px-2 py-0.5 text-xs font-semibold text-[#f16610] whitespace-nowrap">{item.badge}</span>
                           )}
                         </div>
-                        {item.description && <p className="text-sm text-slate-600 leading-relaxed">{item.description}</p>}
+                        {item.description && <p className="text-xs lg:text-sm text-slate-600 leading-relaxed">{item.description}</p>}
                       </div>
                     </ItemComponent>
                   )
@@ -201,13 +209,13 @@ export default function Navbar() {
           ))}
         </div>
         {cta && (
-          <div className="mt-8 space-y-4 rounded-3xl border border-slate-200/80 bg-white/90 p-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <p className="text-sm font-semibold text-slate-700">{cta.text}</p>
+          <div className="mt-6 lg:mt-8 space-y-3 lg:space-y-4 rounded-3xl border border-slate-200/80 bg-white/90 p-4 lg:p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <p className="text-xs lg:text-sm font-semibold text-slate-700 flex-1">{cta.text}</p>
               {cta.primary && (
                 <a
                   href={cta.primary.href}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#f16610] px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-[#f16610]/30 transition hover:-translate-y-0.5"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#f16610] px-4 lg:px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-[#f16610]/30 transition hover:-translate-y-0.5 whitespace-nowrap"
                 >
                   {cta.primary.label}
                   <ArrowUpRight size={18} />
@@ -215,7 +223,7 @@ export default function Navbar() {
               )}
             </div>
             {cta.actions && (
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2 lg:gap-3">
                 {cta.actions.map((action) => {
                   const ActionComponent = action.href.startsWith('http') ? 'a' : Link
                   const props = action.href.startsWith('http') ? { href: action.href, target: '_blank', rel: 'noreferrer' } : { to: action.href }
@@ -223,10 +231,11 @@ export default function Navbar() {
                     <ActionComponent
                       key={action.label}
                       {...props}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-1.5 text-sm font-semibold text-slate-600 hover:border-[#f16610] hover:text-[#f16610]"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-3 lg:px-4 py-1.5 text-xs lg:text-sm font-semibold text-slate-600 hover:border-[#f16610] hover:text-[#f16610] whitespace-nowrap"
                     >
                       {action.label}
-                      <ArrowUpRight size={16} />
+                      <ArrowUpRight size={14} className="lg:hidden" />
+                      <ArrowUpRight size={16} className="hidden lg:block" />
                     </ActionComponent>
                   )
                 })}
@@ -236,11 +245,12 @@ export default function Navbar() {
         )}
       </div>
     </div>
+    </div>
   )
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-white/95 via-white/90 to-[#fff6ee]/90 border-b border-white/40 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-2xl">
-      <div className="max-w-6xl mx-auto px-4 sm:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 relative">
         <div className="flex items-center gap-4 h-20">
           <Link to="/" className="flex items-center gap-2 group">
             <img

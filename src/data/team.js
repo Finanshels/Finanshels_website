@@ -110,6 +110,38 @@ export const TESTIMONIALS = [
     quote:
       "Portfolio visibility jumped overnight. Finanshels runs bookkeeping and compliance for multiple SPVs and reports back with insights we can trust during board meetings.",
     rating: 5
+  },
+  {
+    name: "Fatima Al Hashimi",
+    role: "CFO, TechVentures DMCC",
+    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima&backgroundColor=dbeafe",
+    quote:
+      "The speed at which Finanshels onboarded us was incredible. Within days, they understood our complex multi-entity structure and started delivering actionable insights.",
+    rating: 5
+  },
+  {
+    name: "Omar Youssef",
+    role: "Founder, FitLife Studios",
+    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Omar&backgroundColor=fce7f3",
+    quote:
+      "Managing 8 locations across Dubai was a nightmare until Finanshels stepped in. Their bookkeeping and payroll services freed up my team to focus on what we do best—fitness.",
+    rating: 5
+  },
+  {
+    name: "Priya Sharma",
+    role: "Director, Nexus Consulting",
+    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya&backgroundColor=e0e7ff",
+    quote:
+      "Finanshels doesn't just do compliance—they think like business partners. Their fractional CFO helped us restructure our pricing and improve margins by 18%.",
+    rating: 5
+  },
+  {
+    name: "Ahmed Khalil",
+    role: "CEO, Greenfield Properties",
+    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmed&backgroundColor=fef9c3",
+    quote:
+      "Real estate finance is tricky with escrow accounts and project-based accounting. Finanshels handled it seamlessly, giving us crystal-clear visibility into every project.",
+    rating: 5
   }
 ]
 

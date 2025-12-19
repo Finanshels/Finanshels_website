@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import AnimatedSection from '../components/AnimatedSection'
 import { Card } from '../components/ui/Card'
-import TestimonialCard from '../components/TestimonialCard'
+import TestimonialCarousel from '../components/TestimonialCarousel'
 import { TESTIMONIALS } from '../data/team'
 
 const HERO_BULLETS = [
@@ -318,20 +318,19 @@ export default function Home() {
       </section>
 
       <section className="px-6 sm:px-10 lg:px-16 pb-20 bg-[#fffdfb]">
-        <div className="max-w-6xl mx-auto space-y-10">
+        <div className="max-w-6xl mx-auto">
           <AnimatedSection animation="fade-up">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 text-center mb-8">
               <p className="text-xs uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">Testimonials</p>
-              <h2 className="text-3xl font-semibold">What founders and CFOs say</h2>
+              <h2 className="text-3xl md:text-4xl font-semibold">What founders and CFOs say</h2>
+              <p className="text-slate-600 mt-2 max-w-2xl mx-auto">
+                Trusted by leading businesses across the UAE—from startups to enterprise
+              </p>
             </div>
           </AnimatedSection>
-          <div className="grid md:grid-cols-2 gap-6">
-            {TESTIMONIALS.slice(0, 4).map((testimonial, index) => (
-              <AnimatedSection key={testimonial.name} animation="fade-up" delay={index * 60}>
-                <TestimonialCard testimonial={testimonial} />
-              </AnimatedSection>
-            ))}
-          </div>
+          <AnimatedSection animation="fade-up" delay={100}>
+            <TestimonialCarousel testimonials={TESTIMONIALS} />
+          </AnimatedSection>
         </div>
       </section>
 
