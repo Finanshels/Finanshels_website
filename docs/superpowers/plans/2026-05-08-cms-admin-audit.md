@@ -6,6 +6,8 @@
 
 **Architecture:** Audit-only. No production code modified. One `.mjs` script samples real Firestore documents and writes `docs/cms/admin-audit.data.json`. The audit doc is built incrementally — one Part per task — with each task ending in a typecheck/commit checkpoint. Per-collection coverage in Part 3 is split into three subtasks chunked by editorial volume.
 
+> **Mid-execution note (recorded after Task 1):** The configured Firestore project (`finanshels-website`) was confirmed to have only one database (`(default)`) and ~0 CMS documents — the CMS was created the same day as this audit. **Population stats are therefore unavailable for this audit pass.** The script and JSON output remain checked in and idempotent; rerunning will populate stats once content exists. Tasks 4A/4B/4C drop the `Pop. %` column from field tables and replace it with a `Frontend usage` column (which public render paths read the field). Verdicts are based on **frontend usage + semantic duplication + CMO judgment** rather than population data.
+
 **Tech Stack:** Node `.mjs` scripts (matches existing `scripts/check-firestore.mjs` precedent — no new dev deps), `firebase-admin`, plain Markdown for the audit doc.
 
 **Spec:** `docs/superpowers/specs/2026-05-08-cms-admin-audit-design.md`
@@ -333,7 +335,7 @@ Categories to cover (each finding belongs to one):
 - **Accessibility** — labels, focus management in dialogs, keyboard handling in custom controls (RichText, MultiReference, Blocks).
 - **Security & input handling** — sanitize.ts coverage, HTML injection in rich text, file URL validation in storageUpload, admin auth perimeter.
 - **Maintainability** — file size and decomposition candidates, dead exports, inconsistent naming.
-- **Frontend-vs-admin gap** — fields the admin lets editors set that the public render path never reads (this is the primary "remove candidate" signal alongside population stats).
+- **Frontend-vs-admin gap** — fields the admin lets editors set that the public render path never reads (this is the **primary** "remove candidate" signal in this audit, since population data is unavailable).
 
 - [ ] **Step 3: Write Part 1 findings into the doc**
 
@@ -398,7 +400,7 @@ A. **Field-type usage matrix.** For each of the 16 `CmsFieldType` values, count 
 
 B. **Section utilization matrix.** For each of the 9 `CmsSectionKey` values, list per collection whether the section has 0, 1–2, 3–5, or 6+ fields. Sections that are nearly empty across most collections are flag candidates.
 
-C. **Block usage data.** For each block in `CMS_BLOCK_TYPES`, look up usage in `admin-audit.data.json` — specifically, scan the `populationByKey` for `page_blocks` across collections. (If population data doesn't break down by block type, note the limitation and propose a follow-up script tweak.) Mark blocks with no observed instances as candidates for removal.
+C. **Block frontend usage.** Population data is empty (mid-execution note above), so use a structural signal instead: for each block in `CMS_BLOCK_TYPES`, grep `src/components/cms/PageBlocksRenderer.tsx` (and any switch/case that dispatches on `block.type`) to confirm there is a render branch for that type. Mark blocks **defined but never rendered** as candidates for removal.
 
 - [ ] **Step 2: Write Part 2**
 
@@ -450,7 +452,7 @@ git add docs/cms/admin-audit.md
 git -c commit.gpgsign=false commit -m "docs(cms-audit): add Part 2 field-type and section model review
 
 Audit of the 16 CmsFieldTypes, 9 CmsSectionKeys, and 15 CMS_BLOCK_TYPES with
-usage matrices and consolidation recommendations backed by population data.
+usage matrices and consolidation recommendations backed by structural analysis.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
@@ -476,10 +478,12 @@ For each of the three collections write a section using this exact template (rep
 
 **Field table.**
 
-| Section | Field | Type | Required | Pop. % | Verdict | Move/Rename | Notes |
-|---------|-------|------|----------|--------|---------|-------------|-------|
-| publish | `title` | text | yes | 100% | keep | — | canonical title |
-| publish | `categories` | tags | — | 4% | merge-with-blog_category | — | duplicate; legacy |
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `title` | text | yes | rendered | keep | — | canonical title |
+| publish | `categories` | tags | — | unread | merge-with-blog_category | — | duplicate; legacy |
+
+`Frontend usage` values: `rendered` (read by a public component/route) · `unread` (no public reader found) · `admin-only` (used by admin UI, not public) · `unknown` (could not determine — note in Notes column).
 
 **Per-field documentation (kept fields only).**
 
@@ -521,13 +525,13 @@ Use the results to fill the **Public surfaces** bullet for each collection.
 
 For each of the three collections:
 1. List every field in every section by reading the collection's entry in `CMS_COLLECTION_DEFINITIONS_BASE` PLUS the merged-in core fields (`STRIP_PUBLISH_FIELDS_BY_COLLECTION`, `LEGACY_FIELDS_BY_COLLECTION` apply — exclude stripped fields, include legacy ones marked clearly).
-2. Look up each field's population percentage in `admin-audit.data.json`. Use `n/a` if the field key isn't present in the sampled data.
+2. Determine **Frontend usage** for each field by greppign the public render paths and routes for the field name (case-insensitive, allow camelCase/snake_case variants). Mark `rendered` if any non-admin component or route reads it; `unread` if no public reader is found; `admin-only` if it appears only in admin/cms code; `unknown` only if you genuinely cannot tell — put a one-line reason in Notes.
 3. Apply CMO judgment for the verdict, using:
-   - **Population < 5%** AND **not read by any public surface** → strong `remove` candidate.
+   - **Frontend usage = unread** AND **field is not a server-managed/internal flag** → strong `remove` candidate.
    - **Field semantically duplicates another** in the same collection → `merge-with-<other>`.
    - **Field is in the wrong section** (e.g. card-only data sitting in publish) → `move-to-<section>`.
-   - **Field is heavily used and clear** → `keep`.
-   - **Field is heavily used but has issues** (label, type, placeholder) → `keep-but-rework`.
+   - **Field is rendered and clear** → `keep`.
+   - **Field is rendered but has issues** (label, type, placeholder) → `keep-but-rework`.
    - **Editorially ambiguous** → `flag-for-product` with a one-line question for the user.
 
 - [ ] **Step 3: Write the per-field documentation**
@@ -552,7 +556,7 @@ git add docs/cms/admin-audit.md
 git -c commit.gpgsign=false commit -m "docs(cms-audit): per-collection deep dive — blog, glossary, customer_stories
 
 CMO-grade field audit and per-module documentation for the three highest-
-editorial-volume collections, backed by Firestore population stats.
+editorial-volume collections, backed by frontend-usage analysis.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
@@ -605,7 +609,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 Apply the **same template, rules, and verdict criteria as Task 4A** to all eight remaining collections. Use ids `VID-`, `POD-`, `FAQT-`, `FAQQ-`, `REV-`, `OURC-`, `REVSRC-`, `MEDIA-`.
 
-These are smaller and may share patterns — for any field that's identical to a field already documented in 4A/4B (e.g. core SEO fields), the per-field documentation entry may say `See <COLL>.<field> in section above.` to avoid duplication. The verdict and population row in the table is still required per collection.
+These are smaller and may share patterns — for any field that's identical to a field already documented in 4A/4B (e.g. core SEO fields), the per-field documentation entry may say `See <COLL>.<field> in section above.` to avoid duplication. The verdict and table row are still required per collection.
 
 - [ ] **Step 1: Map public surfaces for all eight**
 
@@ -651,7 +655,7 @@ Build the executable backlog by walking every finding (`CR-`, `MM-`, and per-col
 - [ ] **Step 1: Classify every finding into a pass**
 
 Rules:
-- **Pass 1 — Low-risk now:** label/placeholder fixes, hidden fields, blocking validation that's missing, dead helpers/exports, accessibility nits, doc fixes, removing fields with **0% population AND not referenced anywhere**. Each item is one PR-sized chunk.
+- **Pass 1 — Low-risk now:** label/placeholder fixes, hidden fields, blocking validation that's missing, dead helpers/exports, accessibility nits, doc fixes, removing fields whose Frontend usage = `unread` AND that are not referenced anywhere in code. Each item is one PR-sized chunk.
 - **Pass 2 — Medium-risk next:** field renames or merges (need data backfill scripts), section reshuffles, decomposition of `page.tsx` if Part 1 calls for it, schema changes that don't break consumers. Each item lists its data-migration plan as a precondition.
 - **Pass 3 — Needs discussion:** whole-section removal (e.g. AEO/GEO if data confirms zero use), changes that need a content team coordination plan, anything tagged `flag-for-product` in any verdict. Items here become inputs to follow-up brainstorming/spec cycles — they do NOT auto-execute.
 
@@ -729,7 +733,7 @@ Run: `grep -nE "TBD|TODO|FIXME" docs/cms/admin-audit.md` → expected: empty.
 Read the document end to end. Fix any:
 - Internal contradictions (a field marked `keep` in the table but `remove` in the verdict prose).
 - Findings whose suggested fix references a function/file that doesn't exist.
-- Verdicts that conflict with the population data (e.g. `keep` for a field with 0% population unless explicitly justified).
+- Verdicts that conflict with the Frontend-usage column (e.g. `keep` for a field marked `unread` unless explicitly justified — server-managed flags, future-public-render plans, etc.).
 
 - [ ] **Step 3: Hand back to user**
 
