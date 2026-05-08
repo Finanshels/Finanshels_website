@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import {
   authenticate,
   getUserById,
+  getUserCount,
   recordSuccessfulLogin,
   ROLE_RANK,
   type CmsUserPublic,
@@ -84,6 +85,21 @@ function parseLegacyCookie(value: string): { role: 'admin' | 'editor'; token: st
 
 export function isAdminAuthConfigured(): boolean {
   return Boolean(getAdminPassword() || getEditorPassword())
+}
+
+/**
+ * Whether /admin/login should show the sign-in form.
+ * - Env bootstrap: `CMS_ADMIN_PASSWORD` / `CMS_EDITOR_PASSWORD` (first-time or break-glass).
+ * - Or at least one row in `cms_users` (team email + password) — common on Vercel when only
+ *   Firestore + session secret were set, not the bootstrap password.
+ */
+export async function isAdminLoginAvailable(): Promise<boolean> {
+  if (isAdminAuthConfigured()) return true
+  try {
+    return (await getUserCount()) > 0
+  } catch {
+    return false
+  }
 }
 
 export function isLegacyEnvAuthEnabled(): boolean {

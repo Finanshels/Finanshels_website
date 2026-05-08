@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import {
   createAdminSession,
-  isAdminAuthConfigured,
+  isAdminLoginAvailable,
   isAdminAuthenticated,
   isLegacyEnvAuthEnabled,
 } from '@/lib/cms/adminAuth'
@@ -25,14 +25,32 @@ async function loginAction(formData: FormData) {
 }
 
 export default async function AdminLoginPage({ searchParams }: { searchParams: SearchParams }) {
-  if (!isAdminAuthConfigured()) {
+  if (!(await isAdminLoginAvailable())) {
     return (
       <section className="mx-auto max-w-2xl px-6 pb-16 pt-32 sm:px-10">
         <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-amber-900">
-          <h1 className="text-2xl font-semibold">Admin auth is not configured</h1>
-          <p className="mt-3 text-sm">
-            Set <code className="font-mono">CMS_ADMIN_PASSWORD</code> in your environment, then reload this page. After
-            that, you can sign in once and add team members from <code className="font-mono">/admin/settings/users</code>.
+          <h1 className="text-2xl font-semibold">Admin login is not available yet</h1>
+          <p className="mt-3 text-sm leading-relaxed">
+            Pick one of these setups (Vercel → Project →{' '}
+            <strong className="font-semibold">Settings → Environment Variables</strong>, then redeploy):
+          </p>
+          <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-relaxed">
+            <li>
+              <strong>Bootstrap (empty database):</strong> set{' '}
+              <code className="rounded bg-amber-100/80 px-1 font-mono text-xs">CMS_ADMIN_PASSWORD</code>, reload, sign in
+              with email empty and that password, then add users under{' '}
+              <code className="font-mono text-xs">/admin/settings/users</code>.
+            </li>
+            <li>
+              <strong>Team login only:</strong> ensure Firestore is wired ({' '}
+              <code className="font-mono text-xs">FIREBASE_ADMIN_*</code>) and create at least one user in{' '}
+              <code className="font-mono text-xs">cms_users</code> (locally or via bootstrap). Also set{' '}
+              <code className="font-mono text-xs">CMS_ADMIN_SESSION_SECRET</code> for cookie signing in production.
+            </li>
+          </ul>
+          <p className="mt-4 text-xs text-amber-800/90">
+            Without Firebase credentials on Vercel, user-based login cannot work — add them so this page can reach your{' '}
+            <code className="font-mono">cms_users</code> collection.
           </p>
         </div>
       </section>
