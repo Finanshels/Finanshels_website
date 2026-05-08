@@ -1,0 +1,125 @@
+import { redirect } from 'next/navigation'
+import {
+  createAdminSession,
+  isAdminAuthConfigured,
+  isAdminAuthenticated,
+  isLegacyEnvAuthEnabled,
+} from '@/lib/cms/adminAuth'
+import { getUserCount } from '@/lib/cms/usersRepository'
+
+type SearchParams = Promise<{ error?: string; email?: string; ok?: string }>
+
+export const dynamic = 'force-dynamic'
+
+async function loginAction(formData: FormData) {
+  'use server'
+  const email = String(formData.get('email') ?? '').trim()
+  const password = String(formData.get('password') ?? '')
+
+  const result = await createAdminSession(email, password)
+  if (!result.ok) {
+    const reason = result.reason
+    redirect(`/admin/login?error=${reason}&email=${encodeURIComponent(email)}`)
+  }
+  redirect('/admin/cms')
+}
+
+export default async function AdminLoginPage({ searchParams }: { searchParams: SearchParams }) {
+  if (!isAdminAuthConfigured()) {
+    return (
+      <section className="mx-auto max-w-2xl px-6 pb-16 pt-32 sm:px-10">
+        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-amber-900">
+          <h1 className="text-2xl font-semibold">Admin auth is not configured</h1>
+          <p className="mt-3 text-sm">
+            Set <code className="font-mono">CMS_ADMIN_PASSWORD</code> in your environment, then reload this page. After
+            that, you can sign in once and add team members from <code className="font-mono">/admin/settings/users</code>.
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  if (await isAdminAuthenticated()) {
+    redirect('/admin/cms')
+  }
+
+  const params = await searchParams
+  const errorReason = params.error ?? ''
+  const showError = errorReason === 'invalid' || errorReason === '1'
+  const showDisabled = errorReason === 'disabled'
+  const showInvitePending = errorReason === 'invite_pending'
+  const showInviteAccepted = (params.ok ?? '') === 'invite-accepted'
+  const prefillEmail = params.email ?? ''
+  const userCount = await getUserCount().catch(() => 0)
+  const allowEnvOnly = isLegacyEnvAuthEnabled()
+
+  return (
+    <section className="mx-auto max-w-2xl px-6 pb-16 pt-32 sm:px-10">
+      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Finanshels CMS</p>
+        <h1 className="mt-3 text-3xl font-semibold text-slate-900">Sign in</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          {userCount > 0
+            ? 'Use your team email and password.'
+            : allowEnvOnly
+            ? 'No team members yet — sign in with the bootstrap admin password (leave email empty), then invite your team in Settings.'
+            : 'Use your team email and password.'}
+        </p>
+
+        {showInviteAccepted ? (
+          <p className="mt-6 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">
+            Password set. Sign in below to enter the CMS.
+          </p>
+        ) : null}
+
+        <form action={loginAction} className="mt-8 space-y-4">
+          <label className="block text-sm font-medium text-slate-700">
+            Email
+            <input
+              type="email"
+              name="email"
+              autoComplete="username"
+              defaultValue={prefillEmail}
+              placeholder={userCount === 0 && allowEnvOnly ? 'Leave empty for bootstrap login' : 'you@finanshels.com'}
+              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none ring-[#f16610] focus:ring"
+            />
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Password
+            <input
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none ring-[#f16610] focus:ring"
+              required
+            />
+          </label>
+          {showError ? (
+            <p className="text-sm text-red-600">Invalid credentials. Try again.</p>
+          ) : null}
+          {showDisabled ? (
+            <p className="text-sm text-red-600">This account is disabled. Contact an owner.</p>
+          ) : null}
+          {showInvitePending ? (
+            <p className="text-sm text-amber-700">
+              You haven't accepted your invite yet — check your email for the invitation link, or ask an admin to resend it.
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            className="inline-flex items-center rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            Sign in
+          </button>
+        </form>
+
+        {allowEnvOnly && userCount === 0 ? (
+          <p className="mt-6 text-xs text-slate-500">
+            First sign in: leave the email empty and enter your <code className="font-mono">CMS_ADMIN_PASSWORD</code>{' '}
+            value. You'll then create real users in <code className="font-mono">/admin/settings/users</code>.
+          </p>
+        ) : null}
+      </div>
+    </section>
+  )
+}

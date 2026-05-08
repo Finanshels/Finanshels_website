@@ -1,4 +1,7 @@
-import { Link, useLocation } from 'react-router-dom'
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   Menu,
   X,
@@ -17,8 +20,6 @@ import {
   ShoppingCart,
   Building2,
   HelpCircle,
-  Mic,
-  PlayCircle,
   Megaphone,
   Briefcase,
   Archive
@@ -59,21 +60,21 @@ const SOLUTIONS_SECTIONS = [
   }
 ]
 
-const RESOURCES_SECTIONS = [
+const INSIGHTS_SECTIONS = [
   {
-    title: 'Use cases',
+    title: 'Learn',
     items: [
-      { name: 'Tools', description: 'Bite-sized utilities for finance teams.', href: '/resources/tools', icon: Briefcase },
-      { name: 'Glossary', description: 'Speak finance like a founder.', href: '/resources/glossary', icon: MessageSquare },
-      { name: 'FAQs', description: 'Answers to the most common questions.', href: '/resources/faqs', icon: HelpCircle }
+      { name: 'Glossary', description: 'Speak finance like a founder.', href: '/glossary', icon: MessageSquare },
+      { name: 'Blog', description: 'Sharp takes on startup finance.', href: '/blog', icon: Megaphone },
+      { name: 'FAQs', description: 'Answers to the most common questions.', href: '/contact', icon: HelpCircle }
     ]
   },
   {
-    title: 'Resources',
+    title: 'Explore',
     items: [
-      { name: 'Ebooks', description: 'Deep dives, zero fluff—finance decoded.', href: '/resources/ebooks', icon: BookOpen },
-      { name: 'Podcasts', description: 'Stories from operators and CFOs.', href: '/resources/podcasts', icon: Mic },
-      { name: 'Webinars', description: 'Live and on-demand finance wisdom.', href: '/resources/webinars', icon: PlayCircle }
+      { name: 'Products', description: 'Purpose-built tools for finance teams.', href: '/products', icon: Briefcase },
+      { name: 'Solutions', description: 'Services tailored by business stage.', href: '/solutions', icon: Sparkles },
+      { name: 'Pricing', description: 'Plans for startups and growing teams.', href: '/pricing', icon: BookOpen }
     ]
   },
   {
@@ -97,7 +98,10 @@ const PRODUCTS_SECTIONS = PRODUCT_CATEGORIES.map((section) => ({
 }))
 
 export default function Navbar() {
-  const location = useLocation()
+  const pathname = usePathname()
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState(null)
   const [openMobileDropdown, setOpenMobileDropdown] = useState(null)
@@ -105,12 +109,12 @@ export default function Navbar() {
   useEffect(() => {
     setOpenDropdown(null)
     setMobileMenuOpen(false)
-  }, [location.pathname])
+  }, [pathname])
 
   const isActive = (path) => {
     if (!path) return false
-    if (path === '/') return location.pathname === '/'
-    return location.pathname.startsWith(path)
+    if (path === '/') return pathname === '/'
+    return pathname.startsWith(path)
   }
 
   const navItems = useMemo(
@@ -131,11 +135,11 @@ export default function Navbar() {
       { name: 'Pricing', path: '/pricing' },
       { name: 'Customers', path: '/customers' },
       {
-        name: 'Resources',
-        dropdown: RESOURCES_SECTIONS,
+        name: 'Insights',
+        dropdown: INSIGHTS_SECTIONS,
         cta: {
           text: 'Deep dives, podcasts, and live sessions for ambitious operators.',
-          primary: { href: 'https://www.finanshels.com/resources', label: 'View library' },
+          primary: { href: 'https://www.finanshels.com/blog', label: 'View blog' },
           actions: [
             { href: 'https://www.finanshels.com/blog', label: 'Blog' },
             { href: 'https://www.finanshels.com/careers', label: 'Careers' }
@@ -178,10 +182,10 @@ export default function Navbar() {
               <div className="space-y-3">
                 {section.items.map((item) => {
                   const Icon = item.icon || ArrowUpRight
-                  const ItemComponent = item.href?.startsWith('http') ? 'a' : Link
-                  const componentProps = item.href?.startsWith('http')
-                    ? { href: item.href, target: '_blank', rel: 'noreferrer' }
-                    : { to: item.href || '#' }
+              const ItemComponent = item.href?.startsWith('http') ? 'a' : Link
+              const componentProps = item.href?.startsWith('http')
+                ? { href: item.href, target: '_blank', rel: 'noreferrer' }
+                : { href: item.href || '#' }
                   return (
                     <ItemComponent
                       key={item.name}
@@ -225,8 +229,8 @@ export default function Navbar() {
             {cta.actions && (
               <div className="flex flex-wrap gap-2 lg:gap-3">
                 {cta.actions.map((action) => {
-                  const ActionComponent = action.href.startsWith('http') ? 'a' : Link
-                  const props = action.href.startsWith('http') ? { href: action.href, target: '_blank', rel: 'noreferrer' } : { to: action.href }
+          const ActionComponent = action.href.startsWith('http') ? 'a' : Link
+          const props = action.href.startsWith('http') ? { href: action.href, target: '_blank', rel: 'noreferrer' } : { href: action.href }
                   return (
                     <ActionComponent
                       key={action.label}
@@ -252,7 +256,7 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-white/95 via-white/90 to-[#fff6ee]/90 border-b border-white/40 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-2xl">
       <div className="max-w-6xl mx-auto px-4 sm:px-8 relative">
         <div className="flex items-center gap-4 h-20">
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group">
             <img
               src="/finanshels_logo.png"
               alt="Finanshels"
@@ -281,7 +285,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   key={item.name}
-                  to={item.path}
+                  href={item.path}
                   className={cn(
                     'px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.35em] transition',
                     isActive(item.path) ? 'text-[#f16610] bg-[#fff2ea] shadow-[0_8px_20px_rgba(241,102,16,0.15)]' : 'text-slate-600 hover:text-[#f16610]'
@@ -392,7 +396,7 @@ export default function Navbar() {
               ) : (
                 <Link
                   key={item.name}
-                  to={item.path}
+                  href={item.path}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
                     'block px-5 py-3.5 rounded-xl font-semibold transition-all duration-300',

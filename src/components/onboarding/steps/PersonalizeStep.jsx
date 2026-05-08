@@ -89,7 +89,7 @@ export default function PersonalizeStep() {
                   <option value="Marketing">Marketing</option>
                   <option value="Operations">Operations</option>
                   <option value="Finance">Finance</option>
-                  <option value="HR">Human Resources</option>
+                  <option value="People">People Team</option>
                   <option value="Customer Success">Customer Success</option>
                   <option value="Product">Product</option>
                 </select>

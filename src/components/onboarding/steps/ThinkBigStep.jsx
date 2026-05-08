@@ -47,7 +47,7 @@ export default function ThinkBigStep() {
                   'Set ambitious goals that inspire you and others',
                   'Think 10x instead of 10% improvement',
                   'Consider long-term impact over short-term wins',
-                  'Don\'t limit yourself based on current resources',
+                  'Don\'t limit yourself based on current constraints',
                   'Study successful visionaries and their strategies',
                   'Regularly step back to see the bigger picture'
                 ].map((step, idx) => (

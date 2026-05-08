@@ -1,0 +1,136 @@
+export const PRIMARY_STATIC_ROUTES = [
+  '',
+  '/about',
+  '/contact',
+  '/pricing',
+  '/products',
+  '/services',
+  '/solutions',
+  '/customers',
+  '/careers',
+  '/home2',
+] as const
+
+export const LEGACY_STATIC_ROUTES = [
+  '',
+  '/about-us',
+  '/bookkeeping-services-uae',
+  '/careers',
+  '/community',
+  '/contact-us',
+  '/tools/corporate-tax-registration-deadline-checker-uae',
+  '/our-customers',
+  '/services/accounting-firm-for-ecommerce-in-uae',
+  '/services/hire-an-accountant-in-uae',
+  '/order-confirmation',
+  '/services/accounting-firm-for-restaurants-in-uae',
+  '/services/accounting-firm-for-startups-in-uae',
+  '/locations/vat-tool-in-abu-dhabi',
+  '/locations/best-corporate-tax-tool-in-dubai',
+  '/locations/corporate-tax-tool-in-abu-dhabi',
+  '/locations/corporate-tax-tool-in-ajman',
+  '/locations/corporate-tax-tool-in-sharjah',
+  '/locations/vat-consultants-in-dubai',
+  '/locations/vat-tool-in-dubai',
+  '/sitemap',
+  '/finanshels-app',
+  '/policies/cookies-policy',
+  '/locations/corporate-tax-tool-in-dubai-marina',
+  '/locations/corporate-tax-tool-in-deira',
+  '/locations/corporate-tax-tool-in-downtown-dubai',
+  '/locations/corporate-tax-tool-in-palm-jumeirah',
+  '/locations/corporate-tax-tool-in-marina-beach',
+  '/policies/privacy-policy',
+  '/policies/terms-of-service',
+  '/locations/corporate-tax-tool-dubai-creek',
+  '/locations/corporate-tax-tool-in-kite-beach',
+  '/locations/corporate-tax-tool-in-jumeirah-beach',
+  '/locations/corporate-tax-tool-in-dubai-creek-harbor',
+  '/locations/corporate-tax-tool-in-burj-park',
+  '/locations/bookkeeping-services-in-abu-dhabi',
+  '/locations/bookkeeping-services-in-ajman',
+  '/locations/bookkeeping-services-in-sharjah',
+  '/locations/vat-registration-in-dubai',
+  '/locations/vat-registration-in-sharjah',
+  '/locations/vat-registration-in-abu-dhabi',
+  '/locations/vat-registration-in-ajman',
+  '/locations/accounting-and-bookkeeping-services-in-dubai',
+  '/policies/privacy-policy-for-finanshels-apps',
+  '/policies/terms-of-use-for-finanshels-apps',
+  '/policies/gdpr-policy',
+  '/thank-you-from-finanshels',
+  '/cfo-services-uae',
+  '/services/accounting-firm-for-smes-in-uae',
+  '/services/company-liquidation-services-in-uae',
+  '/pricing',
+  '/finanshels-for-founder-institutes-people',
+  '/meet-finanshels-at-gitex2024-north-star',
+  '/services/corporate-tax-registration-in-uae',
+  '/services/valuation-and-financial-modelling-service-in-uae',
+  '/services/corporate-tax-return-filing-in-uae',
+  '/services/vat-filing-and-accounting-in-uae',
+  '/services/claim-your-vat-refund-in-uae',
+  '/auditing-services-uae',
+  '/services/vat-registration-in-uae',
+  '/aml-compliance-uae',
+  '/tools/gratuity-checker-calculator-tool-in-uae',
+  '/order-successful-page',
+  '/cfo-event-by-finanshels',
+  '/tools/corporate-tax-filing-deadline-checker-in-uae',
+  '/landing-pages/aml-compliance-filing-in-uae-with-finanshels',
+  '/landing-pages/company-liquidation-services-in-uae-with-finanshels',
+  '/finanshels-vs/osome-accounting-and-why-to-choose-finanshels-in-the-uae',
+  '/locations/best-corporate-tax-filing-service-provider-in-the-dubai',
+  '/locations/best-corporate-tax-filing-service-provider-in-the-abu-dhabi-trusted-by-dubai-startups-smes',
+  '/locations/best-corporate-tax-filing-service-provider-in-the-sharjah-trusted-by-dubai-startups-smes',
+  '/locations/best-corporate-tax-filing-service-provider-in-the-ajman-trusted-by-dubai-startups-smes',
+  '/refer-us',
+  '/referral-program',
+  '/corporate-tax-filing-portal-by-finanshels-in-the-uae',
+  '/advocate-finanshels',
+  '/uae-corporate-tax-webinar---avoid-mistakes-penalties',
+  '/landing-pages/vat-filing-for-your-business',
+  '/why-vcs-need-better-bookkeeping-fund-accounting-webinar-by-finanshels',
+  '/alaan-x-finanshels-40-off-finance-back-office-for-uae-businesses',
+  '/landing-pages/vat-filing-for-your-business-desk',
+  '/tools/finanshels-tools-powered-by-finanshels',
+  '/tools/check-financial-health-for-your-business-with-finanshels',
+  '/tools/cash-flow-scoring-system-for-your-business-with-finanshels',
+  '/the-2025-aml-playbook-webinar-finanshels',
+  '/landing-pages/goaml-registration-services-in-uae',
+  '/landing-pages/goaml-registration-services-in-uae-arabic',
+  '/e-invoicing-in-the-uae-2026-2027-what-founders-need-to-know',
+  '/nook-x-finanshels-40-off-finance-back-office-for-uae-businesses',
+  '/spc-x-finanshels-upto-30-off-finance-back-office-for-spc-customers',
+  '/smarter-way-to-manage-business-finances-during-a-geopolitical-crisis',
+  '/services/tax-consultation-in-uae',
+  '/capital-options-for-founders',
+  '/services/business-compliance-services-in-uae',
+  '/nuwacapital-x-finanshels-30-off-finance-back-office-for-uae-businesses',
+  '/events-by-finanshels',
+  '/tools/finance-hiring-salary-benchmark',
+] as const
+
+export const NON_RESOURCE_STATIC_PAGE_PATHS = Array.from(
+  new Set([...PRIMARY_STATIC_ROUTES, ...LEGACY_STATIC_ROUTES])
+)
+
+export const STATIC_PAGE_ALIASES: Record<string, string> = {
+  '/about-us': '/about',
+  '/contact-us': '/contact',
+  '/our-customers': '/customers',
+}
+
+export function prettyTitleFromPath(path: string): string {
+  const normalized = path.replace(/^\/+|\/+$/g, '')
+  if (!normalized) return 'Finanshels'
+
+  const parts = normalized.split('/')
+  const slug = parts[parts.length - 1] ?? normalized
+
+  return slug
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}

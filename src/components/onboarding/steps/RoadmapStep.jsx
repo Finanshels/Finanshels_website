@@ -15,7 +15,7 @@ export default function RoadmapStep() {
       description: 'Embark on an exciting path to integrate our team and culture.'
     },
     {
-      title: 'Access to Essential Resources',
+      title: 'Access to Essential Guidance',
       icon: TrendingUp,
       color: 'from-orange-500 to-amber-600',
       description: 'Receive all the tools and credentials you need to get started effectively.'

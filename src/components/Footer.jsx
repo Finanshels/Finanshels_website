@@ -1,5 +1,8 @@
-import { Link } from 'react-router-dom'
+ 'use client'
+
+import Link from 'next/link'
 import { Linkedin, Twitter, Mail, Instagram, Youtube, ArrowUpRight, MapPin, Phone } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 
 const NAV_LINKS = [
   {
@@ -12,10 +15,10 @@ const NAV_LINKS = [
     ]
   },
   {
-    heading: 'Resources',
+    heading: 'Insights',
     items: [
       { label: 'Products', to: '/products' },
-      { label: 'Resources', to: '/resources/tools' },
+      { label: 'Glossary', to: '/glossary' },
       { label: 'Blog', to: '/blog' },
       { label: 'Careers', to: '/careers' }
     ]
@@ -38,6 +41,11 @@ const SOCIALS = [
 ]
 
 export default function Footer() {
+  const pathname = usePathname()
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
+
   return (
     <footer className="relative overflow-hidden bg-gradient-to-b from-white via-[#fff6ef] to-white text-slate-900 border-t border-[#ffe0ca]">
       <div className="absolute inset-0 pointer-events-none">
@@ -80,7 +88,7 @@ export default function Footer() {
                 <ul className="space-y-2 text-sm text-slate-600">
                   {section.items.map((item) => {
                     const Component = item.to ? Link : 'a'
-                    const props = item.to ? { to: item.to } : { href: item.href, target: '_blank', rel: 'noreferrer' }
+          const props = item.to ? { href: item.to } : { href: item.href, target: '_blank', rel: 'noreferrer' }
                     return (
                       <li key={item.label}>
                         <Component
@@ -123,10 +131,10 @@ export default function Footer() {
         <div className="pt-8 border-t border-white/60 flex flex-col sm:flex-row items-center justify-between text-sm text-slate-500">
           <p>© {new Date().getFullYear()} Finanshels. Licensed by DIFC, in5 Tech cohort alumni.</p>
           <div className="flex gap-4 mt-4 sm:mt-0">
-            <Link to="/privacy" className="hover:text-[#f16610] transition">
+            <Link href="/privacy" className="hover:text-[#f16610] transition">
               Privacy
             </Link>
-            <Link to="/terms" className="hover:text-[#f16610] transition">
+            <Link href="/terms" className="hover:text-[#f16610] transition">
               Terms
             </Link>
           </div>
@@ -135,4 +143,3 @@ export default function Footer() {
     </footer>
   )
 }
-

@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    /**
+     * CMS writes/reads should happen through trusted backend services
+     * (Firebase Admin SDK on Vercel / Cloud Functions / Cloud Run),
+     * not directly from browser clients.
+     */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -58,7 +58,7 @@ export default function VisionMissionStep() {
                 <div className="space-y-4 flex-1">
                   <h3 className="text-xl font-bold text-orange-900">Simplifying Financial Life</h3>
                   <p className="text-slate-700 leading-relaxed">
-                    We are on a mission to simplify financial life for SMEs through Technology, Data and Design. Our focus is on providing tools and resources for a new generation of founders to understand their finances seamlessly.
+                    We are on a mission to simplify financial life for SMEs through Technology, Data and Design. Our focus is on providing tools and guidance for a new generation of founders to understand their finances seamlessly.
                   </p>
                 </div>
               </div>
