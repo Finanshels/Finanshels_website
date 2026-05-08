@@ -8,7 +8,10 @@ import { listPublishedGlossaryTerms } from '@/lib/cms/glossaryRepository'
 export const revalidate = 600
 
 export default async function GlossaryIndexPage() {
-  const terms = await listPublishedGlossaryTerms()
+  const terms = await listPublishedGlossaryTerms().catch((err) => {
+    console.warn('[glossary] listing failed:', err instanceof Error ? err.message : err)
+    return []
+  })
   const cmsReady = isCmsConfigured()
 
   return (

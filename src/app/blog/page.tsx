@@ -8,7 +8,10 @@ import { listPublishedBlogPosts } from '@/lib/cms/blogRepository'
 export const revalidate = 300
 
 export default async function BlogIndexPage() {
-  const posts = await listPublishedBlogPosts()
+  const posts = await listPublishedBlogPosts().catch((err) => {
+    console.warn('[blog] listing failed:', err instanceof Error ? err.message : err)
+    return []
+  })
   const cmsReady = isCmsConfigured()
 
   return (

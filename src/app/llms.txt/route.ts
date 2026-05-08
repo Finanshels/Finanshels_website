@@ -10,7 +10,18 @@ export const revalidate = 3600
  */
 export async function GET() {
   const site = getSiteUrl()
-  const [blogPosts, glossaryTerms] = await Promise.all([listPublishedBlogPosts(), listPublishedGlossaryTerms()])
+  // Tolerate Firestore outages / misconfigured credentials at build time —
+  // the route still renders, just without dynamic listings. ISR re-tries hourly.
+  const [blogPosts, glossaryTerms] = await Promise.all([
+    listPublishedBlogPosts().catch((err) => {
+      console.warn('[llms.txt] blog listing failed:', err instanceof Error ? err.message : err)
+      return []
+    }),
+    listPublishedGlossaryTerms().catch((err) => {
+      console.warn('[llms.txt] glossary listing failed:', err instanceof Error ? err.message : err)
+      return []
+    }),
+  ])
 
   const lines: string[] = [
     '# Finanshels',
