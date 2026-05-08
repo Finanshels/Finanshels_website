@@ -1,0 +1,66 @@
+{
+  "sampledAt": "2026-05-08T14:22:11.429Z",
+  "sampleLimit": 200,
+  "collections": {
+    "media_assets": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "videos": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "our_customers": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "tools": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "review_sources": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "customer_reviews": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "podcasts": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "faq_questions": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "faq_topics": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "customer_stories": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "ebooks": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "webinars": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "glossary_terms": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "blog_posts": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    },
+    "team_members": {
+      "totalSampled": 0,
+      "populationByKey": {}
+    }
+  }
+}
