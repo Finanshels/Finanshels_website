@@ -26,7 +26,7 @@ import {
   type CmsUserRole,
   type CmsUserStatus,
 } from '@/lib/cms/usersRepository'
-import { isCmsConfigured } from '@/lib/cms/config'
+import { getSiteUrl, isCmsConfigured } from '@/lib/cms/config'
 import { isEmailConfigured, sendEmail } from '@/lib/email/resend'
 import { renderInviteEmail } from '@/lib/email/templates/invite'
 
@@ -48,14 +48,8 @@ function safeRedirect(qs: string) {
   redirect(`${SETTINGS_PATH}?${qs}`)
 }
 
-function siteOrigin(): string {
-  const explicit = (process.env.NEXT_PUBLIC_SITE_URL ?? '').trim()
-  if (explicit) return explicit.replace(/\/$/, '')
-  return 'http://localhost:3000'
-}
-
 function buildAcceptInviteUrl(rawToken: string): string {
-  return `${siteOrigin()}/admin/accept-invite?token=${encodeURIComponent(rawToken)}`
+  return `${getSiteUrl()}/admin/accept-invite?token=${encodeURIComponent(rawToken)}`
 }
 
 async function sendInviteEmailFor(params: {
