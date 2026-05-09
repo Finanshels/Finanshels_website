@@ -501,7 +501,192 @@ This is the source-of-truth audit for the CMS admin panel. It covers code-level 
 
 ## Part 2 — Field-type & section model review
 
-<!-- TASK-3 -->
+### Field-type review
+
+The CMS meta-model declares 16 `CmsFieldType` values. Counting every field definition across all collection publish sections, the 7 universal section functions (card, listing, detail, blocks, seo, aeo, geo), and the 15 `CMS_BLOCK_TYPES` reveals a heavily skewed distribution.
+
+**Types that pull their weight.** `text` (100 instances total), `textarea` (54), `select` (41), `url` (33), `boolean` (31), `tags` (29), `number` (19), `json` (18), `multi_reference` (18), `image` (16), and `reference` (14) all appear across many collections and serve distinct purposes that justify their places in the type system.
+
+**Types with overlap or identity ambiguity.** `image` and `url` carry semantic tension: `og_image` (type `image`) and `ogImageUrl` (type `url`) exist in the same merged SEO section storing what is conceptually the same datum — a URL to an image. The `image` type is UI-differentiated (triggers an image picker with `<datalist>`) while `url` is plain text input; but three OG/card image pairs now store duplicate data. Similarly, `email` (1 instance: `team_members.email`) is behaviorally identical to `text` in the current renderer — it renders as `<input type="text">` with no email-specific validation (see the `FieldRenderer` in `page.tsx`). Unless the renderer is updated to emit `<input type="email">` with browser validation, `email` adds a type that looks distinctive but behaves identically to `text`.
+
+**Types used zero or once.** `file` appears once (`ebooks.file_upload`, `collectionDefinitions.ts:1308`) and `email` appears once (`team_members.email`, line 1377). Neither has special handling in `parseFieldValue` beyond a text fallback. `blocks` appears exactly once (`page_blocks`) and is correct — it should remain a singleton. `icon` appears 4 times (2 collection publish fields + 1 card field + 1 relations block field) and currently has a dedicated picker path in the renderer, making it narrowly justified.
+
+**The `json` problem.** 18 json-typed fields across collection sections (plus 6 more in block definitions, totalling 24) represent the most editorial-friction type in the model. Editors must hand-author structured arrays — `faqItems`, `howToSteps`, `key_takeaways`, `metrics_highlights`, `agenda_items`, `citations`, `keyStatistics`, `expertQuotes`, `primary_inputs`, `benefits`, `manualRefs`, `data` (table), `items` (stats, faq_accordion, timeline) — with no schema validation, no form UI, and silent data-loss on parse failure (see CR-002). This is not a type problem per se but it is the type with the worst editor experience / data-reliability ratio in the model.
+
+#### Field-type usage matrix
+
+| Type | # fields (all contexts) | # fields (publish sections only) | Example fields | Verdict |
+|------|------------------------|----------------------------------|----------------|---------|
+| text | 100 | 54 | `title`, `slug`, `blog_category`, `full_name`, `question` | keep |
+| textarea | 54 | 31 | `excerpt`, `body`, `definition_full`, `episode_summary` | keep |
+| select | 41 | 24 | `status`, `language`, `tool_type`, `schema_type` | keep |
+| url | 33 | 13 | `website_url`, `audio_url`, `cta_link`, `ogImageUrl` | keep-but-rework — consolidate duplicate OG/card image url vs image pairs (see MM-001) |
+| boolean | 31 | 17 | `featured`, `gated`, `indexable`, `display_as_author` | keep |
+| tags | 29 | 18 | `blog_tags`, `synonyms`, `key_topics`, `seoKeywords` | keep |
+| number | 19 | 13 | `rating`, `sort_order`, `episode_number`, `byteSize` | keep |
+| json | 18 | 6 | `faqItems`, `metrics_highlights`, `agenda_items`, `citations` | keep-but-rework — introduce `repeatable` type for known-shape arrays (see MM-002) |
+| multi_reference | 18 | 15 | `relatedPostRefs`, `speakers`, `relatedGlossaryRefs` | keep |
+| image | 16 | 12 | `featured_image`, `logo`, `cover_image`, `og_image` | keep-but-rework — consolidate OG/card image duplicates (see MM-001) |
+| reference | 14 | 11 | `author`, `faq_topic`, `customerRef`, `company` | keep |
+| datetime | 9 | 7 | `publish_date`, `start_datetime`, `last_synced_at` | keep |
+| icon | 4 | 2 | `icon` (tools), `icon` (faq_topics), `card_icon` | keep — narrowly used but picker behavior is distinct |
+| file | 1 | 1 | `ebooks.file_upload` | keep — only one use; renderer needs dedicated handling (see MM-003) |
+| email | 1 | 1 | `team_members.email` | consolidate-with-text — no renderer differentiation today (see MM-004) |
+| blocks | 1 | 1 | `page_blocks` | keep — correctly a singleton |
+
+---
+
+### Section review
+
+The 9 `CmsSectionKey` values divide editor concerns into: core publishing (`publish`), listing-page card appearance (`card`), collection-index configuration (`listing`), detail-page configuration (`detail`), page-builder (`blocks`), cross-collection relationships (`relations`), search-engine metadata (`seo`), answer-engine optimisation (`aeo`), and generative-engine optimisation (`geo`).
+
+**The section taxonomy has three structural problems.**
+
+First, the `aeo` section mislabels its content. The `seo` section is the merge of `globalSeoFields` (12 fields) and `commonSeoFields` (12 more, all camelCase duplicates — see CR-043 and MM-005), producing 24 fields. The `aeo` section is the merge of `globalContentLayoutFields` (7 fields: `hero_heading`, `hero_subheading`, `body`, `sections`, `sidebar_cta_enabled`, `primary_cta_variant`, `template_variant`) with `commonAeoFields` (5 fields: `directAnswer`, `faqItems`, `answerSnippet`, `howToSteps`, `speakableContent`). The first 7 fields are content-layout controls with no AEO relationship; shipping them under the "AEO" tab teaches editors to associate hero heading with answer-engine optimisation, which is incorrect.
+
+Second, the `listing` and `detail` sections are 100% dead across all 15 collections (see CR-050, CR-051). The 16-field `listing` section and the 14-field `detail` section are universally applied but have zero public consumers, inflating every editor session by 30 unread fields. Together they account for 450 form inputs (30 fields × 15 collections) that do nothing.
+
+Third, the `seo` section is bloated by the snake_case vs. camelCase duplication. `seo_title`/`seoTitle`, `canonical_url`/`canonicalUrl`, `og_image`/`ogImageUrl` (with differing types: `image` vs. `url`) all coexist in the same section, giving editors two inputs for each concept with no guidance on which to fill (see CR-043 and MM-005). Effective unique concepts in the SEO section: 18, not 24.
+
+**AEO and GEO sections.** Cross-referencing Part 1 (CR-047, CR-048): `directAnswer`, `answerSnippet`, `howToSteps`, `speakableContent`, `geoSummary`, `sourceUrls`, `geoContentType`, `lastUpdatedDate`, `citations`, `keyStatistics`, `expertQuotes`, and `relatedEntities` are all unread on the public site. The checklists and scores shown in the editor sidebar are calculated from fields that have zero rendering effect. Until consumers exist, both sections should be hidden or collapsed by default (see MM-006, MM-007).
+
+**The `relations` section** is appropriately scoped — 0 to 5 relation fields per collection — and serves a clear purpose (the reverse-reference picker panel). Its fields are technically unread on the public site today (CR-054) but the infrastructure is correct; the gap is in the rendering layer, not the meta-model.
+
+#### Section utilization
+
+| Section | Fields per collection | Collections with 6+ fields | Public consumers exist? | Verdict |
+|---------|----------------------|---------------------------|------------------------|---------|
+| publish | 21–33 (varies) | 15 / 15 | Yes — core content fields | keep |
+| card | 9 (universal) | 15 / 15 | Partial — 2/9 fields read (see CR-049) | keep-but-shrink — remove 5 unread fields (card_title, card_label, card_cta_label, card_cta_link, card_icon) until listing components consume them |
+| listing | 16 (universal) | 15 / 15 | No — 0/16 fields read (CR-050) | flag-for-product — hide from editor or implement generic listing renderer |
+| detail | 14 (universal) | 15 / 15 | No — 0/14 fields read (CR-051) | flag-for-product — hide from editor or implement in detail routes |
+| blocks | 2 (universal) | 15 / 15 | Yes — `page_blocks` rendered by `PageBlocksRenderer`, `schema_type_override` read | keep |
+| relations | 0–5 (varies) | 5 / 15 | No (data written, rendering unimplemented — CR-054) | keep — model is correct; rendering is the gap |
+| seo | 24 (universal) | 15 / 15 | Partial — indexable/noindex/og_image/canonical_url consumed; OG camelCase fields not (CR-046) | keep-but-shrink — collapse to 12 canonical fields by removing duplicate camelCase set (see MM-005) |
+| aeo | 12 (universal) | 15 / 15 | Partial — faqItems only (CR-047) | keep-but-rework — split content-layout fields into publish; rename remaining 5 fields section (see MM-006) |
+| geo | 8 (universal) | 15 / 15 | No — 0/8 fields read (CR-048) | flag-for-product — hide until GEO rendering is implemented (see MM-007) |
+
+---
+
+### Block catalogue review
+
+All 15 blocks defined in `CMS_BLOCK_TYPES` (`collectionDefinitions.ts:89-336`) have a `case` branch in `PageBlocksRenderer.tsx`. However, "having a case" does not mean "properly rendered." The switch at `PageBlocksRenderer.tsx:275-319` reveals three quality tiers:
+
+**Tier 1 — Fully implemented (dedicated component, uses block-specific fields):** `hero` (HeroBlock, 10 fields rendered), `rich_text` (ArticleBody with sanitize, 1 field), `cta` (CtaBlock, 4 fields), `testimonial` (TestimonialBlock, 3 fields), `faq_accordion` (FaqAccordionBlock, items+heading), `stats` (StatsBlock, items+heading), `logo_wall` (LogoWallBlock, logos+heading), `video_embed` (VideoEmbedBlock, iframe embed), `download` (DownloadBlock, 5 fields), `table` (TableBlock, headers+rows), `timeline` (TimelineBlock, items). **11 of 15 blocks are properly implemented.**
+
+**Tier 2 — Stub (CtaBlock used as a stand-in, most fields silently ignored):** `tool_embed` (line 299) extracts only `toolUrl` and passes it as `primaryUrl` to `CtaBlock` — the `heading`, `description`, and `toolRef` fields are discarded. `form` (line 301) passes the block directly to `CtaBlock` — `formId`, `submitLabel`, and `embedUrl` are never read. `speaker` (lines 304-309) renders `CtaBlock` with a hardcoded heading "Featured speakers", discarding `memberRefs` entirely. **3 blocks render as generic CTAs regardless of their content.**
+
+**Tier 3 — Null (block present in the editor but renders nothing):** `related_content` (line 312) returns `null`. Its 5 fields (`heading`, `mode`, `maxItems`, `sourceCollections`, `manualRefs`) are stored in Firestore but produce no output. This corroborates CR-054.
+
+#### Block utilization
+
+| Block | Renderer tier | Key fields rendered | Fields ignored by renderer | Verdict |
+|-------|--------------|---------------------|---------------------------|---------|
+| hero | Tier 1 — full | eyebrow, heading, subheading, imageUrl, ctaLabel, ctaUrl | secondaryCtaLabel, secondaryCtaUrl, variant | keep — add secondary CTA and variant support |
+| rich_text | Tier 1 — full | html (sanitized) | — | keep |
+| cta | Tier 1 — full | heading, subheading, primaryLabel, primaryUrl | secondaryLabel, secondaryUrl, tone | keep — add secondary + tone |
+| testimonial | Tier 1 — full | quote, authorName, authorRole, companyName | authorImageUrl, logoUrl, reviewRef | keep — add image/logo support |
+| faq_accordion | Tier 1 — full | heading, items (JSON) | subheading, questionRefs | keep — add questionRefs fallback |
+| stats | Tier 1 — full | heading, items (JSON) | — | keep |
+| logo_wall | Tier 1 — full | heading, logos (JSON) | customerRefs | keep — add customerRefs fallback |
+| video_embed | Tier 1 — full | videoUrl, caption | videoRef | keep |
+| download | Tier 1 — full | heading, description, fileUrl, coverImageUrl | gated, formId | keep — add gate logic |
+| table | Tier 1 — full | heading, data (JSON headers+rows) | — | keep |
+| timeline | Tier 1 — full | heading, items (JSON) | — | keep |
+| tool_embed | Tier 2 — stub | toolUrl → CtaBlock primaryUrl only | heading, description, toolRef | keep-but-rework — implement ToolEmbedBlock (see MM-008) |
+| form | Tier 2 — stub | block passed as CtaBlock | formId, submitLabel, embedUrl | keep-but-rework — implement FormBlock (see MM-008) |
+| speaker | Tier 2 — stub | hardcoded heading only | memberRefs, heading | keep-but-rework — implement SpeakerBlock (see MM-008) |
+| related_content | Tier 3 — null | nothing | all 5 fields | flag-for-product — implement or remove (see MM-009; corroborates CR-054) |
+
+---
+
+### MM-001 [P1] `image` and `url` types both represent image URLs, creating duplicate fields in the SEO section
+
+- **File:** `src/lib/cms/collectionDefinitions.ts:423` (`ogImageUrl`, type `url`) and `:473` (`og_image`, type `image`) — both in the merged SEO section served to all 15 collections.
+- **Observation:** The SEO section contains `og_image` (type `image`, snake_case, in `globalSeoFields`) and `ogImageUrl` (type `url`, camelCase, in `commonSeoFields`). Similarly `card_image` (type `image`) and `card_cta_link` (type `url`) exist alongside each other in the card section. Editors see two OG image inputs with different UI controls (image picker vs. plain URL box); downstream `generateMetadata` reads `og_image` from the snake_case path only. `ogImageUrl` stores a URL that is never consumed.
+- **Why it matters:** Editorial confusion about which input is canonical; potential for `og_image` and `ogImageUrl` to diverge silently across documents. The public site reads `og_image` only (`content/[collection]/[slug]/page.tsx:202`) so any data in `ogImageUrl` is already dead.
+- **Suggested fix:** Remove `ogImageUrl` from `commonSeoFields`; keep `og_image` (type `image`) as the single OG image field. Apply the same dedup logic to the canonical-URL pair (`canonical_url` / `canonicalUrl`) and the SEO-title pair (`seo_title` / `seoTitle`) — see MM-005 for the full SEO dedup.
+- **Risk if changed:** low — `ogImageUrl` is unread; removing it from the form only.
+
+### MM-002 [P1] The `json` type is overloaded for typed arrays and should be replaced by a `repeatable` sub-type for known-shape items
+
+- **File:** `src/lib/cms/collectionDefinitions.ts:18-34` (type declaration) and fields at lines 549, 558, 575, 599, 606, 612, 982, 1039, 1101, 1103, 1280, 1349.
+- **Observation:** 12 of the 18 `json`-typed fields in collection sections (plus 6 in block definitions) store arrays of typed objects with fixed schemas: `faqItems` (question+answer), `howToSteps` (title+description), `key_takeaways` (string[]), `metrics_highlights` (label+value), `agenda_items` (string[]), `citations` (title+url+publisher), `keyStatistics` (stat+source), `expertQuotes` (quote+name+role), `primary_inputs` (tool-schema), `benefits` (string[]), `manualRefs` (collection+id), and the block-level `items` fields (stats, faq_accordion, timeline). Editors must hand-author JSON with no validation and are silently cleared on parse error (CR-002).
+- **Why it matters:** The `json` type is the highest-friction, highest-data-loss-risk type in the model. Every one of these arrays has a known item shape that could be captured in a typed sub-schema.
+- **Suggested fix:** Add `repeatable` to `CmsFieldType` (or a `itemSchema` property on `CmsFieldDefinition`) so the editor renders a form-based repeater UI. Migrate the 12 known-shape json fields to `repeatable` with inline item field definitions. Keep bare `json` only for truly freeform cases (the `sections` legacy field at line 512, if retained).
+- **Risk if changed:** medium — requires a new editor component and data migration path; existing documents' JSON values remain valid as the backing data format.
+
+### MM-003 [P1] The `file` type (1 instance) has no dedicated renderer in `FieldRenderer`, falling back to text
+
+- **File:** `src/lib/cms/collectionDefinitions.ts:1308` (`ebooks.file_upload`, type `file`); `src/app/admin/cms/page.tsx` `FieldRenderer` (no `file` case found).
+- **Observation:** `file` is a declared `CmsFieldType` used once for `ebooks.file_upload`. The `FieldRenderer` switch in `page.tsx` does not have a dedicated `case 'file'` — it falls to the default `<input type="text">`. Editors cannot browse or upload a file; they must paste a URL. Meanwhile the media library (`CmsMediaLibrary.tsx`) handles file uploads correctly but is only accessible via the `image` type picker.
+- **Why it matters:** The `file` type advertises file-upload semantics but delivers a plain text box. The ebook download URL is a critical field — an editor who clicks this expecting a file picker sees only a text box with no affordance.
+- **Suggested fix:** Either (a) add a `case 'file'` in `FieldRenderer` that opens the media library picker filtered to documents/PDFs, or (b) change `file_upload` to type `url` with a description pointing editors to the media library, and remove `file` from `CmsFieldType` until a real file-picker component exists.
+- **Risk if changed:** low — currently falls back to text, so behavior after fix is strictly better.
+
+### MM-004 [P2] The `email` type (1 instance) renders identically to `text` and provides no validation signal to editors
+
+- **File:** `src/lib/cms/collectionDefinitions.ts:1377` (`team_members.email`, type `email`); `src/app/admin/cms/page.tsx` `FieldRenderer` — no `email` case.
+- **Observation:** `email` is declared in the type union and used once. The `FieldRenderer` has no `case 'email'`; the field renders as `<input type="text">`. No format validation, no `type="email"` attribute, no `inputmode="email"`. The type signal exists in the schema but is invisible to both the renderer and the editor.
+- **Why it matters:** Editors can save malformed email addresses with no warning. The team_member email is likely used in contact or authorship pages.
+- **Suggested fix:** Option A — add `case 'email'` to `FieldRenderer` to emit `<input type="email" inputMode="email">` with client-side validation. Option B — consolidate `email` into `text` with a `validate: 'email'` annotation on the field definition and enforce it in the save action. Either way, the type should behave differently from `text`.
+- **Risk if changed:** low.
+
+### MM-005 [P1] The SEO section is inflated to 24 fields by duplicate snake_case + camelCase field pairs — editors face 3 paired inputs for the same concepts
+
+- **File:** `src/lib/cms/collectionDefinitions.ts:414-504` (`globalSeoFields` + `commonSeoFields`); merged at line 1448 (`seo: mergeFieldSets(globalSeoFields(), commonSeoFields())`).
+- **Observation:** The merged SEO section contains `seo_title` and `seoTitle` (same concept), `canonical_url` and `canonicalUrl` (same concept), `og_image` (type `image`) and `ogImageUrl` (type `url`) (same concept, different types). Six of the 24 SEO fields are duplicates. In addition `meta_description`/`seoDescription` and `og_title`/`ogTitle` and `og_description`/`ogDescription` are near-duplicates (same concept, different casing style). The public site reads only the snake_case variants.
+- **Why it matters:** Editors fill either the snake_case or camelCase version — whichever appears first in the UI — and the other silently diverges. With 15 collections × 24 fields = 360 SEO editor inputs, roughly half are redundant. This is the single largest source of editor-visible noise in the model.
+- **Suggested fix:** Delete `commonSeoFields()` as a standalone function. Fold the genuinely additive fields (`focusKeyword`, `secondaryKeywords`, `seoKeywords`, `twitterCardType`, `twitterCreatorHandle`, `robotsMeta`) into `globalSeoFields()` as new canonical snake_case entries. Remove the duplicates (`seoTitle`, `seoDescription`, `ogTitle`, `ogDescription`, `ogImageUrl`, `canonicalUrl`). Run a one-time Firestore migration to copy camelCase values to their snake_case keys where snake_case is null. Result: 18 SEO fields (down from 24), all snake_case.
+- **Risk if changed:** medium — requires Firestore migration; any document with only the camelCase key set would temporarily lose its SEO data until migrated. Back up before running.
+
+### MM-006 [P1] The `aeo` section mixes content-layout controls (7 fields) with AEO signals (5 fields) under a single mislabeled tab
+
+- **File:** `src/lib/cms/collectionDefinitions.ts:507-569`; rendered at `src/app/admin/cms/page.tsx:1658-1659` as `'aeo'` / `'AEO Fields'`.
+- **Observation:** `globalContentLayoutFields()` returns 7 fields (`hero_heading`, `hero_subheading`, `body`, `sections`, `sidebar_cta_enabled`, `primary_cta_variant`, `template_variant`) that control page layout and content. These are placed in the AEO section via `mergeFieldSets(globalContentLayoutFields(), commonAeoFields())`. None of these 7 fields have any relationship to answer-engine optimisation. Editors who fill them under the "AEO" tab believe they are affecting AEO signals; they are actually just setting hero content and template choices.
+- **Why it matters:** Semantic mislabelling confuses the editor's mental model. AEO score/checklist in the sidebar does not reference any of the 7 content-layout fields (`page.tsx:1180-1186`), so editors could legitimately fill `directAnswer` in the AEO tab while `hero_heading` sits invisibly in the same tab and doesn't contribute to any checklist.
+- **Suggested fix:** Move `globalContentLayoutFields()` to the `publish` section (or a new `content` section key). Keep the `aeo` section for the 5 genuine AEO signals only. Rename the tab label from "AEO Fields" to "AEO" (already done in the UI at line 1456) but align the data to match. If a `content` section is added as a new `CmsSectionKey`, it will require `getAllFields()` and the admin renderer to be updated.
+- **Risk if changed:** medium — the section merge means existing documents have data stored against field names that would just move sections; no renaming required, only the admin grouping changes.
+
+### MM-007 [P1] GEO section (8 fields) has zero public consumers — it should be hidden from editors until rendering exists
+
+- **File:** `src/lib/cms/collectionDefinitions.ts:572-622`; rendered at `src/app/admin/cms/page.tsx:1690-1692`; zero non-admin readers (CR-048).
+- **Observation:** All 8 GEO fields (`geoSummary`, `sourceUrls`, `geoContentType`, `lastUpdatedDate`, `citations`, `keyStatistics`, `expertQuotes`, `relatedEntities`) are stored in Firestore but never emitted to the public site. The GEO score/checklist shown in the editor sidebar at lines 1188-1199 rewards editors for filling fields that have no impact. Across 15 collections this is 120 form inputs (8 × 15) with no effect.
+- **Why it matters:** Editors invest time in GEO content expecting LLM-optimization; the data is dark. The GEO checklist score is decorative noise. This is the exact same pattern as CR-048 (Part 1) but viewed from the meta-model perspective: the section exists, the fields are defined, the tab is rendered, but the consumer is missing.
+- **Suggested fix:** Short-term: hide the GEO tab behind a feature flag (`NEXT_PUBLIC_CMS_GEO_ENABLED=false`) so editors do not fill data that does nothing. Medium-term: implement `citations` as `citation` JSON-LD on `Article` schema, `keyStatistics` and `expertQuotes` as visible body components, then re-enable the tab. If the product decision is to not pursue GEO, remove the section and drop the 8 fields from the schema.
+- **Risk if changed:** low — hiding the tab does not affect Firestore data; any previously stored GEO values persist and become visible again when the tab is re-enabled.
+
+### MM-008 [P1] Three block types (`tool_embed`, `form`, `speaker`) render as generic `CtaBlock` stubs, silently discarding all their unique fields
+
+- **File:** `src/components/cms/PageBlocksRenderer.tsx:299-309` (the three stub cases).
+- **Observation:** `tool_embed` (case line 299) extracts only `toolUrl` and passes it to `CtaBlock` as `primaryUrl`. The block's `heading`, `description`, and `toolRef` fields are discarded. `form` (line 301) passes the raw block to `CtaBlock`; `formId`, `submitLabel`, and `embedUrl` are never read by `CtaBlock`. `speaker` (lines 304-309) constructs a `CtaBlock` with a hardcoded heading `'Featured speakers'`, ignoring the block's own `heading` and discarding `memberRefs` entirely — no team member data appears. All three blocks are editable in the admin (editors fill unique fields) but the renderer ignores those fields.
+- **Why it matters:** Editors who build tool-embed or speaker blocks are creating data that is not only unrendered but actively masked by a generic CTA. The output is misleading: the page appears to have a CTA where the editor intended a tool or a team-member card.
+- **Suggested fix:** Implement `ToolEmbedBlock`, `FormBlock`, and `SpeakerBlock` components in `PageBlocksRenderer.tsx`. `ToolEmbedBlock` should render an iframe or link with heading/description. `FormBlock` should render the `embedUrl` in an iframe or `formId` as a hook. `SpeakerBlock` should follow `memberRefs` to render team-member cards (requires a data-fetch which may need a Server Component wrapper). Until proper implementations exist, consider rendering `null` rather than a misleading CTA stub — at least `null` signals an implementation gap rather than false content.
+- **Risk if changed:** low for `null` path; medium for full implementation (SpeakerBlock requires async data fetch).
+
+### MM-009 [P2] The `related_content` block returns `null` — 5 editor fields are stored but the block renders nothing on the public site
+
+- **File:** `src/components/cms/PageBlocksRenderer.tsx:312` (`case 'related_content': return null`); block defined at `src/lib/cms/collectionDefinitions.ts:279-305`.
+- **Observation:** The `related_content` block has 5 fields (`heading`, `mode`, `maxItems`, `sourceCollections`, `manualRefs`) and is the block-layer analogue of the relations section's multi-reference fields. Both are unimplemented on the public side (CR-054). The block case exists, the editor allows editors to configure it, but `null` is returned at render time — no output.
+- **Why it matters:** Any page with a `related_content` block has an invisible hole where related cards should appear. It is the only block that guarantees a render gap regardless of content quality.
+- **Suggested fix:** Either (a) implement a `RelatedContentBlock` server component that resolves `manualRefs` or auto-queries collections; or (b) remove the block type from `CMS_BLOCK_TYPES` so editors cannot add it until the renderer exists. Returning `null` is the worst outcome — it looks fine in the admin preview but silently produces no HTML.
+- **Risk if changed:** low — removing it prevents future data entry; existing blocks stored in Firestore would need a migration to remove them or keep rendering null.
+
+### MM-010 [P2] The `listing` and `detail` sections are universally applied to `media_assets`, which cannot have a listing or detail page in the conventional sense
+
+- **File:** `src/lib/cms/collectionDefinitions.ts:1426-1453` (final assembly loop); `media_assets` definition at lines 931-955.
+- **Observation:** `media_assets` is a utility collection (reusable image/video/document records). It has no `routePattern` or `listingRoute`. The final assembly loop at line 1426 applies `universalListingFields()` (16 fields) and `universalDetailFields()` (14 fields) to it identically to content collections like `blog_posts`. The media library admin renders these sections in the editor sidebar even though no `/media_assets` listing or `/media_assets/[slug]` detail page exists or is planned.
+- **Why it matters:** 30 dead fields on every media asset editor open; the listing/detail sections in the sidebar are pure noise for the media library use case. This also means `buildDefaultDocumentValues()` seeds `detail_breadcrumbs_enabled: true` and `listing_search_enabled: true` on every new media asset — values that will never be read.
+- **Suggested fix:** Add an `excludeSections?: CmsSectionKey[]` property to `BaseCollectionDefinition`, and set `excludeSections: ['listing', 'detail', 'card', 'blocks', 'aeo', 'geo']` for `media_assets`. The assembly loop skips those sections for excluded collections. Alternatively, give `media_assets` its own bespoke definition builder that does not call `universalListingFields`.
+- **Risk if changed:** low — media_assets currently has listing/detail fields silently; removing them from the editor has no public-site impact.
+
+### MM-011 [P2] The `blocks` section universally applies to all 15 collections including utility collections that will never use page blocks
+
+- **File:** `src/lib/cms/collectionDefinitions.ts:1430` (`const blocksFields = universalBlocksFields(definition.defaultSchemaType)`); applies to `review_sources`, `customer_reviews`, `faq_questions`, `faq_topics`, `media_assets`.
+- **Observation:** Collections like `review_sources` (a lookup table for G2/Clutch/Google review platforms), `customer_reviews` (testimonial snippets), `faq_questions` (Q&A pairs), and `faq_topics` (topic groups) are primarily used as reference targets in other collections or as data sources for blocks. They are unlikely to ever have page-builder blocks. Yet every document in these collections shows the full PageBlocksEditor and the `schema_type_override` select in the admin.
+- **Why it matters:** Editor cognitive overhead; the PageBlocksEditor is the most complex component in the admin and adds visual weight to every editor for collections where blocks will never be used. The `schema_type_override` select for a `customer_review` (which already has a hardcoded `defaultSchemaType: 'Review'`) is particularly noisy.
+- **Suggested fix:** As with MM-010, introduce `excludeSections` per collection. Collections whose sole purpose is as reference data (`review_sources`, `customer_reviews`, `faq_questions`, `faq_topics`) should exclude `blocks` (and likely `listing`, `detail`, `aeo`, `geo`) from their editor UI.
+- **Risk if changed:** low — any page_blocks values in Firestore would persist; only the editor UI changes.
 
 ---
 
