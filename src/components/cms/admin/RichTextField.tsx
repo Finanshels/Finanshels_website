@@ -137,7 +137,7 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
     editorProps: {
       attributes: {
         class:
-          'prose prose-slate max-w-none min-h-[360px] bg-white px-5 py-5 text-[15px] leading-7 text-slate-800 focus:outline-none',
+          'prose prose-slate max-w-none min-h-[240px] md:min-h-[320px] bg-white px-5 py-5 text-[15px] leading-7 text-slate-800 focus:outline-none',
       },
     },
     onUpdate: ({ editor }) => {
@@ -197,156 +197,156 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
 
       <div className="overflow-hidden rounded-xl border border-[#e7dccf] bg-white shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
         {/* Toolbar */}
-        <div className="border-b border-[#efe5da] bg-[#fffaf5] px-3 pt-2.5 pb-2">
-          <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-            <ToolbarGroup>
-              <GroupLabel>Heading</GroupLabel>
-              <ToolbarRow>
-                <IconBtn label="Heading 1" active={editor?.isActive('heading', { level: 1 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}>H1</IconBtn>
-                <IconBtn label="Heading 2" active={editor?.isActive('heading', { level: 2 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>H2</IconBtn>
-                <IconBtn label="Heading 3" active={editor?.isActive('heading', { level: 3 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>H3</IconBtn>
-                <IconBtn label="Heading 4" active={editor?.isActive('heading', { level: 4 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 4 }).run()}>H4</IconBtn>
-              </ToolbarRow>
-            </ToolbarGroup>
+        <div className="border-b border-[#efe5da] bg-[#fffaf5] px-3 pt-2 pb-2">
+          <p className="mb-1.5 px-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">Essentials</p>
+          <ToolbarRow>
+            <IconBtn label="Paragraph" active={editor?.isActive('paragraph')} onClick={() => editor?.chain().focus().setParagraph().run()}>
+              ¶
+            </IconBtn>
+            <Sep />
+            <IconBtn label="Heading 2" active={editor?.isActive('heading', { level: 2 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>
+              H2
+            </IconBtn>
+            <IconBtn label="Heading 3" active={editor?.isActive('heading', { level: 3 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>
+              H3
+            </IconBtn>
+            <Sep />
+            <IconBtn label="Bold (⌘B)" active={editor?.isActive('bold')} onClick={() => editor?.chain().focus().toggleBold().run()}>
+              <Bold className="h-3.5 w-3.5" />
+            </IconBtn>
+            <IconBtn label="Italic (⌘I)" active={editor?.isActive('italic')} onClick={() => editor?.chain().focus().toggleItalic().run()}>
+              <Italic className="h-3.5 w-3.5" />
+            </IconBtn>
+            <IconBtn label="Underline (⌘U)" active={editor?.isActive('underline')} onClick={() => editor?.chain().focus().toggleUnderline().run()}>
+              <UnderlineIcon className="h-3.5 w-3.5" />
+            </IconBtn>
+            <Sep />
+            <IconBtn label="Bulleted list" active={editor?.isActive('bulletList')} onClick={() => editor?.chain().focus().toggleBulletList().run()}>
+              <List className="h-3.5 w-3.5" />
+            </IconBtn>
+            <IconBtn label="Numbered list" active={editor?.isActive('orderedList')} onClick={() => editor?.chain().focus().toggleOrderedList().run()}>
+              <ListOrdered className="h-3.5 w-3.5" />
+            </IconBtn>
+            <IconBtn label="Quote" active={editor?.isActive('blockquote')} onClick={() => editor?.chain().focus().toggleBlockquote().run()}>
+              <TextQuote className="h-3.5 w-3.5" />
+            </IconBtn>
+            <Sep />
+            <IconBtn label="Link" active={editor?.isActive('link')} onClick={setLink}>
+              <Link2 className="h-3.5 w-3.5" />
+            </IconBtn>
+            <IconBtn label="Image" onClick={insertImage}>
+              <ImageIcon className="h-3.5 w-3.5" />
+            </IconBtn>
+            <IconBtn label="Divider" onClick={() => editor?.chain().focus().setHorizontalRule().run()}>
+              <Minus className="h-3.5 w-3.5" />
+            </IconBtn>
+            <Sep />
+            <IconBtn label="Undo" onClick={() => editor?.chain().focus().undo().run()}>
+              <Undo2 className="h-3.5 w-3.5" />
+            </IconBtn>
+            <IconBtn label="Redo" onClick={() => editor?.chain().focus().redo().run()}>
+              <Redo2 className="h-3.5 w-3.5" />
+            </IconBtn>
+            <Sep />
+            <IconBtn label={showPreview ? 'Hide split preview' : 'Split preview'} active={showPreview} onClick={() => setShowPreview((v) => !v)}>
+              <Eye className="h-3.5 w-3.5" />
+            </IconBtn>
+          </ToolbarRow>
 
-            <ToolbarGroup>
-              <GroupLabel>Format</GroupLabel>
-              <ToolbarRow>
-                <IconBtn label="Bold (Cmd/Ctrl+B)" active={editor?.isActive('bold')} onClick={() => editor?.chain().focus().toggleBold().run()}>
-                  <Bold className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Italic (Cmd/Ctrl+I)" active={editor?.isActive('italic')} onClick={() => editor?.chain().focus().toggleItalic().run()}>
-                  <Italic className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Underline (Cmd/Ctrl+U)" active={editor?.isActive('underline')} onClick={() => editor?.chain().focus().toggleUnderline().run()}>
-                  <UnderlineIcon className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Strikethrough" active={editor?.isActive('strike')} onClick={() => editor?.chain().focus().toggleStrike().run()}>
-                  <Strikethrough className="h-3.5 w-3.5" />
-                </IconBtn>
-                <Sep />
-                <IconBtn label="Superscript" active={editor?.isActive('superscript')} onClick={() => editor?.chain().focus().toggleSuperscript().run()}>
-                  <SuperscriptIcon className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Subscript" active={editor?.isActive('subscript')} onClick={() => editor?.chain().focus().toggleSubscript().run()}>
-                  <SubscriptIcon className="h-3.5 w-3.5" />
-                </IconBtn>
-                <Sep />
-                <IconBtn label="Inline code" active={editor?.isActive('code')} onClick={() => editor?.chain().focus().toggleCode().run()}>
-                  <InlineCode className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Clear formatting" onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}>
-                  <Eraser className="h-3.5 w-3.5" />
-                </IconBtn>
-              </ToolbarRow>
-            </ToolbarGroup>
-
-            <ToolbarGroup>
-              <GroupLabel>Align</GroupLabel>
-              <ToolbarRow>
-                <IconBtn label="Align left" active={editor?.isActive({ textAlign: 'left' })} onClick={() => editor?.chain().focus().setTextAlign('left').run()}>
-                  <AlignLeft className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Align center" active={editor?.isActive({ textAlign: 'center' })} onClick={() => editor?.chain().focus().setTextAlign('center').run()}>
-                  <AlignCenter className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Align right" active={editor?.isActive({ textAlign: 'right' })} onClick={() => editor?.chain().focus().setTextAlign('right').run()}>
-                  <AlignRight className="h-3.5 w-3.5" />
-                </IconBtn>
-              </ToolbarRow>
-            </ToolbarGroup>
-
-            <ToolbarGroup>
-              <GroupLabel>Lists</GroupLabel>
-              <ToolbarRow>
-                <IconBtn label="Bulleted list" active={editor?.isActive('bulletList')} onClick={() => editor?.chain().focus().toggleBulletList().run()}>
-                  <List className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Numbered list" active={editor?.isActive('orderedList')} onClick={() => editor?.chain().focus().toggleOrderedList().run()}>
-                  <ListOrdered className="h-3.5 w-3.5" />
-                </IconBtn>
-              </ToolbarRow>
-            </ToolbarGroup>
-
-            <ToolbarGroup>
-              <GroupLabel>Blocks</GroupLabel>
-              <ToolbarRow>
-                <IconBtn label="Quote" active={editor?.isActive('blockquote')} onClick={() => editor?.chain().focus().toggleBlockquote().run()}>
-                  <TextQuote className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Code block" active={editor?.isActive('codeBlock')} onClick={() => editor?.chain().focus().toggleCodeBlock().run()}>
-                  <Code2 className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="HTML embed (paste in source view)" onClick={() => setShowSource((v) => !v)} active={showSource}>
-                  <span className="font-mono text-[11px]">&lt;/&gt;</span>
-                </IconBtn>
-              </ToolbarRow>
-            </ToolbarGroup>
-          </div>
-
-          <div className="mt-2 flex flex-wrap items-start gap-x-4 gap-y-2">
-            <ToolbarGroup>
-              <GroupLabel>Insert</GroupLabel>
-              <ToolbarRow>
-                <IconBtn label="Insert / edit link" active={editor?.isActive('link')} onClick={setLink}>
-                  <Link2 className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Insert image" onClick={insertImage}>
-                  <ImageIcon className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Insert video link" onClick={insertVideo}>
-                  <Video className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Insert table" onClick={insertTable}>
-                  <TableIcon className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Divider" onClick={() => editor?.chain().focus().setHorizontalRule().run()}>
-                  <Minus className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Hard break" onClick={() => editor?.chain().focus().setHardBreak().run()}>
-                  <CornerDownLeft className="h-3.5 w-3.5" />
-                </IconBtn>
-              </ToolbarRow>
-            </ToolbarGroup>
-
-            <ToolbarGroup>
-              <GroupLabel>History</GroupLabel>
-              <ToolbarRow>
-                <IconBtn label="Undo (Cmd/Ctrl+Z)" onClick={() => editor?.chain().focus().undo().run()}>
-                  <Undo2 className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label="Redo (Shift+Cmd/Ctrl+Z)" onClick={() => editor?.chain().focus().redo().run()}>
-                  <Redo2 className="h-3.5 w-3.5" />
-                </IconBtn>
-              </ToolbarRow>
-            </ToolbarGroup>
-
-            <ToolbarGroup>
-              <GroupLabel>Source</GroupLabel>
-              <ToolbarRow>
-                <IconBtn
-                  label="Paste from clipboard"
-                  onClick={async () => {
-                    if (typeof navigator === 'undefined' || !navigator.clipboard) return
-                    try {
-                      const text = await navigator.clipboard.readText()
-                      if (text) editor?.chain().focus().insertContent(text).run()
-                    } catch {
-                      /* ignore permission denied */
-                    }
-                  }}
-                >
-                  <ClipboardPaste className="h-3.5 w-3.5" />
-                </IconBtn>
-                <IconBtn label={showSource ? 'Close HTML source' : 'View HTML source'} active={showSource} onClick={() => setShowSource((v) => !v)}>
-                  <span className="font-mono text-[11px]">&lt;/&gt;</span>
-                </IconBtn>
-                <IconBtn label={showPreview ? 'Hide preview' : 'Live preview'} active={showPreview} onClick={() => setShowPreview((v) => !v)}>
-                  <Eye className="h-3.5 w-3.5" />
-                </IconBtn>
-              </ToolbarRow>
-            </ToolbarGroup>
-          </div>
+          <details className="mt-2 rounded-lg border border-[#ebe0d2] bg-white/80 open:bg-white">
+            <summary className="cursor-pointer select-none px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 marker:text-slate-400">
+              Advanced formatting &amp; HTML
+            </summary>
+            <div className="border-t border-[#efe5da] px-2 py-2">
+              <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+                <ToolbarGroup>
+                  <GroupLabel>Heading</GroupLabel>
+                  <ToolbarRow>
+                    <IconBtn label="Heading 1" active={editor?.isActive('heading', { level: 1 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}>H1</IconBtn>
+                    <IconBtn label="Heading 4" active={editor?.isActive('heading', { level: 4 })} onClick={() => editor?.chain().focus().toggleHeading({ level: 4 }).run()}>H4</IconBtn>
+                  </ToolbarRow>
+                </ToolbarGroup>
+                <ToolbarGroup>
+                  <GroupLabel>Format</GroupLabel>
+                  <ToolbarRow>
+                    <IconBtn label="Strikethrough" active={editor?.isActive('strike')} onClick={() => editor?.chain().focus().toggleStrike().run()}>
+                      <Strikethrough className="h-3.5 w-3.5" />
+                    </IconBtn>
+                    <IconBtn label="Superscript" active={editor?.isActive('superscript')} onClick={() => editor?.chain().focus().toggleSuperscript().run()}>
+                      <SuperscriptIcon className="h-3.5 w-3.5" />
+                    </IconBtn>
+                    <IconBtn label="Subscript" active={editor?.isActive('subscript')} onClick={() => editor?.chain().focus().toggleSubscript().run()}>
+                      <SubscriptIcon className="h-3.5 w-3.5" />
+                    </IconBtn>
+                    <IconBtn label="Inline code" active={editor?.isActive('code')} onClick={() => editor?.chain().focus().toggleCode().run()}>
+                      <InlineCode className="h-3.5 w-3.5" />
+                    </IconBtn>
+                    <IconBtn label="Clear formatting" onClick={() => editor?.chain().focus().clearNodes().unsetAllMarks().run()}>
+                      <Eraser className="h-3.5 w-3.5" />
+                    </IconBtn>
+                  </ToolbarRow>
+                </ToolbarGroup>
+                <ToolbarGroup>
+                  <GroupLabel>Align</GroupLabel>
+                  <ToolbarRow>
+                    <IconBtn label="Align left" active={editor?.isActive({ textAlign: 'left' })} onClick={() => editor?.chain().focus().setTextAlign('left').run()}>
+                      <AlignLeft className="h-3.5 w-3.5" />
+                    </IconBtn>
+                    <IconBtn label="Align center" active={editor?.isActive({ textAlign: 'center' })} onClick={() => editor?.chain().focus().setTextAlign('center').run()}>
+                      <AlignCenter className="h-3.5 w-3.5" />
+                    </IconBtn>
+                    <IconBtn label="Align right" active={editor?.isActive({ textAlign: 'right' })} onClick={() => editor?.chain().focus().setTextAlign('right').run()}>
+                      <AlignRight className="h-3.5 w-3.5" />
+                    </IconBtn>
+                  </ToolbarRow>
+                </ToolbarGroup>
+                <ToolbarGroup>
+                  <GroupLabel>Blocks</GroupLabel>
+                  <ToolbarRow>
+                    <IconBtn label="Code block" active={editor?.isActive('codeBlock')} onClick={() => editor?.chain().focus().toggleCodeBlock().run()}>
+                      <Code2 className="h-3.5 w-3.5" />
+                    </IconBtn>
+                    <IconBtn label="Hard line break" onClick={() => editor?.chain().focus().setHardBreak().run()}>
+                      <CornerDownLeft className="h-3.5 w-3.5" />
+                    </IconBtn>
+                  </ToolbarRow>
+                </ToolbarGroup>
+                <ToolbarGroup>
+                  <GroupLabel>Insert</GroupLabel>
+                  <ToolbarRow>
+                    <IconBtn label="Video link" onClick={insertVideo}>
+                      <Video className="h-3.5 w-3.5" />
+                    </IconBtn>
+                    <IconBtn label="Table" onClick={insertTable}>
+                      <TableIcon className="h-3.5 w-3.5" />
+                    </IconBtn>
+                  </ToolbarRow>
+                </ToolbarGroup>
+                <ToolbarGroup>
+                  <GroupLabel>Source</GroupLabel>
+                  <ToolbarRow>
+                    <IconBtn
+                      label="Paste from clipboard"
+                      onClick={async () => {
+                        if (typeof navigator === 'undefined' || !navigator.clipboard) return
+                        try {
+                          const text = await navigator.clipboard.readText()
+                          if (text) editor?.chain().focus().insertContent(text).run()
+                        } catch {
+                          /* ignore */
+                        }
+                      }}
+                    >
+                      <ClipboardPaste className="h-3.5 w-3.5" />
+                    </IconBtn>
+                    <IconBtn label={showSource ? 'Close HTML' : 'Edit HTML'} active={showSource} onClick={() => setShowSource((v) => !v)}>
+                      <span className="font-mono text-[11px]">&lt;/&gt;</span>
+                    </IconBtn>
+                  </ToolbarRow>
+                </ToolbarGroup>
+              </div>
+            </div>
+          </details>
         </div>
 
         {/* Editor surface */}
@@ -357,14 +357,14 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
                 value={html}
                 onChange={(e) => applySource(e.target.value)}
                 spellCheck={false}
-                className="block min-h-[360px] w-full bg-white px-5 py-5 font-mono text-xs leading-6 text-slate-800 focus:outline-none"
+                className="block min-h-[240px] w-full bg-white px-5 py-5 font-mono text-xs leading-6 text-slate-800 focus:outline-none md:min-h-[320px]"
               />
             ) : (
               <EditorContent editor={editor} />
             )}
           </div>
           {showPreview ? (
-            <div className="min-h-[360px] bg-[#fffaf5] px-5 py-5">
+            <div className="min-h-[240px] bg-[#fffaf5] px-5 py-5 md:min-h-[320px]">
               <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Live preview</p>
               <article
                 className="prose prose-slate max-w-none text-[15px] leading-7"
@@ -375,7 +375,7 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#efe5da] bg-[#fffcf8] px-3 py-2 text-xs text-slate-500">
-          <p className="text-[11px]">Hover any button for its keyboard shortcut.</p>
+          <p className="text-[11px]">Tips: hover buttons for shortcuts. Open Advanced for alignment, tables, and raw HTML.</p>
           <div className="flex items-center gap-3">
             <span><strong className="font-semibold text-slate-700">{wordCount}</strong> words</span>
             <span aria-hidden>·</span>

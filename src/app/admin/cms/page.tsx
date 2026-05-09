@@ -4,8 +4,11 @@ import { redirect } from 'next/navigation'
 import RichTextField from '@/components/cms/admin/RichTextField'
 import PageBlocksEditor from '@/components/cms/admin/PageBlocksEditor'
 import CardPreview from '@/components/cms/admin/CardPreview'
+import { CmsTitleSlugFields } from '@/components/cms/admin/CmsTitleSlugFields'
+import { CmsMultiReferencePick } from '@/components/cms/admin/CmsMultiReferencePick'
 import { ReverseReferencesPanel } from '@/components/cms/admin/ReverseReferencesPanel'
 import { CmsCollectionItemTable } from '@/components/cms/admin/CmsCollectionItemTable'
+import { CmsMediaLibrary } from '@/components/cms/admin/CmsMediaLibrary'
 import {
   destroyAdminSession,
   requireAdminAuth,
@@ -39,11 +42,13 @@ import {
   listReferenceOptions,
   listCmsDocuments,
   listReverseReferences,
+  listCmsMediaLibraryItems,
   rollbackCmsDocumentToRevision,
   upsertCmsDocument,
   type CmsDocumentStatus,
   type CmsReverseReferenceGroup,
 } from '@/lib/cms/collectionRepository'
+import { isCmsConfigured } from '@/lib/cms/config'
 
 type SearchParams = Promise<{
   saved?: string
@@ -185,9 +190,11 @@ function fieldHint(field: CmsFieldDefinition): string | null {
   if (field.type === 'tags') return 'Use comma-separated values and press save to store.'
   if (field.type === 'json') return 'Valid JSON only. Invalid JSON will not be saved.'
   if (field.type === 'url') return 'Use full URL including https://'
-  if (field.type === 'image') return 'Use an accessible image URL, preferably with CDN optimization.'
+  if (field.type === 'image')
+    return 'Paste a stable https:// image URL (CDN recommended). Listing cards suggest URLs from uploaded Media assets when available.'
   if (field.type === 'file') return 'Paste a downloadable file URL (storage/CDN).'
-  if (field.type === 'icon') return 'Use an icon key or a direct image URL.'
+  if (field.type === 'icon')
+    return 'Lucide icon name in kebab-case (example: arrow-right), or paste a https:// URL to force an image. The site maps names to lucide-react at render time.'
   if (field.type === 'datetime') return 'Use local datetime; this is saved as text/timestamp value.'
   if (field.type === 'boolean') return 'Choose true or false.'
   if (field.type === 'textarea') return 'Supports rich text/HTML where applicable.'
@@ -291,6 +298,11 @@ async function saveCmsDocumentAction(formData: FormData) {
 
   const payload: Record<string, unknown> = {}
   for (const field of getAllFields(definition)) {
+    if (field.type === 'multi_reference') {
+      const parts = formData.getAll(field.name).map((v) => String(v).trim()).filter(Boolean)
+      payload[field.name] = [...new Set(parts)]
+      continue
+    }
     const raw = String(formData.get(field.name) ?? '')
     const value = parseFieldValue(field, raw)
     if (field.required && (value === undefined || value === '' || value === null)) {
@@ -472,11 +484,14 @@ function FieldRenderer({
   value,
   referenceOptions,
   mediaAssetUrls,
+  documentHydrationKey = '',
 }: {
   field: CmsFieldDefinition
   value: string
   referenceOptions: Record<string, Array<{ id: string; label: string }>>
   mediaAssetUrls: string[]
+  /** Stable per open document so multi-reference picks remount after navigation. */
+  documentHydrationKey?: string
 }) {
   const common =
     'mt-2 w-full rounded-xl border border-[#e8dccf] bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20'
@@ -572,6 +587,12 @@ function FieldRenderer({
             </option>
           ))}
         </select>
+        {options.length === 0 ? (
+          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
+            No documents to link yet in <span className="font-mono">{field.referenceCollection ?? '—'}</span>. Create one in that
+            collection (or check Firestore config) so it appears here.
+          </p>
+        ) : null}
         {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
       </>
     )
@@ -580,15 +601,14 @@ function FieldRenderer({
     const options = field.referenceCollection ? referenceOptions[field.referenceCollection] ?? [] : []
     return (
       <>
-        <input name={field.name} defaultValue={value} placeholder="id-one, id-two, id-three" className={common} list={`${field.name}-ref-suggestions`} />
-        <datalist id={`${field.name}-ref-suggestions`}>
-          {options.map((opt) => (
-            <option key={opt.id} value={opt.id}>
-              {opt.label}
-            </option>
-          ))}
-        </datalist>
-        <p className="mt-1 text-xs text-slate-500">Enter comma-separated reference IDs. Suggestions available.</p>
+        <CmsMultiReferencePick
+          key={`${documentHydrationKey}:${field.name}:${value}`}
+          name={field.name}
+          label={field.label}
+          options={options}
+          valueCsv={value}
+        />
+        {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
       </>
     )
   }
@@ -639,7 +659,8 @@ function renderSection(
   fields: CmsFieldDefinition[],
   values: FieldValueMap,
   referenceOptions: Record<string, Array<{ id: string; label: string }>>,
-  mediaAssetUrls: string[]
+  mediaAssetUrls: string[],
+  documentHydrationKey = ''
 ) {
   return (
     <section id={id} className="rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
@@ -647,17 +668,38 @@ function renderSection(
       <div className="mt-3 grid gap-4 md:grid-cols-2">
         {fields.map((field) => {
           const value = stringifyFieldValue(field, values[field.name])
+          const header = (
+            <span className="flex items-center gap-2">
+              {field.label}
+              {field.required ? (
+                <span className="rounded-full border border-brand-primary/30 bg-brand-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-brand-primary">
+                  Required
+                </span>
+              ) : null}
+            </span>
+          )
+          const control = (
+            <FieldRenderer
+              field={field}
+              value={value}
+              referenceOptions={referenceOptions}
+              mediaAssetUrls={mediaAssetUrls}
+              documentHydrationKey={documentHydrationKey}
+            />
+          )
+          const baseClass = `block text-sm font-medium text-slate-800 ${fieldColumnSpan(field)}`
+          if (field.type === 'multi_reference') {
+            return (
+              <div key={field.name} className={baseClass}>
+                {header}
+                {control}
+              </div>
+            )
+          }
           return (
-            <label key={field.name} className={`block text-sm font-medium text-slate-800 ${fieldColumnSpan(field)}`}>
-              <span className="flex items-center gap-2">
-                {field.label}
-                {field.required ? (
-                  <span className="rounded-full border border-brand-primary/30 bg-brand-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-brand-primary">
-                    Required
-                  </span>
-                ) : null}
-              </span>
-              <FieldRenderer field={field} value={value} referenceOptions={referenceOptions} mediaAssetUrls={mediaAssetUrls} />
+            <label key={field.name} className={baseClass}>
+              {header}
+              {control}
             </label>
           )
         })}
@@ -666,64 +708,87 @@ function renderSection(
   )
 }
 
-/**
- * Same field grid as `renderSection` but wrapped in a native `<details>` so
- * editors can collapse/expand without client-side state.
- */
-function renderCollapsibleSection(
+/** Like `renderSection`, but pairs the title + slug so the slug can follow the title until the slug is edited. */
+function renderMainEditorSection(
   id: string,
-  title: string,
-  subtitle: string,
+  titleText: string,
   fields: CmsFieldDefinition[],
   values: FieldValueMap,
   referenceOptions: Record<string, Array<{ id: string; label: string }>>,
   mediaAssetUrls: string[],
-  options: { defaultOpen?: boolean; extra?: React.ReactNode } = {}
+  documentHydrationKey: string,
+  opts: { slugAutoSync: boolean; titleFieldName: string; slugFieldName: string }
 ) {
-  if (!fields || fields.length === 0) {
-    if (!options.extra) return null
-  }
+  const tf = fields[0]
+  const sf = fields[1]
+  const useSyncedPair =
+    tf?.name === opts.titleFieldName &&
+    sf?.name === opts.slugFieldName &&
+    tf?.type === 'text' &&
+    sf?.type === 'text'
+
+  const restFields = useSyncedPair ? fields.slice(2) : fields
+
   return (
-    <details
-      id={id}
-      open={options.defaultOpen ?? false}
-      className="group rounded-2xl border border-[#e8dccf] bg-white shadow-[0_8px_22px_rgba(15,23,42,0.06)]"
-    >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
-        <div>
-          <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{title}</h3>
-          {subtitle ? <p className="mt-1 text-xs text-slate-500">{subtitle}</p> : null}
-        </div>
-        <span className="rounded-full border border-[#e8dccf] bg-[#fffaf5] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 transition group-open:border-brand-primary/40 group-open:bg-brand-primary/10 group-open:text-brand-primary">
-          <span className="hidden group-open:inline">Hide</span>
-          <span className="group-open:hidden">Edit</span>
-        </span>
-      </summary>
-      <div className="space-y-4 border-t border-[#eee2d3] px-4 py-4">
-        {fields && fields.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {fields.map((field) => {
-              const value = stringifyFieldValue(field, values[field.name])
-              return (
-                <label key={field.name} className={`block text-sm font-medium text-slate-800 ${fieldColumnSpan(field)}`}>
-                  <span className="flex items-center gap-2">
-                    {field.label}
-                    {field.required ? (
-                      <span className="rounded-full border border-brand-primary/30 bg-brand-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-brand-primary">
-                        Required
-                      </span>
-                    ) : null}
-                  </span>
-                  <FieldRenderer field={field} value={value} referenceOptions={referenceOptions} mediaAssetUrls={mediaAssetUrls} />
-                  {field.description ? <p className="mt-1 text-xs text-slate-500">{field.description}</p> : null}
-                </label>
-              )
-            })}
-          </div>
+    <section id={id} className="rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+      <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{titleText}</h3>
+      <div className="mt-3 grid gap-4 md:grid-cols-2">
+        {useSyncedPair ? (
+          <CmsTitleSlugFields
+            autoSyncSlug={opts.slugAutoSync}
+            titleName={tf.name}
+            slugName={sf.name}
+            titleLabel={tf.label}
+            slugLabel={sf.label}
+            titlePlaceholder={tf.placeholder}
+            slugPlaceholder={sf.placeholder}
+            titleRequired={tf.required}
+            slugRequired={sf.required}
+            initialTitle={stringifyFieldValue(tf, values[tf.name])}
+            initialSlug={stringifyFieldValue(sf, values[sf.name])}
+            titleClassName={`block text-sm font-medium text-slate-800 ${fieldColumnSpan(tf)}`}
+            slugClassName={`block text-sm font-medium text-slate-800 ${fieldColumnSpan(sf)}`}
+          />
         ) : null}
-        {options.extra ? <div className="pt-2">{options.extra}</div> : null}
+        {restFields.map((field) => {
+          const value = stringifyFieldValue(field, values[field.name])
+          const header = (
+            <span className="flex items-center gap-2">
+              {field.label}
+              {field.required ? (
+                <span className="rounded-full border border-brand-primary/30 bg-brand-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-brand-primary">
+                  Required
+                </span>
+              ) : null}
+            </span>
+          )
+          const control = (
+            <FieldRenderer
+              field={field}
+              value={value}
+              referenceOptions={referenceOptions}
+              mediaAssetUrls={mediaAssetUrls}
+              documentHydrationKey={documentHydrationKey}
+            />
+          )
+          const baseClass = `block text-sm font-medium text-slate-800 ${fieldColumnSpan(field)}`
+          if (field.type === 'multi_reference') {
+            return (
+              <div key={field.name} className={baseClass}>
+                {header}
+                {control}
+              </div>
+            )
+          }
+          return (
+            <label key={field.name} className={baseClass}>
+              {header}
+              {control}
+            </label>
+          )
+        })}
       </div>
-    </details>
+    </section>
   )
 }
 
@@ -734,7 +799,8 @@ function renderSidebarSection(
   values: FieldValueMap,
   subtitle?: string,
   referenceOptions: Record<string, Array<{ id: string; label: string }>> = {},
-  mediaAssetUrls: string[] = []
+  mediaAssetUrls: string[] = [],
+  documentHydrationKey = ''
 ) {
   return (
     <section id={id} className="rounded-2xl border border-[#e8dccf] bg-white p-4">
@@ -743,17 +809,38 @@ function renderSidebarSection(
       <div className="mt-3 flex flex-col gap-3">
         {fields.map((field) => {
           const value = stringifyFieldValue(field, values[field.name])
+          const header = (
+            <span className="flex items-center gap-2">
+              {field.label}
+              {field.required ? (
+                <span className="rounded-full border border-brand-primary/30 bg-brand-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-brand-primary">
+                  Required
+                </span>
+              ) : null}
+            </span>
+          )
+          const control = (
+            <FieldRenderer
+              field={field}
+              value={value}
+              referenceOptions={referenceOptions}
+              mediaAssetUrls={mediaAssetUrls}
+              documentHydrationKey={documentHydrationKey}
+            />
+          )
+          const boxClass = 'block rounded-xl border border-[#f1e7dc] bg-[#fffaf5] p-3 text-sm font-medium text-slate-800'
+          if (field.type === 'multi_reference') {
+            return (
+              <div key={field.name} className={boxClass}>
+                {header}
+                {control}
+              </div>
+            )
+          }
           return (
-            <label key={field.name} className="block rounded-xl border border-[#f1e7dc] bg-[#fffaf5] p-3 text-sm font-medium text-slate-800">
-              <span className="flex items-center gap-2">
-                {field.label}
-                {field.required ? (
-                  <span className="rounded-full border border-brand-primary/30 bg-brand-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-brand-primary">
-                    Required
-                  </span>
-                ) : null}
-              </span>
-              <FieldRenderer field={field} value={value} referenceOptions={referenceOptions} mediaAssetUrls={mediaAssetUrls} />
+            <label key={field.name} className={boxClass}>
+              {header}
+              {control}
             </label>
           )
         })}
@@ -816,13 +903,17 @@ function CmsSidebar({
   const userName = sessionDisplayName(session)
   const userEmail = session.kind === 'user' ? session.user.email : null
   return (
-          <aside className="rounded-2xl border border-[#e8dccf] bg-white p-4 xl:overflow-y-auto shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+          <aside className="flex min-h-0 flex-col rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
             <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-brand-primary">Finanshels CMS</p>
       <Link
-        href={`/admin/cms?collection=${definition.key}&new=1`}
+        href={
+          definition.key === 'media_assets'
+            ? `/admin/cms?collection=${definition.key}#cms-media-upload`
+            : `/admin/cms?collection=${definition.key}&new=1`
+        }
         className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-gradient-brand px-4 py-2.5 text-sm font-semibold text-brand-dark shadow-[0_12px_30px_rgba(241,102,16,0.25)] transition hover:brightness-110"
       >
-        + New {definition.singularLabel}
+        {definition.key === 'media_assets' ? '+ Upload media' : `+ New ${definition.singularLabel}`}
       </Link>
 
       <div className="mt-5">
@@ -911,29 +1002,58 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     ...new Set<CmsCollectionKey>([...fieldReferencedCollections, ...BLOCKS_REFERENCED_COLLECTIONS]),
   ]
 
-  const [documentList, selectedDocument, collectionCounts, mediaAssets, referenceOptionResults, revisions, reverseRefs] =
-    await Promise.all([
-      isEditorView ? Promise.resolve([]) : listCmsDocuments(definition.key, definition.titleField, definition.slugField),
-      isEditorView && params.slug ? getCmsDocument(definition.key, params.slug) : Promise.resolve(null),
-      getCmsCollectionItemCounts(),
-      listCmsDocuments('media_assets', 'title', 'slug'),
-      Promise.all(allReferencedCollections.map((key) => listReferenceOptions(key).then((options) => [key, options] as const))),
-      isEditorView && params.slug ? listCmsRevisions(definition.key, params.slug) : Promise.resolve([]),
-      isEditorView && params.slug
-        ? listReverseReferences(definition.key, params.slug)
-        : Promise.resolve([] as CmsReverseReferenceGroup[]),
-    ])
-  const referenceOptions = Object.fromEntries(referenceOptionResults) as Record<string, Array<{ id: string; label: string }>>
-  const mediaAssetDocUrls = await Promise.all(
-    mediaAssets.slice(0, 120).map(async (asset) => {
-      const doc = await getCmsDocument('media_assets', asset.id)
-      return typeof doc?.assetUrl === 'string' ? doc.assetUrl : ''
-    })
-  )
+  const [
+    documentList,
+    selectedDocument,
+    collectionCounts,
+    mediaAssets,
+    referenceOptionResults,
+    revisions,
+    reverseRefs,
+    mediaLibraryItems,
+  ] = await Promise.all([
+    isEditorView
+      ? Promise.resolve([])
+      : activeCollection === 'media_assets'
+      ? Promise.resolve([])
+      : listCmsDocuments(definition.key, definition.titleField, definition.slugField),
+    isEditorView && params.slug ? getCmsDocument(definition.key, params.slug) : Promise.resolve(null),
+    getCmsCollectionItemCounts(),
+    isEditorView ? listCmsDocuments('media_assets', 'title', 'slug') : Promise.resolve([]),
+    Promise.all(allReferencedCollections.map((key) => listReferenceOptions(key).then((options) => [key, options] as const))),
+    isEditorView && params.slug ? listCmsRevisions(definition.key, params.slug) : Promise.resolve([]),
+    isEditorView && params.slug
+      ? listReverseReferences(definition.key, params.slug)
+      : Promise.resolve([] as CmsReverseReferenceGroup[]),
+    !isEditorView && activeCollection === 'media_assets' ? listCmsMediaLibraryItems() : Promise.resolve([]),
+  ])
+  const referenceOptionsBase = Object.fromEntries(referenceOptionResults) as Record<string, Array<{ id: string; label: string }>>
+  const editingBlogSlug = activeCollection === 'blog_posts' && typeof params.slug === 'string' && params.slug.trim() ? params.slug.trim() : ''
+  const referenceOptions =
+    editingBlogSlug.length > 0
+      ? {
+          ...referenceOptionsBase,
+          blog_posts: (referenceOptionsBase.blog_posts ?? []).filter((o) => o.id !== editingBlogSlug),
+        }
+      : referenceOptionsBase
+  const mediaAssetDocUrls = isEditorView
+    ? await Promise.all(
+        mediaAssets.slice(0, 120).map(async (asset) => {
+          const doc = await getCmsDocument('media_assets', asset.id)
+          return typeof doc?.assetUrl === 'string' ? doc.assetUrl : ''
+        })
+      )
+    : []
   const allMediaUrls = [...new Set(mediaAssetDocUrls.filter(Boolean))]
 
   const saved = params.saved === '1'
-  const error = params.error
+  const errorRaw = params.error
+  const error =
+    typeof errorRaw === 'string'
+      ? errorRaw
+      : Array.isArray(errorRaw) && typeof errorRaw[0] === 'string'
+      ? errorRaw[0]
+      : undefined
 
   if (!isEditorView) {
     const listRows = documentList.map((d) => ({
@@ -966,19 +1086,29 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 </p>
               ) : null}
 
-              <CmsCollectionItemTable
-                collectionKey={definition.key}
-                label={definition.label}
-                singularLabel={definition.singularLabel}
-                items={listRows}
-                routePattern={definition.routePattern}
-                canPublish={canPublish}
-                canDelete={canDelete}
-                bulkStatusAction={bulkUpdateStatusAction}
-                bulkDeleteAction={bulkDeleteAction}
-                duplicateAction={duplicateCmsDocumentAction}
-                deleteAction={deleteCmsDocumentAction}
-              />
+              {definition.key === 'media_assets' ? (
+                <CmsMediaLibrary
+                  items={mediaLibraryItems}
+                  canDelete={canDelete}
+                  cmsConfigured={isCmsConfigured()}
+                  bucketConfigured={Boolean(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim())}
+                  deleteAction={deleteCmsDocumentAction}
+                />
+              ) : (
+                <CmsCollectionItemTable
+                  collectionKey={definition.key}
+                  label={definition.label}
+                  singularLabel={definition.singularLabel}
+                  items={listRows}
+                  routePattern={definition.routePattern}
+                  canPublish={canPublish}
+                  canDelete={canDelete}
+                  bulkStatusAction={bulkUpdateStatusAction}
+                  bulkDeleteAction={bulkDeleteAction}
+                  duplicateAction={duplicateCmsDocumentAction}
+                  deleteAction={deleteCmsDocumentAction}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -1013,6 +1143,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
   const formValues: FieldValueMap = selectedDocument ?? {}
   const activeSlug = params.slug ?? ''
   const publicSlug = readText(formValues[definition.slugField]) || activeSlug
+  const editorDocKey = typeof params.slug === 'string' && params.slug.trim() ? params.slug.trim() : openNew ? '__create__' : '__edit__'
 
   const primaryPublishFieldsRaw = definition.sections.publish.filter((f) => isPrimaryEditorField(f, definition.slugField, definition.titleField))
   const primaryPublishFields = sortPrimaryFields(primaryPublishFieldsRaw, definition.slugField, definition.titleField)
@@ -1074,22 +1205,22 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     options?: { defaultOpen?: boolean; extra?: React.ReactNode }
   ) => (
     <div className="space-y-3">
-      {renderSection(id, title, fields, values, refs, assets)}
+      {renderSection(id, title, fields, values, refs, assets, editorDocKey)}
       {options?.extra ? <div>{options.extra}</div> : null}
     </div>
   )
 
   return (
-    <section className="min-h-screen bg-[#f7f3ee] text-slate-900">
+    <section className="min-h-dvh bg-[#f7f3ee] text-slate-900">
       <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
-        <div className="grid gap-3 xl:h-[calc(100vh-1.5rem)] xl:grid-cols-[minmax(260px,320px)_60fr_25fr]">
+        <div className="grid gap-3 xl:h-[calc(100dvh-1.5rem)] xl:min-h-0 xl:grid-cols-[minmax(260px,320px)_minmax(0,60fr)_minmax(0,25fr)] xl:overflow-hidden xl:items-stretch">
           <CmsSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
 
           <form
             action={saveCmsDocumentAction}
             id="cms-editor-form"
             data-cms-editor=""
-            className="xl:col-span-2 grid gap-3 xl:h-[calc(100vh-1.5rem)] xl:grid-cols-[60fr_25fr]"
+            className="xl:col-span-2 grid min-h-0 gap-3 xl:h-full xl:grid-cols-[minmax(0,60fr)_minmax(0,25fr)] xl:overflow-hidden"
           >
             <input type="hidden" name="collection" value={definition.key} />
             <input type="hidden" name="cmsIntent" value={params.slug ? 'edit' : 'create'} />
@@ -1097,7 +1228,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
             {params.slug ? <input type="hidden" name="id" value={params.slug} /> : null}
             <input type="hidden" name="cmsCurrentStatus" value={currentStatus} />
 
-            <div className="space-y-3 rounded-2xl border border-[#e8dccf] bg-[#fcfaf7] p-0 xl:overflow-y-auto shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+            <div className="flex min-h-0 flex-col space-y-0 overflow-hidden rounded-2xl border border-[#e8dccf] bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
               {/* Sticky editor header — Webflow style */}
               <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-[#e8dccf] bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/85">
                 <Link
@@ -1128,7 +1259,25 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {saved ? (
+                    <span
+                      role="status"
+                      aria-live="polite"
+                      className="inline-flex shrink-0 items-center rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-800"
+                    >
+                      Saved · cache refreshed
+                    </span>
+                  ) : null}
+                  {error ? (
+                    <span
+                      role="alert"
+                      title={error}
+                      className="inline-flex max-w-[min(320px,45vw)] shrink-0 truncate rounded-full border border-red-300 bg-red-50 px-2.5 py-1 text-[10px] font-semibold text-red-800"
+                    >
+                      {error}
+                    </span>
+                  ) : null}
                   {definition.routePattern && publicSlug ? (
                     <a
                       href={definition.routePattern.replace('[slug]', publicSlug)}
@@ -1151,20 +1300,28 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 </div>
               </div>
 
-              <div className="space-y-3 px-4 pb-4">
-                {saved ? (
-                  <p className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">
-                    Changes saved. Content cache revalidated and routes refreshed.
-                  </p>
-                ) : null}
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-4">
                 {error ? (
-                  <p className="rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+                  <p role="alert" className="rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-700">
                     Action failed: {error}
                   </p>
                 ) : null}
 
                 <div className="space-y-4">
-                  {renderSection('main-editor', 'Main Editor', primaryPublishFields, formValues, referenceOptions, allMediaUrls)}
+                  {renderMainEditorSection(
+                    'main-editor',
+                    'Main Editor',
+                    primaryPublishFields,
+                    formValues,
+                    referenceOptions,
+                    allMediaUrls,
+                    editorDocKey,
+                    {
+                      slugAutoSync: openNew && !params.slug,
+                      titleFieldName: definition.titleField,
+                      slugFieldName: definition.slugField,
+                    }
+                  )}
 
                   {renderCollapsibleSection(
                     'card-section',
@@ -1256,43 +1413,62 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
               </div>
             </div>
 
-            <aside className="rounded-2xl border border-[#e8dccf] bg-[#fcfaf7] p-0 xl:overflow-y-auto shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-              <input id="cms-tab-publish" type="radio" name="cms-settings-tab" className="peer/tab-publish sr-only" defaultChecked />
-              <input id="cms-tab-seo" type="radio" name="cms-settings-tab" className="peer/tab-seo sr-only" />
-              <input id="cms-tab-aeo" type="radio" name="cms-settings-tab" className="peer/tab-aeo sr-only" />
-              <input id="cms-tab-geo" type="radio" name="cms-settings-tab" className="peer/tab-geo sr-only" />
-
+            <aside className="group/cms-aside flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#e8dccf] bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
+              {/*
+                Tab visibility: Tailwind `peer-checked` only works for *following siblings* of `.peer`.
+                Panels lived inside a wrapper div, so they were never siblings of the radios and every
+                panel stayed `hidden`. Use `group-has-[#id:checked]` on the aside instead.
+                Tab labels: each radio must sit immediately before its label as a sibling so
+                `peer-checked/*` styles apply to the active tab chip.
+              */}
               <div className="sticky top-0 z-20 border-b border-[#e8dccf] bg-[#fcfaf7]/95 px-3 py-3 backdrop-blur supports-[backdrop-filter]:bg-[#fcfaf7]/80">
                 <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-[#e8dccf] bg-white text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                <label
-                  htmlFor="cms-tab-publish"
-                  className="cursor-pointer border-r border-[#e8dccf] px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-publish:bg-brand-primary/10 peer-checked/tab-publish:text-brand-primary"
-                >
-                  Publish
-                </label>
-                <label
-                  htmlFor="cms-tab-seo"
-                  className="cursor-pointer border-r border-[#e8dccf] px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-seo:bg-brand-primary/10 peer-checked/tab-seo:text-brand-primary"
-                >
-                  SEO
-                </label>
-                <label
-                  htmlFor="cms-tab-aeo"
-                  className="cursor-pointer border-r border-[#e8dccf] px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-aeo:bg-brand-primary/10 peer-checked/tab-aeo:text-brand-primary"
-                >
-                  AEO
-                </label>
-                <label
-                  htmlFor="cms-tab-geo"
-                  className="cursor-pointer px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-geo:bg-brand-primary/10 peer-checked/tab-geo:text-brand-primary"
-                >
-                  GEO
-                </label>
-              </div>
+                  <div className="min-w-0 border-r border-[#e8dccf]">
+                    <input
+                      id="cms-tab-publish"
+                      type="radio"
+                      name="cms-settings-tab"
+                      className="peer/tab-publish sr-only"
+                      defaultChecked
+                    />
+                    <label
+                      htmlFor="cms-tab-publish"
+                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-publish:bg-brand-primary/10 peer-checked/tab-publish:text-brand-primary"
+                    >
+                      Publish
+                    </label>
+                  </div>
+                  <div className="min-w-0 border-r border-[#e8dccf]">
+                    <input id="cms-tab-seo" type="radio" name="cms-settings-tab" className="peer/tab-seo sr-only" />
+                    <label
+                      htmlFor="cms-tab-seo"
+                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-seo:bg-brand-primary/10 peer-checked/tab-seo:text-brand-primary"
+                    >
+                      SEO
+                    </label>
+                  </div>
+                  <div className="min-w-0 border-r border-[#e8dccf]">
+                    <input id="cms-tab-aeo" type="radio" name="cms-settings-tab" className="peer/tab-aeo sr-only" />
+                    <label
+                      htmlFor="cms-tab-aeo"
+                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-aeo:bg-brand-primary/10 peer-checked/tab-aeo:text-brand-primary"
+                    >
+                      AEO
+                    </label>
+                  </div>
+                  <div className="min-w-0">
+                    <input id="cms-tab-geo" type="radio" name="cms-settings-tab" className="peer/tab-geo sr-only" />
+                    <label
+                      htmlFor="cms-tab-geo"
+                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-geo:bg-brand-primary/10 peer-checked/tab-geo:text-brand-primary"
+                    >
+                      GEO
+                    </label>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-3 px-3 pt-3 pb-3">
-              <div className="hidden space-y-3 peer-checked/tab-publish:block">
+              <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-publish:checked]/cms-aside:block">
                 <div className="rounded-2xl border border-[#e8dccf] bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Stage for publish</p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1384,7 +1560,8 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       formValues,
                       'Core metadata for publishing',
                       referenceOptions,
-                      allMediaUrls
+                      allMediaUrls,
+                      editorDocKey
                     )
                   : null}
 
@@ -1428,7 +1605,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 ) : null}
               </div>
 
-              <div className="hidden space-y-3 peer-checked/tab-seo:block">
+              <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-seo:checked]/cms-aside:block">
                 <section className="rounded-2xl border border-[#e8dccf] bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">SEO Score</p>
                   <div className="mt-3 flex items-center justify-between">
@@ -1454,12 +1631,13 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                   formValues,
                   'Single-column CMO control panel',
                   referenceOptions,
-                  allMediaUrls
+                  allMediaUrls,
+                  editorDocKey
                 )}
                 {renderChecklistCard('SEO Checklist', seoChecklist)}
               </div>
 
-              <div className="hidden space-y-3 peer-checked/tab-aeo:block">
+              <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-aeo:checked]/cms-aside:block">
                 <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">AEO Tips - Answer Engines</p>
                   <ul className="mt-2 space-y-1 text-sm text-amber-800">
@@ -1483,12 +1661,13 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                   formValues,
                   'FAQ, direct answers, and speakable schema',
                   referenceOptions,
-                  allMediaUrls
+                  allMediaUrls,
+                  editorDocKey
                 )}
                 {renderChecklistCard('AEO Checklist', aeoChecklist)}
               </div>
 
-              <div className="hidden space-y-3 peer-checked/tab-geo:block">
+              <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-geo:checked]/cms-aside:block">
                 <section className="rounded-2xl border border-cyan-300 bg-cyan-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">GEO Tips - Optimized for LLMs</p>
                   <ul className="mt-2 space-y-1 text-sm text-cyan-800">
@@ -1514,10 +1693,10 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                   formValues,
                   'Citations, entities, and AI-trust signals',
                   referenceOptions,
-                  allMediaUrls
+                  allMediaUrls,
+                  editorDocKey
                 )}
                 {renderChecklistCard('GEO Checklist', geoChecklist)}
-              </div>
               </div>
             </aside>
           </form>

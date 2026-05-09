@@ -5,10 +5,13 @@ import {
   CMS_COLLECTION_DEFINITIONS,
   CMS_COLLECTION_DEFINITION_MAP,
   CMS_INCOMING_REFERENCES,
+  type CmsCollectionDefinition,
   type CmsCollectionKey,
 } from './collectionDefinitions'
+import { slugifyForCms } from './slugify'
 
 export type CmsDocumentStatus = 'draft' | 'in_review' | 'approved' | 'scheduled' | 'published' | 'archived'
+export type CmsMediaAssetType = 'image' | 'video' | 'document' | 'other'
 
 export type CmsDocumentListItem = {
   id: string
@@ -42,10 +45,60 @@ function readTitle(value: unknown): string {
   return 'Untitled'
 }
 
+function referenceOptionLabel(
+  docId: string,
+  normalized: Record<string, unknown>,
+  def: CmsCollectionDefinition
+): string {
+  const primary = normalized[def.titleField]
+  if (typeof primary === 'string' && primary.trim()) return primary.trim()
+  if (def.key === 'team_members') {
+    const legacyName = normalized.name
+    if (typeof legacyName === 'string' && legacyName.trim()) return legacyName.trim()
+  }
+  return readSlug(docId, normalized, def.slugField)
+}
+
 function readSlug(id: string, raw: Record<string, unknown>, slugField: string): string {
   const val = raw[slugField]
   if (typeof val === 'string' && val.trim()) return val
   return id
+}
+
+function readOptionalString(value: unknown): string | null {
+  if (typeof value === 'string' && value.trim()) return value.trim()
+  return null
+}
+
+function inferCmsMediaAssetType(
+  rawType: unknown,
+  mimeType: string | null,
+  assetUrl: string
+): CmsMediaAssetType {
+  if (rawType === 'image' || rawType === 'video' || rawType === 'document' || rawType === 'other') return rawType
+
+  const mime = mimeType?.toLowerCase() ?? ''
+  if (mime.startsWith('image/')) return 'image'
+  if (mime.startsWith('video/')) return 'video'
+  if (
+    mime === 'application/pdf' ||
+    mime.startsWith('text/') ||
+    mime.includes('document') ||
+    mime.includes('spreadsheet') ||
+    mime.includes('presentation') ||
+    mime.includes('msword') ||
+    mime.includes('officedocument') ||
+    mime === 'application/rtf'
+  ) {
+    return 'document'
+  }
+
+  const cleanUrl = assetUrl.toLowerCase().split('?')[0] ?? ''
+  if (/\.(png|jpe?g|gif|webp|svg)$/.test(cleanUrl)) return 'image'
+  if (/\.(mp4|webm|mov|m4v)$/.test(cleanUrl)) return 'video'
+  if (/\.(pdf|docx?|xlsx?|pptx?|csv|txt|rtf)$/.test(cleanUrl)) return 'document'
+
+  return 'other'
 }
 
 /** Parallel count queries for sidebar item totals (Webflow-style “Collection (N)”). */
@@ -75,7 +128,16 @@ export async function listCmsDocuments(
   const db = getDb()
   if (!db) return []
 
-  const snap = await db.collection(collection).orderBy('updatedAt', 'desc').limit(limit).get()
+  let snap: FirebaseFirestore.QuerySnapshot
+  try {
+    snap = await db.collection(collection).orderBy('updatedAt', 'desc').limit(limit).get()
+  } catch {
+    try {
+      snap = await db.collection(collection).orderBy(slugField).limit(limit).get()
+    } catch {
+      snap = await db.collection(collection).limit(limit).get()
+    }
+  }
   return snap.docs.map((doc) => {
     const normalized = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
     return {
@@ -89,6 +151,91 @@ export async function listCmsDocuments(
       scheduledAt: normalized.scheduledAt instanceof Date ? normalized.scheduledAt : undefined,
     }
   })
+}
+
+export type CmsMediaLibraryItem = {
+  id: string
+  slug: string
+  title: string
+  status: CmsDocumentStatus
+  assetType: CmsMediaAssetType
+  assetUrl: string
+  mimeType: string | null
+  byteSize: number | null
+  category: string | null
+  folder: string | null
+  updatedAtIso?: string
+}
+
+/** Media library grid — includes URLs and sizes for admin UI without N+1 getDocument calls. */
+export async function listCmsMediaLibraryItems(limit = 400): Promise<CmsMediaLibraryItem[]> {
+  const db = getDb()
+  if (!db) return []
+  const def = CMS_COLLECTION_DEFINITION_MAP.media_assets
+  const titleField = def.titleField
+
+  let snap: FirebaseFirestore.QuerySnapshot
+  try {
+    snap = await db.collection('media_assets').orderBy('updatedAt', 'desc').limit(limit).get()
+  } catch {
+    try {
+      snap = await db.collection('media_assets').orderBy(def.slugField).limit(limit).get()
+    } catch {
+      snap = await db.collection('media_assets').limit(limit).get()
+    }
+  }
+
+  return snap.docs.map((doc) => {
+    const normalized = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+    const slug = readSlug(doc.id, normalized, def.slugField)
+    const title = readTitle(normalized[titleField])
+    const assetUrl = typeof normalized.assetUrl === 'string' ? normalized.assetUrl : ''
+    const mimeType = typeof normalized.mimeType === 'string' ? normalized.mimeType : null
+    const byteSizeRaw = normalized.byteSize
+    const byteSize =
+      typeof byteSizeRaw === 'number' && Number.isFinite(byteSizeRaw)
+        ? byteSizeRaw
+        : typeof byteSizeRaw === 'string' && Number.isFinite(Number(byteSizeRaw))
+        ? Number(byteSizeRaw)
+        : null
+
+    const updated =
+      normalized.updatedAt instanceof Date
+        ? normalized.updatedAt.toISOString()
+        : normalized.updated_at instanceof Date
+        ? (normalized.updated_at as Date).toISOString()
+        : undefined
+
+    return {
+      id: doc.id,
+      slug,
+      title,
+      status: readStatus(normalized.status),
+      assetType: inferCmsMediaAssetType(normalized.assetType, mimeType, assetUrl),
+      assetUrl,
+      mimeType,
+      byteSize,
+      category: readOptionalString(normalized.category),
+      folder: readOptionalString(normalized.folder),
+      updatedAtIso: updated,
+    }
+  })
+}
+
+/** Finds a Firestore-safe document id `{base}`, `{base}-2`, … that does not exist yet. */
+export async function reserveUnusedMediaSlug(originalBase: string): Promise<string> {
+  const db = getDb()
+  if (!db) throw new Error('CMS is not configured')
+  let base = slugifyForCms(originalBase).replace(/^-+|-+$/g, '') || 'asset'
+  if (!base || base === '-') base = 'asset'
+  let candidate = base
+  let suffix = 0
+  for (;;) {
+    const snap = await db.collection('media_assets').doc(candidate).get()
+    if (!snap.exists) return candidate
+    suffix += 1
+    candidate = `${base}-${suffix + 1}`
+  }
 }
 
 export async function bulkUpdateCmsDocumentStatus(
@@ -319,8 +466,27 @@ export async function listReferenceOptions(
 ): Promise<Array<{ id: string; label: string }>> {
   const def = CMS_COLLECTION_DEFINITION_MAP[collection]
   if (!def) return []
-  const docs = await listCmsDocuments(collection, def.titleField, def.slugField, limit)
-  return docs.map((item) => ({ id: item.id, label: item.title }))
+  const db = getDb()
+  if (!db) return []
+
+  let snap: FirebaseFirestore.QuerySnapshot
+  try {
+    snap = await db.collection(collection).orderBy('updatedAt', 'desc').limit(limit).get()
+  } catch {
+    try {
+      snap = await db.collection(collection).orderBy(def.slugField).limit(limit).get()
+    } catch {
+      snap = await db.collection(collection).limit(limit).get()
+    }
+  }
+
+  return snap.docs.map((doc) => {
+    const normalized = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+    return {
+      id: doc.id,
+      label: referenceOptionLabel(doc.id, normalized, def),
+    }
+  })
 }
 
 export type CmsReverseReferenceGroup = {

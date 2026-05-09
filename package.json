@@ -8,7 +8,11 @@
     "@tootallnate/once": "^3.0.1"
   },
   "scripts": {
+    "clean": "rm -rf .next",
     "dev": "next dev",
+    "dev:webpack": "next dev",
+    "dev:turbopack": "next dev --turbopack",
+    "dev:clean": "npm run clean && next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",

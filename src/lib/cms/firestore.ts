@@ -44,6 +44,11 @@ export function normalizePrivateKey(input: string): string {
   return key.trim() + '\n'
 }
 
+/** Singleton Firebase Admin App (Firestore + Storage). Returns null when CMS env is not configured. */
+export function getAdminApp(): App | null {
+  return initAdminApp()
+}
+
 function initAdminApp(): App | null {
   if (cachedApp) return cachedApp
   const existing = getApps()[0]
@@ -89,7 +94,7 @@ function initAdminApp(): App | null {
 /** Returns Firestore instance, or `null` when service account env is missing/invalid. */
 export function getDb(): Firestore | null {
   if (!isCmsConfigured()) return null
-  const app = initAdminApp()
+  const app = getAdminApp()
   if (!app) return null
   try {
     return getFirestore(app)

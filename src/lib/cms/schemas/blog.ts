@@ -33,6 +33,8 @@ export function parseBlogPost(raw: Record<string, unknown>, slug: string): BlogP
     featured_image: (raw.featured_image ?? raw.heroImageUrl) as string | undefined,
     seo_title: (raw.seo_title ?? raw.seoTitle) as string | undefined,
     meta_description: (raw.meta_description ?? raw.seoDescription) as string | undefined,
+    publishedAt:
+      raw.publishedAt ?? raw.publish_date ?? raw.published_at ?? raw.updatedAt ?? raw.updated_at,
   }
   const parsed = blogPostSchema.safeParse(merged)
   return parsed.success ? parsed.data : null

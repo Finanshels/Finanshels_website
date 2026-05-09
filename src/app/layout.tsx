@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Fraunces, Plus_Jakarta_Sans } from 'next/font/google'
 import '../index.css'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
+import AppChrome from '../components/AppChrome'
 
 const fontSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -33,11 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${fontSans.variable} ${fontDisplay.variable}`}>
       <body className="font-sans antialiased bg-white text-slate-900">
-        <div className="flex min-h-screen flex-col">
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </div>
+        <AppChrome>{children}</AppChrome>
       </body>
     </html>
   )

@@ -29,8 +29,14 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
   const db = getDb()
   if (!db) return null
 
-  const doc = await db.collection(COLLECTIONS.blogPosts).doc(slug).get()
-  if (!doc.exists) return null
+  const byId = await db.collection(COLLECTIONS.blogPosts).doc(slug).get()
+  let doc = byId
+  if (!byId.exists) {
+    /** Slug shown in CMS can differ from Firestore doc id (imports / manual docs). */
+    const byField = await db.collection(COLLECTIONS.blogPosts).where('slug', '==', slug).limit(1).get()
+    if (byField.empty) return null
+    doc = byField.docs[0]!
+  }
 
   const parsed = parseBlogPost(normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>), doc.id)
   if (!parsed || parsed.status !== 'published') return null

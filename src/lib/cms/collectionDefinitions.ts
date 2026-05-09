@@ -353,7 +353,7 @@ export type IncomingReferenceSpec = {
 
 export const CMS_INCOMING_REFERENCES: Record<CmsCollectionKey, IncomingReferenceSpec[]> = {
   team_members: [
-    { source: 'blog_posts', field: 'authorRef', label: 'Authored blog posts', multi: false },
+    { source: 'blog_posts', field: 'author', label: 'Authored blog posts', multi: false },
     { source: 'videos', field: 'speakerRefs', label: 'Featured in videos', multi: true },
     { source: 'podcasts', field: 'hostRefs', label: 'Hosted podcasts', multi: true },
     { source: 'webinars', field: 'speakerRefs', label: 'Hosted webinars', multi: true },
@@ -809,22 +809,12 @@ function relationshipFields(rel: CollectionRelationshipDescriptor): CmsFieldDefi
 
 const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> = {
   blog_posts: {
-    references: [
-      { name: 'authorRef', label: 'Author', target: 'team_members' },
-      { name: 'heroImageAssetRef', label: 'Hero media asset', target: 'media_assets' },
-    ],
+    /** Author lives on the publish section as `author`; keep media + content-cluster links only here. */
+    references: [{ name: 'heroImageAssetRef', label: 'Hero media asset', target: 'media_assets' }],
     multiReferences: [
       { name: 'relatedPostRefs', label: 'Related blog posts', target: 'blog_posts' },
       { name: 'relatedGlossaryRefs', label: 'Related glossary terms', target: 'glossary_terms' },
       { name: 'relatedFaqRefs', label: 'Related FAQ questions', target: 'faq_questions' },
-      { name: 'relatedVideoRefs', label: 'Related videos', target: 'videos' },
-      { name: 'relatedPodcastRefs', label: 'Related podcasts', target: 'podcasts' },
-      { name: 'relatedEbookRefs', label: 'Related ebooks', target: 'ebooks' },
-      { name: 'relatedWebinarRefs', label: 'Related webinars', target: 'webinars' },
-      { name: 'relatedToolRefs', label: 'Related tools', target: 'tools' },
-      { name: 'relatedCustomerRefs', label: 'Related customers', target: 'our_customers' },
-      { name: 'relatedReviewRefs', label: 'Related customer reviews', target: 'customer_reviews' },
-      { name: 'relatedStoryRefs', label: 'Related customer stories', target: 'customer_stories' },
     ],
   },
   glossary_terms: {
@@ -952,9 +942,13 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
         { name: 'slug', label: 'Asset slug', type: 'text', required: true, placeholder: 'founder-decision-framework-cover' },
         { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'title', label: 'Title', type: 'text', required: true },
+        { name: 'assetType', label: 'Asset type', type: 'select', options: ['image', 'video', 'document', 'other'], required: true },
+        { name: 'category', label: 'Category', type: 'text', placeholder: 'Brand' },
+        { name: 'folder', label: 'Folder', type: 'text', placeholder: 'blog/covers' },
         { name: 'assetUrl', label: 'Asset URL', type: 'url', required: true, placeholder: 'https://...' },
         { name: 'altText', label: 'Alt text', type: 'text', placeholder: 'Describe the visual for accessibility' },
         { name: 'mimeType', label: 'MIME type', type: 'text', placeholder: 'image/webp' },
+        { name: 'byteSize', label: 'File size (bytes)', type: 'number', description: 'Set automatically when uploading from the media library.' },
         { name: 'width', label: 'Width', type: 'number' },
         { name: 'height', label: 'Height', type: 'number' },
       ],
@@ -1424,6 +1418,11 @@ const LEGACY_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, string[]>> =
   team_members: ['name', 'role', 'bio', 'photoUrl', 'linkedinUrl', 'twitterUrl'],
 }
 
+/** Global publish fields to hide per collection (duplicate or server-managed noise). */
+const STRIP_PUBLISH_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, string[]>> = {
+  blog_posts: ['updated_at', 'published_at', 'categories', 'tags', 'short_description', 'related_content'],
+}
+
 export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECTION_DEFINITIONS_BASE.map((definition) => {
   const cardFields = universalCardFields()
   const listingFields = universalListingFields()
@@ -1433,7 +1432,8 @@ export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECT
 
   const mergedPublish = mergeFieldSets(globalCoreFields(), definition.sections.publish ?? [])
   const legacyNames = new Set(LEGACY_FIELDS_BY_COLLECTION[definition.key] ?? [])
-  const normalizedPublish = mergedPublish.filter((field) => !legacyNames.has(field.name))
+  const stripNames = new Set(STRIP_PUBLISH_FIELDS_BY_COLLECTION[definition.key] ?? [])
+  const normalizedPublish = mergedPublish.filter((field) => !legacyNames.has(field.name) && !stripNames.has(field.name))
 
   return {
     ...definition,
