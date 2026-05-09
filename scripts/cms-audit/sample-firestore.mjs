@@ -62,10 +62,6 @@ function getDb() {
   return getFirestore()
 }
 
-loadEnvLocal()
-const db = getDb()
-console.log('[ok] firestore initialized for project', process.env.FIREBASE_ADMIN_PROJECT_ID)
-
 // Mirror of CMS collection keys from src/lib/cms/collectionDefinitions.ts.
 // We intentionally do NOT mirror the field list here — the script discovers
 // stored keys empirically and the audit doc cross-references the source file.
@@ -91,6 +87,7 @@ function isPopulated(value) {
   if (value === null || value === undefined) return false
   if (typeof value === 'string') return value.trim().length > 0
   if (Array.isArray(value)) return value.length > 0
+  if (typeof value === 'boolean') return true
   if (value && typeof value === 'object') {
     if (typeof value.toDate === 'function') return true
     return Object.keys(value).length > 0
@@ -99,7 +96,7 @@ function isPopulated(value) {
   return Boolean(value)
 }
 
-async function sampleCollection(collectionId) {
+async function sampleCollection(db, collectionId) {
   let snapshot
   try {
     snapshot = await db.collection(collectionId).limit(SAMPLE_LIMIT).get()
@@ -119,18 +116,23 @@ async function sampleCollection(collectionId) {
     }
   }
   const populationByKey = {}
-  for (const [key, count] of keyCounts.entries()) {
+  const sortedKeys = [...keyCounts.keys()].sort((a, b) => a.localeCompare(b))
+  for (const key of sortedKeys) {
+    const count = keyCounts.get(key)
     populationByKey[key] = totalSampled === 0 ? 0 : Number((count / totalSampled).toFixed(3))
   }
   return { totalSampled, populationByKey }
 }
 
 async function main() {
+  loadEnvLocal()
+  const db = getDb()
+  console.log('[ok] firestore initialized for project', process.env.FIREBASE_ADMIN_PROJECT_ID)
   const sampledAt = new Date().toISOString()
   const collections = {}
   for (const id of COLLECTIONS) {
     process.stdout.write(`[..] ${id} `)
-    const result = await sampleCollection(id)
+    const result = await sampleCollection(db, id)
     collections[id] = result
     if (result.error) console.log(`error: ${result.error}`)
     else console.log(`sampled ${result.totalSampled}, ${Object.keys(result.populationByKey).length} distinct keys`)
