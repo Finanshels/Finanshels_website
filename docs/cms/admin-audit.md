@@ -33,7 +33,7 @@ This is the source-of-truth audit for the CMS admin panel. It covers code-level 
 - **Suggested fix:** Either delete `defaultValue` (only used as a `select` default at `page.tsx:534`) or widen the type to `unknown` and stop relying on the per-field constant for non-select types.
 - **Risk if changed:** low
 
-### CR-002 [P1] `parseFieldValue` silently drops invalid JSON and invalid blocks instead of surfacing the error
+### CR-002 [P0] `parseFieldValue` silently drops invalid JSON and invalid blocks instead of surfacing the error
 
 - **File:** `src/app/admin/cms/page.tsx:65-106` (esp. lines 73-78, 91-96)
 - **Observation:** When the editor pastes malformed JSON or blocks, `parseFieldValue` returns `[]` / `undefined`. The save action then writes `undefined` (skipped) or the cleared array, and the redirect carries `saved=1` — the editor sees "Saved" while their JSON content was discarded.
@@ -109,11 +109,11 @@ This is the source-of-truth audit for the CMS admin panel. It covers code-level 
 - **Suggested fix:** In create flow (`cmsIntent === 'create'`), `await db.collection.doc(slug).get()` first, redirect with `error=slug-taken` if it exists. Add a unique index check in `upsertCmsDocument` when `previous.exists === false` — refuse rather than overwrite a doc with a different `createdAt`.
 - **Risk if changed:** low
 
-### CR-011 [P0] Missing-required redirects in the save action lose all the editor's other field input
+### CR-011 [P1] Missing-required redirects in the save action lose all the editor's other field input
 
 - **File:** `src/app/admin/cms/page.tsx:294-312`
 - **Observation:** When `field.required` is missing, the action calls `redirect(...&error=missing-${field.name})`. The redirect is a server-side 302 to the editor URL; the form's other fields (the editor just spent 20 minutes filling) are not preserved — the editor reloads from the last saved Firestore doc.
-- **Why it matters:** Catastrophic UX for new entries: typing 800 words then hitting Save without filling a small required field reloads an empty form. Revisions are not written either since the document was never saved.
+- **Why it matters:** Painful UX for new entries: typing 800 words then hitting Save without filling a small required field reloads the editor to the last saved (or empty) state, discarding all in-progress unsaved input. No Firestore data that was previously persisted is affected — this is loss of in-flight unsaved work only. Revisions are not written since the document was never saved.
 - **Suggested fix:** Persist the in-flight payload to a draft doc *before* validating required fields; OR keep the editor on the page (return validation errors) by switching from a redirect-based save to client-side fetch + validation. Short-term, validate required fields client-side first.
 - **Risk if changed:** medium
 
@@ -199,7 +199,7 @@ This is the source-of-truth audit for the CMS admin panel. It covers code-level 
 
 #### Performance
 
-### CR-022 [P0] Editor open performs an unbounded N+1 read over media assets just to populate URL `<datalist>`
+### CR-022 [P1] Editor open performs an unbounded N+1 read over media assets just to populate URL `<datalist>`
 
 - **File:** `src/app/admin/cms/page.tsx:1039-1047`
 - **Observation:** On every editor open (`isEditorView`), the page first lists 150 media documents (`listCmsDocuments('media_assets', 'title', 'slug')`), then runs `await Promise.all(mediaAssets.slice(0, 120).map(async (asset) => getCmsDocument('media_assets', asset.id)))` — that is 120 individual document reads, just to extract `assetUrl` from each. The list step already returns `id, slug, title, status, updatedAt` but not `assetUrl`, so the editor *re-reads each document* sequentially.
@@ -291,13 +291,13 @@ This is the source-of-truth audit for the CMS admin panel. It covers code-level 
 
 #### Security & input handling
 
-### CR-033 [P0] `sanitizeCmsHtml` whitelists `iframe` for YouTube/Vimeo but Tiptap/RichTextField never inserts iframes — and sanitize-html lets `class`/`id` through on **every** tag
+### CR-033 [P1] `sanitizeCmsHtml` whitelists `iframe` for YouTube/Vimeo but Tiptap/RichTextField never inserts iframes — and sanitize-html passes `class`/`id` through on **every** allowed tag
 
-- **File:** `src/lib/cms/sanitize.ts:14-22`
-- **Observation:** `allowedAttributes['*'] = ['class', 'id']`. That permits `<script class="...">` to slip through on any tag the allowlist accepts, and although `sanitize-html` strips `<script>` itself by default, it does **not** sanitize `class` values — an attacker can stuff a Tailwind/JS-hook class to escalate. Also `iframe` is whitelisted but `RichTextField` only inserts plain text or links, so the only way an iframe enters the body is through "Edit HTML" raw-source mode (line 355), which is fine but increases blast radius.
-- **Why it matters:** A compromised editor account (or an XSS-via-paste vector through the source mode) can persist arbitrary class names that a future Tailwind/JS handler interprets as code paths. The `'*': ['class','id']` rule is a known anti-pattern when the class set isn't bounded.
-- **Suggested fix:** Restrict `class` to a known allowlist (e.g. `prose-*` only) or remove it; if iframes aren't needed, drop them too. Tighten allowed iframe URLs.
-- **Risk if changed:** medium (existing imported HTML may rely on class names)
+- **File:** `src/lib/cms/sanitize.ts:10-25`
+- **Observation:** `sanitize-html` is configured at `src/lib/cms/sanitize.ts:10-25` with `allowedAttributes: { '*': ['class', 'id'] }` plus a global `class`/`id` allowlist that applies to every otherwise-allowed tag. While `<script>`, `<style>`, and other dangerous tags are correctly stripped (they are not in `allowedTags`), the wildcard means an attacker — or a careless paste from elsewhere — can inject arbitrary `class` or `id` values onto every accepted element. Combined with the `iframe` allowlist (lines 21-25), which is dead surface in normal authoring (`RichTextField.insertVideo` inserts a plain `<a>`, not `<iframe>`) but live surface for the raw-HTML source-mode editor, the blast radius is wider than it needs to be.
+- **Why it matters:** Arbitrary `class`/`id` injection lets attackers latch onto any global CSS or JS that selects on class names; an injected class could trigger a Tailwind variant, a CSS animation, or a JS event handler that selects by class. The iframe whitelist is rarely exercised for normal editing and should be off unless source-mode authoring is a documented product requirement.
+- **Suggested fix:** Tighten `allowedAttributes` to a per-tag map — e.g. `'a': ['href', 'title', 'target', 'rel']`, `'img': ['src', 'alt', 'width', 'height']`, `'td'/'th': ['colspan', 'rowspan']` — and remove the `'*': ['class', 'id']` wildcard, or constrain it to a specific safelisted prefix (e.g. `prose-*` only). Disable the `iframe` whitelist unless source-mode HTML authoring is a confirmed product requirement.
+- **Risk if changed:** medium (the wildcard relaxation is safe to remove; the iframe disablement could break authors who currently embed YouTube/Vimeo via raw HTML — confirm with the content team before enabling)
 
 ### CR-034 [P1] `storageUpload.uploadCmsMediaBytes` does not verify file content matches the declared MIME
 
@@ -424,12 +424,13 @@ This is the source-of-truth audit for the CMS admin panel. It covers code-level 
 - **Suggested fix:** Render `citations` as Article/CreativeWork `citation` schema; emit `keyStatistics` and `expertQuotes` as visible cards; or remove the GEO section entirely until consumers exist.
 - **Risk if changed:** low
 
-### CR-049 [P1] Universal Card section (`card_title`, `card_description`, `card_image`, `card_label`, `card_cta_label`, `card_cta_link`, `card_icon`) is read only by `CardPreview.tsx` (admin), never by listing/index pages
+### CR-049 [P1] Universal Card section (`card_title`, `card_description`, `card_image`, `card_label`, `card_cta_label`, `card_cta_link`, `card_icon`) — five of seven fields have zero public consumers
 
 - **File:** `src/lib/cms/collectionDefinitions.ts:629-641` (defined); used at `src/components/cms/admin/CardPreview.tsx:59-65`. Listing pages `src/app/blog/page.tsx`, `src/app/glossary/page.tsx`, and the listing renders inside `BlogCard.tsx`/`GlossaryCard.tsx` use `post.title`/`post.excerpt`/`featured_image` directly.
-- **Why it matters:** Editors set card overrides expecting the public listing to use them. The public listing never reads `card_*` fields.
-- **Suggested fix:** Wire `BlogCard.tsx`, `GlossaryCard.tsx` (and any future listing card) to prefer `card_*` over the publish-section fallbacks; the admin's `CardPreview` already encodes the correct precedence.
-- **Risk if changed:** low
+- **Observation:** The `card_*` fields (defined in the universal Card section of `collectionDefinitions.ts`) are mostly orphan editor inputs. The listing components `BlogCard.tsx` and `GlossaryCard.tsx` and the `/blog`, `/glossary` index pages do not read any `card_*` field. The generic content route at `src/app/content/[collection]/[slug]/page.tsx` reads `card_description` (line 56, as a description fallback for `<meta>`) and `card_image` (line 202, as the OpenGraph image fallback) — but `card_title`, `card_label`, `card_cta_label`, `card_cta_link`, and `card_icon` have **zero** public consumers anywhere in `src/app` or `src/components`.
+- **Why it matters:** Editors invest in card data expecting it to appear on listing pages, but only the generic-route metadata fallbacks consume two of the seven fields (`card_description` and `card_image`). The remaining five fields (`card_title`, `card_label`, `card_cta_label`, `card_cta_link`, `card_icon`) are fully dead — the editorial labor never ships.
+- **Suggested fix:** For `card_description` and `card_image`: keep, and (separately, in a Pass-2 backlog item) wire `BlogCard.tsx` / `GlossaryCard.tsx` / the dedicated route templates to prefer them over `excerpt` / `featured_image_url`. For `card_title`, `card_label`, `card_cta_label`, `card_cta_link`, `card_icon`: remove them, OR commit to wiring them into listing components in a follow-up. Document the chosen path in Part 4.
+- **Risk if changed:** low (the five removed fields are not consumed anywhere; the two kept fields preserve current behavior)
 
 ### CR-050 [P1] Universal Listing section (16 fields including `listing_hero_heading`, `listing_search_enabled`, `listing_filter_facets`, `listing_layout`, `listing_pagination_style`, `listing_sticky_cta_*`, etc.) is unread
 
@@ -491,8 +492,8 @@ This is the source-of-truth audit for the CMS admin panel. It covers code-level 
 
 | Severity | Count |
 |----------|-------|
-| P0 | 4 |
-| P1 | 36 |
+| P0 | 2 |
+| P1 | 38 |
 | P2 | 16 |
 | **Total** | **56** |
 
