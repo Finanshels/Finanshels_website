@@ -5,32 +5,46 @@ export function useScrollAnimation(options = {}) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-          if (options.once) {
-            observer.unobserve(entry.target)
-          }
-        } else if (!options.once) {
-          setIsVisible(false)
-        }
-      },
-      {
-        threshold: options.threshold || 0.1,
-        rootMargin: options.rootMargin || '0px'
-      }
-    )
-
     const currentElement = elementRef.current
-    if (currentElement) {
+
+    if (!currentElement) {
+      return
+    }
+
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') {
+      setIsVisible(true)
+      return
+    }
+
+    let observer
+
+    try {
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true)
+            if (options.once) {
+              observer?.unobserve(entry.target)
+            }
+          } else if (!options.once) {
+            setIsVisible(false)
+          }
+        },
+        {
+          threshold: options.threshold || 0.1,
+          rootMargin: options.rootMargin || '0px'
+        }
+      )
+
       observer.observe(currentElement)
+    } catch {
+      setIsVisible(true)
+      return
     }
 
     return () => {
-      if (currentElement) {
-        observer.unobserve(currentElement)
-      }
+      observer?.unobserve(currentElement)
+      observer?.disconnect()
     }
   }, [options.once, options.threshold, options.rootMargin])
 
@@ -83,4 +97,3 @@ export function useParallax(speed = 0.5) {
 
   return offset
 }
-

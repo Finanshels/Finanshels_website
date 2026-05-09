@@ -22,6 +22,14 @@ export const metadata: Metadata = {
   },
   description: 'Finance, tax, and compliance for ambitious teams across MENA.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.finanshels.com'),
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/favicon.svg',
+  },
 }
 
 export const viewport: Viewport = {

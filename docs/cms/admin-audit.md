@@ -692,7 +692,635 @@ All 15 blocks defined in `CMS_BLOCK_TYPES` (`collectionDefinitions.ts:89-336`) h
 
 ## Part 3 — Per-collection deep dive (per-module documentation)
 
-<!-- TASK-4A -->
+### Collection: `blog_posts`
+
+**Purpose.** Long-form articles for the Finanshels insights hub: founder-finance commentary, tax/compliance explainers, and operations content for MENA-focused startups. Edited by the content team and external writers; the highest-volume editorial collection.
+
+**Public surfaces.**
+- Listing page — `src/app/blog/page.tsx` (renders `BlogCard` for each post via `listPublishedBlogPosts`).
+- Detail page — `src/app/blog/[slug]/page.tsx` (renders `ArticleBody` from `body`/`bodyHtml`, plus title, excerpt, hero image, author, publish date).
+- Card component — `src/components/cms/BlogCard.tsx` (reads `title`, `slug`, `excerpt`, `publishedAt`, `authorName`).
+- Body renderer — `src/components/cms/ArticleBody.tsx` (consumes sanitized HTML from `body`/`bodyHtml`).
+- Sitemap — `listAllPublishedBlogSlugsWithDates` in `src/lib/cms/blogRepository.ts`.
+- LLMs context — `src/app/llms.txt/route.ts` (lists `title`/`slug` of up to 80 posts).
+- Generic fallback — `src/app/content/[collection]/[slug]/page.tsx` (only used if a doc is reached via `/content/blog_posts/<slug>`; the `/blog/[slug]` route is canonical).
+
+**Sample size:** 0 documents (CMS launched 2026-05-08; Firestore is empty per `admin-audit.data.json::collections.blog_posts.totalSampled = 0`). Verdicts below are derived from frontend-usage grep, not population.
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `title` | text | yes | rendered | keep | — | canonical title — `BlogCard.tsx:17`, `[slug]/page.tsx:49`. |
+| publish | `slug` | text | yes | rendered | keep | — | doc id; `BlogCard.tsx:16`. |
+| publish | `status` | select | yes | rendered | keep | — | filtered by `where('status','==','published')` in `blogRepository.ts:14`. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | not yet rendered, but mandatory for upcoming i18n; suppress validation noise. |
+| publish | `excerpt` | textarea | yes | rendered | keep | — | `BlogCard.tsx:20`, `[slug]/page.tsx:73`. |
+| publish | `featured_image` | image | — | rendered | keep | — | hero in `[slug]/page.tsx:64-69`; legacy alias `heroImageUrl`. |
+| publish | `thumbnail_image` | image | — | unread | merge-with-`featured_image` | — | duplicate; only `featured_image` is read on detail. |
+| publish | `icon` | icon | — | unread | remove | — | no public reader; not editorially meaningful for blog posts. |
+| publish | `author` | reference (team_members) | yes | rendered | keep-but-rework | — | `[slug]/page.tsx:57` reads it as a string fallback to `authorName`; reference target is unresolved on the public surface today (writes name string only). |
+| publish | `published_at` | datetime | — | unread | merge-with-`publish_date` | — | duplicate of `publish_date`; schema reads `publishedAt`. See CR-056. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed; admin should not surface as a required editor field. See MM-005, CR-056. |
+| publish | `sort_order` | number | — | unread | remove | — | blog list is date-sorted; never used. |
+| publish | `tags` | tags | — | unread | merge-with-`blog_tags` | — | duplicates `blog_tags`. See CR-056. |
+| publish | `categories` | tags | — | unread | merge-with-`blog_category` | — | duplicates `blog_category`. See CR-056. |
+| publish | `related_content` | multi_reference | — | unread | merge-with-`related_posts` | — | duplicates collection-specific `related_posts`. See CR-056. |
+| publish | `cta_label` | text | — | unread | remove | — | global core; blog has its own `lead_magnet_cta` slot. |
+| publish | `cta_link` | url | — | unread | remove | — | as above. |
+| publish | `body` | textarea | yes | rendered | keep-but-rework | — | rendered via `ArticleBody`. Field type is `textarea`, but the editor is the rich-text Tiptap variant; label hides that. See CR-009. |
+| publish | `publish_date` | datetime | yes | rendered | keep | — | parsed as `publishedAt` in `parseBlogPost`; shown on card and detail. |
+| publish | `reading_time` | number | — | unread | remove | — | no reader. See CR-052. |
+| publish | `blog_category` | text | yes | unread | keep-but-rework | — | required but no reader; will drive category-faceted listing. See CR-052. Hold for product. |
+| publish | `blog_tags` | tags | — | unread | keep-but-rework | — | as above; tag-based filter pending. See CR-052. |
+| publish | `table_of_contents_enabled` | boolean | — | unread | remove | — | no TOC component exists. See CR-052. |
+| publish | `featured_post` | boolean | — | unread | remove | — | no featured slot on listing. See CR-052; also overlaps with universal `featured`. |
+| publish | `related_posts` | multi_reference | — | unread | keep-but-rework | — | will power related-posts module; presently unread. See CR-054. |
+| publish | `lead_magnet_cta` | json | — | unread | flag-for-product | — | shape is `{label,href}`; PM should confirm before we wire it. See CR-052. |
+| card | (9 universal fields) | — | — | unread | remove | — | section-level issue covered in CR-049; see also. |
+| listing | (16 universal fields) | — | — | unread | remove | — | section-level issue covered in CR-050; see also. |
+| detail | (12 universal fields) | — | — | unread | remove | — | section-level issue covered in CR-051; see also. |
+| blocks | `page_blocks` | blocks | — | rendered (only via `/content/...`) | keep-but-rework | — | `/blog/[slug]` does not call `PageBlocksRenderer`; only the generic `/content/blog_posts/[slug]` route does. See BLOG-002. |
+| blocks | `schema_type_override` | select | — | rendered (only via `/content/...`) | keep-but-rework | — | as above. See BLOG-002. |
+| relations | `heroImageAssetRef` | reference | — | unread | remove | — | section-level issue covered in CR-054; see also. |
+| relations | `relatedPostRefs` | multi_reference | — | unread | merge-with-`related_posts` | — | exact duplicate; legacy. See CR-054 + BLOG-001. |
+| relations | `relatedGlossaryRefs` | multi_reference | — | unread | keep-but-rework | — | section-level issue covered in CR-054; see also. |
+| relations | `relatedFaqRefs` | multi_reference | — | unread | keep-but-rework | — | section-level issue covered in CR-054; see also. |
+| seo | `focusKeyword`, `seoTitle`, `seoDescription`, `seoKeywords`, `secondaryKeywords` (5) | text/textarea/tags | — | partially read | keep-but-rework | — | `[slug]/page.tsx:18-19` reads `seoTitle`/`seoDescription`; secondaries unread. See MM-005. |
+| seo | `ogTitle`, `ogDescription`, `ogImageUrl`, `twitterCardType`, `twitterCreatorHandle`, `robotsMeta` (6) | various | — | unread | remove | — | section-level issue covered in CR-046; see also. |
+| seo | `canonicalUrl` | url | — | unread (canonical is computed) | remove | — | duplicate of computed canonical at `[slug]/page.tsx:20`. |
+| seo | `seo_title`, `meta_description`, `meta_keywords`, `canonical_url`, `og_title`, `og_description`, `og_image` (7 snake_case) | various | — | partially read | merge-with-camelCase pair | — | snake/camel duplicates; section-level issue covered in CR-003 / MM-005. |
+| seo | `schema_type` | select | — | rendered (only via `/content/...`) | keep | — | feeds JSON-LD on the generic route. |
+| seo | `indexable`, `noindex` | boolean | yes | rendered (only via `/content/...`) | keep | — | controls robots on `/content/...`. |
+| seo | `faq_schema_enabled`, `breadcrumbs_title` | boolean/text | — | unread | remove | — | section-level issue covered in CR-055; see also. |
+| aeo | 12 fields (7 content-layout + 5 AEO) | — | — | unread | remove | — | section-level issue covered in MM-006, CR-047; see also. |
+| geo | 8 fields | — | — | unread | remove | — | section-level issue covered in MM-007, CR-048; see also. |
+| publish | `authorName`, `heroImageUrl`, `bodyHtml`, `category`, `relatedPostRefs` (5 legacy, hidden in UI) | — | — | partially read | remove (after backfill) | — | listed in `LEGACY_FIELDS_BY_COLLECTION`; `bodyHtml` and `heroImageUrl` are still read at `[slug]/page.tsx:64-67, 75`. Plan migration to canonical names. See CR-003. |
+
+**Per-field documentation (kept fields only).**
+
+#### `title`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Plain headline, sentence case, ≤ 70 characters. No trailing period.
+- **Good example:** `The 10% Decision Framework: How Founders Spend Time on the Right Problems`
+- **Bad example:** `Blog Post #14 - DRAFT (please rewrite!!!)`
+- **Surfaces on:** `/blog` cards (`BlogCard.tsx:17`), `/blog/[slug]` H1 (`[slug]/page.tsx:49`), `<title>` metadata.
+
+#### `slug`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** lowercase, hyphenated, ASCII only. Should equal Firestore document id. Avoid stop words and dates unless evergreen-irrelevant.
+- **Good example:** `ten-percent-decision-framework`
+- **Bad example:** `10% Decision Framework (v3 final FINAL).docx`
+- **Surfaces on:** `/blog/{slug}` URL, sitemap, `llms.txt`.
+
+#### `status`
+- **Section:** publish · **Type:** select · **Required:** yes
+- **Format:** Choose `published` to make the post visible at `/blog/...`. Anything else (including `draft`, `scheduled`, `archived`) hides it from the public listing and detail.
+- **Good example:** `published`
+- **Bad example:** `live` (not a valid option; will be rejected silently — see CR-004).
+- **Surfaces on:** Public visibility filter in `blogRepository.ts:14`.
+
+#### `language`
+- **Section:** publish · **Type:** select · **Required:** yes
+- **Format:** ISO-639-1 short code; `en` or `ar`. Today only `en` posts are rendered, but the field is required for the upcoming Arabic localisation.
+- **Good example:** `en`
+- **Bad example:** `English` or `EN-US`
+- **Surfaces on:** Not yet rendered publicly; reserved for i18n routing.
+
+#### `excerpt`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** 1–2 plain-prose sentences (≤ 180 chars). No HTML, no emojis. Should give the reader a reason to click.
+- **Good example:** `Most founder time-allocation tools assume infinite optionality. Here is the lighter framework we use to stop chasing 10% wins.`
+- **Bad example:** `Click to read more!`
+- **Surfaces on:** Listing card (`BlogCard.tsx:20`), top of detail page (`[slug]/page.tsx:73`), meta description fallback.
+
+#### `featured_image`
+- **Section:** publish · **Type:** image · **Required:** no (recommended)
+- **Format:** Full URL to a 1600x900 JPG/WebP. Use a hosted media-asset URL.
+- **Good example:** `https://storage.googleapis.com/finanshels-cms/blog/decision-framework.webp`
+- **Bad example:** `featured.jpg` (relative path — will 404)
+- **Surfaces on:** Hero on detail page (`[slug]/page.tsx:64-67`).
+
+#### `author`
+- **Section:** publish · **Type:** reference (team_members) · **Required:** yes
+- **Format:** Pick the team-member document. The public surface currently displays the raw stored value (a name string), so for now the editor should ensure the chosen team member's `full_name` is the byline you want.
+- **Good example:** `team_members/meet-patel`
+- **Bad example:** Empty (the byline area collapses with no graceful fallback).
+- **Surfaces on:** Byline at `[slug]/page.tsx:57`.
+
+#### `body`
+- **Section:** publish · **Type:** textarea (rich-text editor) · **Required:** yes
+- **Format:** Sanitized HTML produced by the in-admin Tiptap editor. Use H2/H3 for sections, blockquotes for pull quotes, ordered/unordered lists. No inline styles, no `<script>`, no raw `<iframe>` outside YouTube/Vimeo allow-list.
+- **Good example:** `<h2>The framework</h2><p>Most founders…</p><ul><li>Decide once.</li>…</ul>`
+- **Bad example:** A Word-paste with `style="font-family:Calibri"` everywhere (will be stripped).
+- **Surfaces on:** `[slug]/page.tsx:75` via `ArticleBody` after `sanitizeCmsHtml`.
+
+#### `publish_date`
+- **Section:** publish · **Type:** datetime · **Required:** yes
+- **Format:** ISO-8601 with timezone offset (the editor stores UTC).
+- **Good example:** `2026-05-08T09:00:00+04:00`
+- **Bad example:** `08/05/2026`
+- **Surfaces on:** `<time>` on card (`BlogCard.tsx:13`) and detail (`[slug]/page.tsx:51`); also drives `orderBy('publishedAt','desc')` listing sort.
+
+#### `blog_category`
+- **Section:** publish · **Type:** text · **Required:** yes (today)
+- **Format:** Single bucket; lowercase kebab-case. Curated list (TBD with PM): `tax`, `compliance`, `payroll`, `operations`, `founder-stories`. The field is currently unread — populate it consistently so the upcoming filter works on day one.
+- **Good example:** `tax`
+- **Bad example:** `Tax,Compliance` (multi-value belongs in `blog_tags`).
+- **Surfaces on:** Not yet (planned: faceted listing). See CR-052.
+
+#### `blog_tags`
+- **Section:** publish · **Type:** tags · **Required:** no
+- **Format:** Up to ~6 lowercase hyphenated tags. Tags should be reusable across posts.
+- **Good example:** `corporate-tax, mena, founder-finance`
+- **Bad example:** `Tax!!!, my-favourite-post`
+- **Surfaces on:** Not yet (planned). See CR-052.
+
+#### `related_posts`
+- **Section:** publish · **Type:** multi_reference (blog_posts) · **Required:** no
+- **Format:** Pick 2–4 already-published posts. Order matters; first selection appears first.
+- **Good example:** `[blog_posts/runway-math-for-founders, blog_posts/anatomy-of-a-cap-table]`
+- **Bad example:** Self-reference (the current post in its own related list).
+- **Surfaces on:** Not yet (planned related-posts module). See CR-054.
+
+#### `seoTitle` (and snake-case alias `seo_title`)
+- **Section:** seo · **Type:** text · **Required:** no
+- **Format:** ≤ 60 characters; verb-led; primary keyword near the front. Falls back to `title` when blank.
+- **Good example:** `Decision Framework for Founders Scaling in MENA`
+- **Bad example:** `The 10% Decision Framework: How Founders Spend Time on the Right Problems Across MENA Markets In 2026`
+- **Surfaces on:** `<title>` at `[slug]/page.tsx:18` and OG title.
+
+#### `seoDescription` (and snake-case alias `meta_description`)
+- **Section:** seo · **Type:** textarea · **Required:** no
+- **Format:** 150–160 characters; benefit-led; one keyword, one CTA.
+- **Good example:** `Learn the 10% framework Finanshels uses to help MENA founders cut decision overhead and reclaim founder hours.`
+- **Bad example:** `Read this blog post about decision making.`
+- **Surfaces on:** `<meta name="description">` and OG description at `[slug]/page.tsx:19`.
+
+#### `schema_type` (publish-side default lives in `defaultSchemaType: 'BlogPosting'`)
+- **Section:** seo · **Type:** select · **Required:** no
+- **Format:** Leave as `BlogPosting` for normal posts. Use `NewsArticle` for time-sensitive posts and `HowTo` only when there are concrete steps.
+- **Good example:** `BlogPosting`
+- **Bad example:** `Article` (less specific than the default).
+- **Surfaces on:** JSON-LD via `/content/blog_posts/[slug]` only — the `/blog/[slug]` route does not yet emit JSON-LD (BLOG-002).
+
+#### `indexable` / `noindex`
+- **Section:** seo · **Type:** boolean · **Required:** yes
+- **Format:** Default `indexable: true`, `noindex: false`. Set `noindex: true` for thin/test posts that must stay published-but-hidden from search.
+- **Good example:** `indexable: true`, `noindex: false`
+- **Bad example:** Both `indexable: false` and `noindex: false` (contradictory; the noindex check only triggers on the generic `/content/...` route).
+- **Surfaces on:** `robots` meta in `/content/blog_posts/[slug]` (BLOG-002 limits this to the generic route).
+
+#### `page_blocks`
+- **Section:** blocks · **Type:** blocks · **Required:** no
+- **Format:** JSON array produced by the page-blocks editor. Use blocks for rich modules (CTAs, comparison tables); keep prose in `body`.
+- **Good example:** `[{"type":"cta","id":"…","heading":"Talk to us","href":"/contact"}]`
+- **Bad example:** Pasting `body` HTML into a block (will render twice on `/content/...`).
+- **Surfaces on:** Only the generic `/content/blog_posts/[slug]` page renders blocks; `/blog/[slug]` ignores them. See BLOG-002.
+
+**Findings.**
+
+#### BLOG-001 [P1] `related_posts` (publish) and `relatedPostRefs` (relations) are exact duplicates with no merge logic
+- **File:** `src/lib/cms/collectionDefinitions.ts:981` (`related_posts`) and `src/lib/cms/collectionDefinitions.ts:815` (`relatedPostRefs` in `RELATIONSHIPS.blog_posts.multiReferences`).
+- **Observation:** Both fields are typed as `multi_reference -> blog_posts`. The relations list is also added to `LEGACY_FIELDS_BY_COLLECTION.blog_posts` (`collectionDefinitions.ts:1406`) so the editor only sees `related_posts`, but Firestore documents from import keep `relatedPostRefs`. No code path reads either today, so the divergence is invisible — for now.
+- **Why it matters:** When the related-posts module ships, the engineer must remember which one to read; otherwise imported posts appear to have no relations. This is the same pattern as CR-054 but specific to blog because the publish section also defines a near-identical field.
+- **Suggested fix:** Pick `relatedPostRefs` as the canonical name (consistent with `relatedGlossaryRefs`, `relatedFaqRefs`), drop `related_posts` from publish, and write a one-time backfill that copies legacy `related_posts` into `relatedPostRefs`.
+- **Risk if changed:** low — neither field is read.
+
+#### BLOG-002 [P1] `/blog/[slug]` ignores `page_blocks`, `schema_type`, `indexable/noindex`, and OG image — they only fire on the generic `/content/...` route
+- **File:** `src/app/blog/[slug]/page.tsx:13-81`; compare `src/app/content/[collection]/[slug]/page.tsx:222-275`.
+- **Observation:** The canonical blog detail page renders only `title`, `excerpt`, `body`/`bodyHtml`, `featured_image`, `author`, and `publishedAt`. It does not call `PageBlocksRenderer`, does not emit JSON-LD, does not honour `noindex`/`indexable`, does not pick OG image from `ogImageUrl`/`og_image`/`card_image`. Editors who use the blocks editor on a blog post see nothing at the canonical URL — only at `/content/blog_posts/[slug]`.
+- **Why it matters:** Editors will assume the blocks editor "works" because the admin shows it. They will publish posts whose CTAs / comparison tables silently disappear at the public URL. Same gap for SEO controls — `noindex` is editorially meaningful but ignored on the route Google actually crawls.
+- **Suggested fix:** Either (a) lift `PageBlocksRenderer`, JSON-LD, robots-meta, and OG image resolution into `/blog/[slug]` to mirror the generic route; or (b) hide the `blocks`, `schema_type`, `indexable`, `noindex`, and OG-image fields for `blog_posts` and document that blocks are not supported on blog. Option (a) is the editorially expected behaviour.
+- **Risk if changed:** medium — must keep the existing simple article rendering as the default and only add blocks below the body.
+
+#### BLOG-003 [P1] `author` reference resolves to a string at runtime, defeating the reference-collection contract
+- **File:** `src/app/blog/[slug]/page.tsx:52-58`; field defined at `src/lib/cms/collectionDefinitions.ts:974`.
+- **Observation:** The schema declares `author` as `reference -> team_members` (with `required: true`), but `parseBlogPost` (`schemas/blog.ts:32`) coerces `author` to a plain string via `(raw.author ?? raw.authorName)`. The detail page then renders `{post.author ?? post.authorName}` as text. The team-member document is never fetched, so `full_name`, `photo_url`, `bio` are unreachable.
+- **Why it matters:** The editor experience implies a rich author block ("we picked a team member"), but the public surface only shows the raw stored value. If the editor saves a Firestore reference path or doc-id (the admin's intended write shape), the byline shows that path instead of a name.
+- **Suggested fix:** In `parseBlogPost`, dereference `author` against `team_members` (use the cached reference-options lookup, or do a small parallel `getDoc`). Render `full_name` + optional photo on `[slug]/page.tsx`. Until then, document that the field stores a name string, not a reference.
+- **Risk if changed:** medium — N+1 read potential; mitigate with batched lookups or by denormalising author name onto the blog post on save.
+
+#### BLOG-004 [P2] Three "featured" booleans coexist on the same document: `featured_post`, `featured` (universal card), and `featured` again from `buildDefaultDocumentValues` semantics
+- **File:** `src/lib/cms/collectionDefinitions.ts:980` (`featured_post`), `:638` (`featured` in `universalCardFields`), `:1011` (separate `featured` on glossary — pattern recurs).
+- **Observation:** `blog_posts` collection inherits `card.featured` from `universalCardFields()` and adds its own `featured_post`. Neither has a public reader yet. When the listing page eventually surfaces a "featured" rail, the engineer must pick one — and editors who toggled the wrong one will be invisible.
+- **Why it matters:** Editorial confusion at scale; the admin form shows two near-identical toggles in two different sections.
+- **Suggested fix:** Remove `featured_post` from the publish section; standardise on `card.featured`. Update `buildDefaultDocumentValues` if needed.
+- **Risk if changed:** low — both are unread.
+
+---
+
+### Collection: `glossary_terms`
+
+**Purpose.** Plain-language definitions of finance, tax, payroll, and compliance concepts for MENA founders. Owned by the content team; high-volume, evergreen, and a primary AI-citation surface (the glossary is exposed in `llms.txt`).
+
+**Public surfaces.**
+- Listing page — `src/app/glossary/page.tsx` (calls `listPublishedGlossaryTerms`, hands terms to `GlossarySearch`).
+- Detail page — `src/app/glossary/[slug]/page.tsx` (renders `term`, `definition` via `ArticleBody`, optional `bodyHtml`).
+- Card component — `src/components/cms/GlossaryCard.tsx` (reads `term`, `slug`, `definition`).
+- Search component — `src/components/cms/GlossarySearch.tsx` (filters on `term`, `slug`, `definition`).
+- LLMs context — `src/app/llms.txt/route.ts` (lists `term`/`slug` of up to 120 terms).
+- Sitemap — `listAllPublishedGlossarySlugsWithDates` in `src/lib/cms/glossaryRepository.ts`.
+- Generic fallback — `src/app/content/[collection]/[slug]/page.tsx` (only via `/content/glossary_terms/<slug>`; canonical is `/glossary/[slug]`).
+
+**Sample size:** 0 documents (`admin-audit.data.json::collections.glossary_terms.totalSampled = 0`). Verdicts derived from frontend-usage grep.
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `title` | text | yes | unread | merge-with-`term` | — | overridden by `titleField: 'term'` (`collectionDefinitions.ts:994, 1392`); admin uses `term` as the display title. |
+| publish | `slug` | text | yes | rendered | keep | — | doc id; `GlossaryCard.tsx:15`. |
+| publish | `status` | select | yes | rendered | keep | — | `where('status','==','published')` in `glossaryRepository.ts:14`. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | reserved for i18n; same as blog. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`definition_short` | — | overlapping with `definition_short`. |
+| publish | `short_description` | textarea | — | unread | merge-with-`definition_short` | — | duplicate. See CR-056. |
+| publish | `featured_image` | image | — | unread | remove | — | glossary detail has no hero image. |
+| publish | `thumbnail_image` | image | — | unread | remove | — | not used. |
+| publish | `icon` | icon | — | unread | remove | — | not used. |
+| publish | `author` | reference | — | unread | remove | — | glossary terms are not authored. |
+| publish | `published_at` | datetime | — | unread | remove | — | not displayed; sort uses `term`. See CR-056. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed. See CR-056. |
+| publish | `sort_order` | number | — | unread | remove | — | listing is alphabetical by `term`. |
+| publish | `tags` | tags | — | unread | remove | — | overlaps `synonyms`. See CR-056. |
+| publish | `categories` | tags | — | unread | merge-with-`term_category` | — | duplicates `term_category`. |
+| publish | `related_content` | multi_reference | — | unread | merge-with-`related_terms` | — | duplicates `related_terms`. |
+| publish | `cta_label` | text | — | unread | remove | — | irrelevant for definitions. |
+| publish | `cta_link` | url | — | unread | remove | — | irrelevant for definitions. |
+| publish | `body` | textarea | — | rendered (via alias) | keep-but-rework | — | `parseGlossaryTerm` reads `definition_full ?? bodyHtml ?? body ?? longHtml` — the public detail page falls back to `bodyHtml` (`[slug]/page.tsx:36`). The admin's `body` field is never read directly, only through the legacy alias. See GLOSS-002. |
+| publish | `term` | text | yes | rendered | keep | — | H1 on detail (`[slug]/page.tsx:46`); card title (`GlossaryCard.tsx:22`); listing sort key. |
+| publish | `definition_short` | textarea | yes | rendered | keep | — | parsed into `definition` and rendered in the card preview (`GlossaryCard.tsx:10`) and the highlighted box on detail (`[slug]/page.tsx:48`). |
+| publish | `definition_full` | textarea | yes | rendered | keep | — | parsed into `bodyHtml`, rendered as the long body on detail (`[slug]/page.tsx:52`). |
+| publish | `term_category` | text | yes | unread | keep-but-rework | — | required in admin but no reader. See CR-053; planned faceted listing. |
+| publish | `alphabet_letter` | text | yes | unread | keep-but-rework | — | required but unread; planned A–Z navigator. See CR-053. |
+| publish | `synonyms` | tags | — | unread | keep-but-rework | — | will feed search expansion in `GlossarySearch`. See CR-053. |
+| publish | `related_terms` | multi_reference (glossary_terms) | — | unread | keep-but-rework | — | will power "related terms" rail. See CR-054. |
+| publish | `faq_items` | multi_reference (faq_questions) | — | unread | keep-but-rework | — | renamed-but-overlaps with the AEO `faqItems` JSON; clarify intent. See GLOSS-001. |
+| publish | `example_usage` | textarea | — | unread | flag-for-product | — | could be valuable but currently unread. See CR-053. |
+| publish | `applicability_region` | tags | — | unread | flag-for-product | — | MENA-region tagging; unread. See CR-053. |
+| publish | `featured` | boolean | — | unread | remove | — | glossary listing is alphabetic, no featured rail. |
+| card | (9 universal fields) | — | — | unread | remove | — | section-level issue covered in CR-049; see also. |
+| listing | (16 universal fields) | — | — | unread | remove | — | section-level issue covered in CR-050; see also. The glossary listing is hardcoded (search bar, alphabetic) — listing controls are doubly irrelevant. |
+| detail | (12 universal fields) | — | — | unread | remove | — | section-level issue covered in CR-051; see also. |
+| blocks | `page_blocks`, `schema_type_override` | blocks/select | — | unread on `/glossary/[slug]` | remove | — | `/glossary/[slug]` does not call `PageBlocksRenderer`. Blocks are only rendered on the generic route, which a glossary term should never use. See GLOSS-003. |
+| relations | `relatedTermRefs` | multi_reference | — | unread | merge-with-`related_terms` | — | exact duplicate of publish-side `related_terms`. See GLOSS-004. |
+| relations | `relatedFaqRefs`, `relatedBlogRefs`, `relatedToolRefs`, `relatedVideoRefs` (4) | multi_reference | — | unread | keep-but-rework | — | section-level issue covered in CR-054; see also. |
+| seo | 24 fields (snake/camel duplicates) | — | — | unread (canonical computed inline) | remove | — | section-level issue covered in CR-046, CR-003, MM-005. The detail page builds metadata from `term` + a stripped-tag `definition`, ignoring the SEO section entirely. |
+| seo | `schema_type` | select | — | unread | remove | — | `/glossary/[slug]` does not emit JSON-LD. See GLOSS-003. |
+| seo | `indexable`, `noindex` | boolean | yes | unread | remove | — | not honoured on `/glossary/[slug]`. See GLOSS-003. |
+| aeo | 12 fields | — | — | unread | remove | — | section-level issue covered in MM-006, CR-047; see also. |
+| geo | 8 fields | — | — | unread | remove | — | section-level issue covered in MM-007, CR-048; see also. |
+| publish | `definition`, `bodyHtml`, `relatedSlugs`, `relatedTermRefs` (4 legacy, hidden) | — | — | partially read | remove (after backfill) | — | listed in `LEGACY_FIELDS_BY_COLLECTION`; `bodyHtml` and `definition` are still consumed by `parseGlossaryTerm` and `[slug]/page.tsx:36`. Plan migration. See CR-003. |
+
+**Per-field documentation (kept fields only).**
+
+#### `term`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Canonical noun phrase, title case. Singular form. ≤ 60 chars. No qualifiers like "(MENA edition)".
+- **Good example:** `Corporate Tax`
+- **Bad example:** `corporate-tax (UAE 2026)` — that belongs in `applicability_region`.
+- **Surfaces on:** Card title (`GlossaryCard.tsx:22`), H1 on detail (`[slug]/page.tsx:46`), `<title>`, `llms.txt`.
+
+#### `slug`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** lowercase, hyphenated. Should equal Firestore doc id and be derivable from `term`.
+- **Good example:** `corporate-tax`
+- **Bad example:** `Corporate_Tax_v2`
+- **Surfaces on:** `/glossary/{slug}` URL.
+
+#### `status`
+- **Section:** publish · **Type:** select · **Required:** yes
+- **Format:** `published` to expose; anything else hides.
+- **Good example:** `published`
+- **Bad example:** `live`
+- **Surfaces on:** `glossaryRepository.ts:14`.
+
+#### `language`
+- **Section:** publish · **Type:** select · **Required:** yes
+- **Format:** `en` or `ar`. Today only `en` renders.
+- **Good example:** `en`
+- **Bad example:** `english`
+- **Surfaces on:** Reserved for i18n.
+
+#### `definition_short`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** One sentence (≤ 240 chars), plain prose, no HTML. Should be self-contained for AI citation. Starts with the term itself or "A …" / "The …".
+- **Good example:** `Corporate Tax is the federal levy on business profits that UAE-resident entities pay above an annual threshold.`
+- **Bad example:** `It's a kind of tax for companies, see definition_full for more.`
+- **Surfaces on:** Card preview (`GlossaryCard.tsx:10-11`), highlighted box on detail (`[slug]/page.tsx:48`), used as `<meta description>` (`[slug]/page.tsx:19`).
+
+#### `definition_full`
+- **Section:** publish · **Type:** textarea (rich-text) · **Required:** yes
+- **Format:** Sanitized HTML. Lead with one sentence summary, then paragraphs. May include H2 sub-headings for "Key features", "Examples", "Common pitfalls". No raw `<script>`/`<iframe>` outside the YouTube/Vimeo allow-list.
+- **Good example:** `<p>Corporate Tax in the UAE…</p><h2>Who must register</h2><ul>…</ul>`
+- **Bad example:** Repasting `definition_short` verbatim.
+- **Surfaces on:** Long body on detail (`[slug]/page.tsx:52`).
+
+#### `term_category`
+- **Section:** publish · **Type:** text · **Required:** yes (today)
+- **Format:** Single bucket, lowercase kebab-case. Curated list (TBD with PM): `tax`, `payroll`, `compliance`, `accounting`, `cash-flow`, `regulatory`.
+- **Good example:** `tax`
+- **Bad example:** `Tax / Compliance` — pick one and put the other in `synonyms` if needed.
+- **Surfaces on:** Not yet (planned). See CR-053.
+
+#### `alphabet_letter`
+- **Section:** publish · **Type:** text · **Required:** yes (today)
+- **Format:** Single uppercase A–Z letter matching the first letter of `term`. Editors should let an autocomputed value win — manual override only for terms beginning with non-letters.
+- **Good example:** `C`
+- **Bad example:** `Co`
+- **Surfaces on:** Not yet (planned A–Z navigator). See CR-053.
+
+#### `synonyms`
+- **Section:** publish · **Type:** tags · **Required:** no
+- **Format:** Other names the term is known by. Lowercase. ≤ 6.
+- **Good example:** `corporation tax, business profit tax, ct`
+- **Bad example:** Repeat of `term` itself.
+- **Surfaces on:** Not yet — but `GlossarySearch` should expand to read this. See CR-053.
+
+#### `related_terms`
+- **Section:** publish · **Type:** multi_reference (glossary_terms) · **Required:** no
+- **Format:** 2–5 sibling glossary terms; first selection appears first in any related-terms rail.
+- **Good example:** `[glossary_terms/value-added-tax, glossary_terms/economic-substance]`
+- **Bad example:** Self-reference.
+- **Surfaces on:** Not yet (planned related-terms module). See CR-054.
+
+#### `faq_items`
+- **Section:** publish · **Type:** multi_reference (faq_questions) · **Required:** no
+- **Format:** 0–6 FAQ-question documents that elaborate the term. Use this for shareable Q&A; leave `aeo.faqItems` JSON for inline AI-snippet authoring (the two are duplicative — see GLOSS-001).
+- **Good example:** `[faq_questions/who-pays-corporate-tax-in-uae, faq_questions/what-is-the-ct-rate]`
+- **Bad example:** Pasting raw FAQ text in this field (it expects references, not strings).
+- **Surfaces on:** Not yet (planned FAQ rail). See CR-054, GLOSS-001.
+
+#### `example_usage`
+- **Section:** publish · **Type:** textarea · **Required:** no
+- **Format:** One short paragraph showing the term in a realistic founder sentence. Plain text.
+- **Good example:** `If your company's profit exceeds AED 375,000, Corporate Tax applies at 9% on the surplus.`
+- **Bad example:** A re-phrasing of the definition.
+- **Surfaces on:** Not yet — flagged for product (CR-053).
+
+#### `applicability_region`
+- **Section:** publish · **Type:** tags · **Required:** no
+- **Format:** ISO-3166 alpha-2 country codes or known regional buckets: `AE`, `SA`, `EG`, `MENA`, `GCC`. Lowercase or uppercase consistently — choose one and document.
+- **Good example:** `AE, SA, GCC`
+- **Bad example:** `United Arab Emirates and Saudi Arabia`
+- **Surfaces on:** Not yet — flagged for product (CR-053).
+
+**Findings.**
+
+#### GLOSS-001 [P1] `faq_items` (publish, multi_reference) and `faqItems` (aeo, JSON) collide semantically and lexically
+- **File:** `src/lib/cms/collectionDefinitions.ts:1008` (`faq_items`) and `:546-550` (`faqItems` from `commonAeoFields`).
+- **Observation:** Both fields are FAQ-shaped and live on every glossary doc. `faq_items` is intended as references to the `faq_questions` collection; `faqItems` (camelCase, AEO section) is a JSON array of `{question, answer}` literals. Editors will fill one, miss the other, and either (a) the FAQ rail or (b) the JSON-LD `FAQPage` schema will be empty.
+- **Why it matters:** The detail page does not render either today, but the generic `/content/glossary_terms/[slug]` route emits JSON-LD `FAQPage` only from the AEO `faqItems` (`page.tsx:237-254`), while the planned related-FAQ module will read `faq_items`. Two fields, two consumers, identical names — confusing in admin.
+- **Suggested fix:** Pick references-to-faq-questions as canonical (richer, reusable), drop the AEO `faqItems` JSON, and have the JSON-LD generator dereference the FAQ docs at render time. Otherwise rename `faq_items` to `relatedFaqRefs` to match other relations.
+- **Risk if changed:** low — neither field has stored data yet.
+
+#### GLOSS-002 [P1] `body` field stays in the publish admin UI although `parseGlossaryTerm` only reads its legacy alias (`definition_full`/`bodyHtml`)
+- **File:** `src/lib/cms/collectionDefinitions.ts:511` (global `body` from `globalContentLayoutFields`); `src/lib/cms/schemas/glossary.ts:24-27`; `src/app/glossary/[slug]/page.tsx:36`.
+- **Observation:** The admin renders three fields that all map to the same long-body HTML: `body` (from `globalContentLayoutFields` mounted in `aeo`), `definition_full` (publish), and the legacy `bodyHtml` (hidden). `parseGlossaryTerm` only reads `definition_full ?? bodyHtml ?? body ?? longHtml`, so a value typed in `body` only surfaces if `definition_full` is empty. Editors who use the AEO `body` field as a "longer description" silently shadow themselves.
+- **Why it matters:** Editorial confusion + apparent data loss. Same field, three places.
+- **Suggested fix:** Remove `body` from glossary's AEO/content-layout section (already in MM-006 territory but glossary is the most acute case), and standardise on `definition_full` for the long body. Backfill any stray `body`/`bodyHtml` into `definition_full`.
+- **Risk if changed:** medium — must run a Firestore backfill before removing readers.
+
+#### GLOSS-003 [P1] `/glossary/[slug]` does not emit JSON-LD, does not honour `noindex`/`indexable`, and does not render `page_blocks`
+- **File:** `src/app/glossary/[slug]/page.tsx:14-59`; compare `src/app/content/[collection]/[slug]/page.tsx:222-275`.
+- **Observation:** The canonical glossary route renders only `term`, `definition`, and the optional long body. There is no `<script type="application/ld+json">` for `DefinedTerm` or `FAQPage`, no `robots: noindex` honouring, and no page-blocks renderer. Glossary is the most AI-citation-relevant collection on the site (it is the primary content type listed in `llms.txt`), so missing JSON-LD is editorially the worst gap.
+- **Why it matters:** Glossary is the schema-markup workhorse; without `DefinedTerm` JSON-LD Google can index but cannot reuse it as an answer card.
+- **Suggested fix:** Mirror the JSON-LD construction from the generic `/content/...` route into `/glossary/[slug]`. While there, honour `noindex`/`indexable`. Then either also render `page_blocks` or drop the `blocks` section from `glossary_terms` (recommended: drop, glossary is prose).
+- **Risk if changed:** low (additive).
+
+#### GLOSS-004 [P2] `related_terms` (publish) and `relatedTermRefs` (relations) are exact duplicates
+- **File:** `src/lib/cms/collectionDefinitions.ts:1007` and `:822`; legacy strip in `:1407`.
+- **Observation:** Same pattern as BLOG-001: a publish-section multi_reference duplicates the relations-section equivalent. `LEGACY_FIELDS_BY_COLLECTION.glossary_terms` already strips `relatedTermRefs` from the editor, but the field stays in the relationship map and would be the one a future engineer reads.
+- **Why it matters:** Same-as-BLOG-001 — silent split between admin field and read-side field.
+- **Suggested fix:** Standardise on `relatedTermRefs`, drop `related_terms` from publish, backfill.
+- **Risk if changed:** low.
+
+---
+
+### Collection: `customer_stories`
+
+**Purpose.** Detailed customer case studies — challenge, solution, results, and a long-form narrative — used for trust building and sales enablement. Edited by the marketing/customer-success team; lower volume than blog or glossary but high editorial weight per document.
+
+**Public surfaces.**
+- No dedicated `/stories` route exists. `find src/app -type d -name 'stories'` returns no results, and `routePattern: '/stories/[slug]'` (`collectionDefinitions.ts:1263`) is declared but unimplemented.
+- Generic fallback only — `src/app/content/[collection]/[slug]/page.tsx:155-171` (the `customer_stories || customer_reviews` branch). This is the **only** code path that renders a customer story today.
+- No card component; no listing page; no sitemap entry; not in `llms.txt`.
+
+**Sample size:** 0 documents (`admin-audit.data.json::collections.customer_stories.totalSampled = 0`). Verdicts derived from frontend-usage grep.
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `title` | text | yes | unread | merge-with-`story_title` | — | `titleField: 'story_title'` (`collectionDefinitions.ts:1265, 1398`); admin uses `story_title`. The global `title` is dead weight. |
+| publish | `slug` | text | yes | unread (no canonical route) | keep | — | doc id; only reachable today via `/content/customer_stories/<slug>`. |
+| publish | `status` | select | yes | rendered | keep | — | `/content/...` filters on `status` (`page.tsx:229-235`). |
+| publish | `language` | select | yes | unread | keep-but-rework | — | reserved for i18n. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`challenge_summary` | — | overlaps with `challenge_summary`. See CR-056. |
+| publish | `short_description` | textarea | — | unread | remove | — | overlaps with `challenge_summary` and `excerpt`. See CR-056. |
+| publish | `featured_image` | image | — | unread | merge-with-`hero_image` | — | duplicate. |
+| publish | `thumbnail_image` | image | — | unread | remove | — | not used. |
+| publish | `icon` | icon | — | unread | remove | — | not used. |
+| publish | `author` | reference | — | unread | merge-with-`leadAuthorRef` | — | overlaps with `relations.leadAuthorRef`. |
+| publish | `published_at` | datetime | — | unread | merge-with-`publish_date` | — | duplicate. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed. |
+| publish | `sort_order` | number | — | unread | remove | — | no listing; nothing to sort. |
+| publish | `tags` | tags | — | unread | merge-with-`industry` | — | overlaps with `industry`. |
+| publish | `categories` | tags | — | unread | merge-with-`industry` | — | duplicate. |
+| publish | `related_content` | multi_reference | — | unread | merge-with-`relatedStoryRefs` | — | duplicates relations. |
+| publish | `cta_label` | text | — | unread | remove | — | story renderer has no CTA. |
+| publish | `cta_link` | url | — | unread | remove | — | as above. |
+| publish | `body` | textarea | — | unread | merge-with-`full_story_body` | — | duplicate of `full_story_body`. |
+| publish | `story_title` | text | yes | rendered | keep | — | H1 in `[collection]/[slug]/page.tsx:22, 158`; resolves the page title. |
+| publish | `customer` | reference (our_customers) | yes | unread | keep-but-rework | — | required but not rendered today; the renderer never displays the customer name. See STORY-001. |
+| publish | `industry` | tags | yes | unread | keep-but-rework | — | required but unread. See STORY-001. |
+| publish | `region` | text | — | unread | keep-but-rework | — | unread. See STORY-001. |
+| publish | `hero_image` | image | — | unread | keep-but-rework | — | unread; renderer has no hero. See STORY-001. |
+| publish | `challenge_summary` | textarea | yes | rendered | keep | — | rendered in the 3-up grid (`page.tsx:165`). |
+| publish | `solution_summary` | textarea | yes | rendered | keep | — | rendered in the 3-up grid (`page.tsx:166`). |
+| publish | `results_summary` | textarea | yes | rendered | keep | — | rendered in the 3-up grid (`page.tsx:167`). |
+| publish | `metrics_highlights` | json | — | unread | keep-but-rework | — | shape is `[{label,value}]`; no renderer. See STORY-001. |
+| publish | `full_story_body` | textarea | yes | unread | keep-but-rework | — | required but never rendered (the case-study branch only shows the 3-up + optional review_text/quote). See STORY-001. |
+| publish | `services_used` | tags | — | unread | keep-but-rework | — | unread. See STORY-001. |
+| publish | `testimonial_reference` | multi_reference (customer_reviews) | — | unread | keep-but-rework | — | unread. See STORY-001. |
+| publish | `featured` | boolean | — | unread | remove | — | no listing; featured rail does not exist. |
+| publish | `publish_date` | datetime | yes | unread | keep-but-rework | — | required but unread (no listing to date-sort). |
+| card | (9 universal fields) | — | — | unread | remove | — | section-level issue covered in CR-049; see also. No card consumer for stories. |
+| listing | (16 universal fields) | — | — | unread | remove | — | section-level issue covered in CR-050; see also. No `/stories` route. |
+| detail | (12 universal fields) | — | — | unread | remove | — | section-level issue covered in CR-051; see also. |
+| blocks | `page_blocks` | blocks | — | rendered (only via `/content/...`) | keep | — | the generic route appends `<PageBlocksRenderer>` after the case-study layout (`page.tsx:271`). |
+| blocks | `schema_type_override` | select | — | rendered (only via `/content/...`) | keep | — | feeds JSON-LD with `defaultSchemaType: 'Article'`. |
+| relations | `customerRef` | reference (our_customers) | — | unread | merge-with-`customer` | — | exact duplicate of publish-side `customer`. See STORY-002. |
+| relations | `leadAuthorRef` | reference (team_members) | — | unread | keep-but-rework | — | section-level issue covered in CR-054; see also. |
+| relations | `reviewRefs` | multi_reference (customer_reviews) | — | unread | merge-with-`testimonial_reference` | — | duplicates publish-side `testimonial_reference`. See STORY-002. |
+| relations | `relatedBlogRefs`, `relatedStoryRefs` (2) | multi_reference | — | unread | keep-but-rework | — | section-level issue covered in CR-054; see also. |
+| seo | 24 fields | — | — | partially read | keep-but-rework | — | section-level issue covered in CR-046, CR-003, MM-005. The generic route reads `seo_title`/`seoTitle`, `meta_description`/`seoDescription`, `og_image`/`ogImageUrl`. |
+| seo | `schema_type` | select | — | rendered | keep | — | JSON-LD on `/content/...` (`page.tsx:256-265`). |
+| seo | `indexable`, `noindex` | boolean | yes | rendered | keep | — | honoured on `/content/...` (`page.tsx:195-198`). |
+| seo | `breadcrumbs_title`, `faq_schema_enabled` | — | — | unread | remove | — | section-level issue covered in CR-055; see also. |
+| aeo | 12 fields | — | — | unread | remove | — | section-level issue covered in MM-006, CR-047; see also. |
+| geo | 8 fields | — | — | unread | remove | — | section-level issue covered in MM-007, CR-048; see also. |
+| publish | `title`, `companyName`, `challenge`, `solution`, `results` (5 legacy, hidden) | — | — | partially read | remove (after backfill) | — | listed in `LEGACY_FIELDS_BY_COLLECTION`; `challenge`/`solution`/`results` are still consumed by `[collection]/[slug]/page.tsx:165-167` as fallbacks. Plan migration to `*_summary`. See CR-003. |
+
+**Per-field documentation (kept fields only).**
+
+#### `story_title`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Outcome-led headline, ≤ 80 chars, no quotes around the customer name. Should imply the result, not just the customer.
+- **Good example:** `How Acme MENA Cut Monthly Close from 14 Days to 4 with Finanshels`
+- **Bad example:** `Acme Case Study`
+- **Surfaces on:** H1 (`page.tsx:158`), `<title>`, JSON-LD `name`.
+
+#### `slug`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** lowercase, hyphenated, customer-name + outcome.
+- **Good example:** `acme-mena-monthly-close-acceleration`
+- **Bad example:** `case-study-1`
+- **Surfaces on:** `/content/customer_stories/{slug}` (today the only public URL).
+
+#### `status`
+- **Section:** publish · **Type:** select · **Required:** yes
+- **Format:** `published` to expose; `scheduled` with `scheduledAt` in the future to time-release.
+- **Good example:** `published`
+- **Bad example:** `live`
+- **Surfaces on:** Visibility filter at `[collection]/[slug]/page.tsx:229-235`.
+
+#### `language`
+- **Section:** publish · **Type:** select · **Required:** yes
+- **Format:** `en` or `ar`. Today only `en` is rendered.
+- **Good example:** `en`
+- **Bad example:** `english`
+- **Surfaces on:** Reserved for i18n.
+
+#### `customer`
+- **Section:** publish · **Type:** reference (our_customers) · **Required:** yes
+- **Format:** Pick the `our_customers` doc. The reference is currently unread on the public surface; populate it consistently so the upcoming customer-name + logo render works on day one.
+- **Good example:** `our_customers/acme-mena`
+- **Bad example:** A free-text customer name (the field is a reference, not a string).
+- **Surfaces on:** Not yet (STORY-001).
+
+#### `industry`
+- **Section:** publish · **Type:** tags · **Required:** yes (today)
+- **Format:** ≤ 3 tags, lowercase kebab-case from a curated list (TBD with PM): `saas`, `ecommerce`, `professional-services`, `manufacturing`, `fintech`, `healthcare`.
+- **Good example:** `saas, fintech`
+- **Bad example:** `Software as a Service / FinTech, etc.`
+- **Surfaces on:** Not yet (STORY-001).
+
+#### `region`
+- **Section:** publish · **Type:** text · **Required:** no
+- **Format:** Country or regional bucket; preferably a code (`AE`, `SA`, `MENA`).
+- **Good example:** `AE`
+- **Bad example:** `Dubai office (mainly)` — that detail belongs in `full_story_body`.
+- **Surfaces on:** Not yet (STORY-001).
+
+#### `hero_image`
+- **Section:** publish · **Type:** image · **Required:** no (recommended)
+- **Format:** 1600x900 hosted URL; brand-safe customer photo or product shot.
+- **Good example:** `https://storage.googleapis.com/finanshels-cms/stories/acme-team.webp`
+- **Bad example:** Stock photo with watermark.
+- **Surfaces on:** Not yet — flagged in STORY-001.
+
+#### `challenge_summary`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** 1–3 plain-prose sentences. Pain, scale, stakes. No HTML.
+- **Good example:** `Acme MENA's monthly close took 14 working days, blocking the leadership team from reviewing P&L until mid-month. With three new entities under EMU launching, that latency was unsustainable.`
+- **Bad example:** `They had problems closing books.`
+- **Surfaces on:** Challenge card on detail (`page.tsx:165`), JSON-LD `description` candidate.
+
+#### `solution_summary`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** 1–3 plain-prose sentences describing what Finanshels did, not the product features.
+- **Good example:** `Finanshels embedded a senior controller, restructured the chart of accounts to consolidate the three entities, and rolled out a 5-day close cadence anchored on cut-off discipline.`
+- **Bad example:** `We used the Finanshels platform.`
+- **Surfaces on:** Solution card on detail (`page.tsx:166`).
+
+#### `results_summary`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** 1–3 sentences with at least one quantified outcome.
+- **Good example:** `Close shrunk from 14 days to 4 days inside one quarter; CFO time freed up 6 days/month for forward-looking work; audit prep cycle compressed by 40%.`
+- **Bad example:** `Results were great.`
+- **Surfaces on:** Results card on detail (`page.tsx:167`).
+
+#### `metrics_highlights`
+- **Section:** publish · **Type:** json · **Required:** no
+- **Format:** Array of `{label, value}` objects, ≤ 4 items. Values are short strings (numbers + units).
+- **Good example:** `[{"label":"Close days","value":"14 → 4"},{"label":"CFO hours/mo","value":"+48"},{"label":"Audit prep","value":"-40%"}]`
+- **Bad example:** Long-form prose dropped into a single `value`.
+- **Surfaces on:** Not yet — flagged in STORY-001 for renderer.
+
+#### `full_story_body`
+- **Section:** publish · **Type:** textarea (rich-text) · **Required:** yes
+- **Format:** Sanitized HTML. Sectioned long-form: background, approach, what worked, what surprised us, the quote(s).
+- **Good example:** `<h2>Background</h2><p>Acme MENA was preparing for a Series B…</p><h2>What worked</h2><ul>…</ul>`
+- **Bad example:** Repasting `solution_summary` verbatim.
+- **Surfaces on:** Not yet — the case-study branch never renders `full_story_body`. See STORY-001.
+
+#### `services_used`
+- **Section:** publish · **Type:** tags · **Required:** no
+- **Format:** ≤ 5 tags from the Finanshels services taxonomy. Lowercase kebab-case.
+- **Good example:** `monthly-close, fractional-cfo, audit-prep`
+- **Bad example:** `everything`
+- **Surfaces on:** Not yet (STORY-001).
+
+#### `testimonial_reference`
+- **Section:** publish · **Type:** multi_reference (customer_reviews) · **Required:** no
+- **Format:** 1–2 already-published `customer_reviews` documents. Order matters; first selection appears first.
+- **Good example:** `[customer_reviews/acme-mena-cfo-quote]`
+- **Bad example:** Pasting the quote text into this field — the field expects references, and the quote belongs in a `customer_reviews` doc.
+- **Surfaces on:** Not yet (STORY-001).
+
+#### `publish_date`
+- **Section:** publish · **Type:** datetime · **Required:** yes
+- **Format:** ISO-8601 with timezone offset.
+- **Good example:** `2026-04-30T09:00:00+04:00`
+- **Bad example:** `April 30, 2026`
+- **Surfaces on:** JSON-LD candidate; will sort the planned `/stories` listing.
+
+#### `page_blocks`
+- **Section:** blocks · **Type:** blocks · **Required:** no
+- **Format:** JSON array. Use blocks below the case-study 3-up to add testimonial pull-quotes, metric tiles, or a contact CTA.
+- **Good example:** `[{"type":"cta","id":"…","heading":"Talk to a controller","href":"/contact"}]`
+- **Bad example:** Repasting `full_story_body` HTML into a block.
+- **Surfaces on:** Below the 3-up grid via `PageBlocksRenderer` (`page.tsx:271`).
+
+#### `seo` — `seoTitle`, `seoDescription`, `og_image` (canonical reads)
+- **Section:** seo · **Type:** various · **Required:** no
+- **Format:** Same shape as blog (`seoTitle` ≤ 60 chars, `seoDescription` 150–160 chars, `og_image` is a 1200x630 hosted URL).
+- **Good example:** `seoTitle: "Acme MENA: 14-day close to 4-day close in 12 weeks"` · `og_image: "https://…/stories/acme-og.jpg"`
+- **Bad example:** Empty `seoDescription` (the page falls back to `card_description` ↦ `excerpt` ↦ `short_description`, which are all unread/empty).
+- **Surfaces on:** `[collection]/[slug]/page.tsx:184-219` (`generateMetadata`).
+
+#### `schema_type`, `indexable`, `noindex`
+- **Section:** seo · **Type:** select/boolean · **Required:** yes for booleans
+- **Format:** Default `Article` schema; `indexable: true`, `noindex: false`. Use `noindex: true` for private case studies (logo wall only).
+- **Good example:** `Article`, `indexable: true`, `noindex: false`
+- **Bad example:** `WebPage` (loses the article semantics for AI engines).
+- **Surfaces on:** JSON-LD and `robots` meta on `/content/...`.
+
+**Findings.**
+
+#### STORY-001 [P0] `customer_stories` has no canonical public route — `/stories/[slug]` is declared but unimplemented; six required fields (`customer`, `industry`, `full_story_body`, plus `region`, `hero_image`, `metrics_highlights`, `services_used`, `testimonial_reference`) have no renderer at all
+- **File:** `src/lib/cms/collectionDefinitions.ts:1263` (`routePattern: '/stories/[slug]'`); `src/app/content/[collection]/[slug]/page.tsx:155-171` (the only renderer); `find src/app -type d -name 'stories'` returns nothing.
+- **Observation:** The collection definition advertises `/stories/[slug]` and `/stories` listing, but no such route exists in `src/app`. The single renderer is the generic case-study branch, which only displays `story_title`, `challenge_summary`, `solution_summary`, `results_summary`, and an optional quote pulled from `review_text`/`quote`. The required `full_story_body`, the required `customer` reference, the required `industry` tags, and `hero_image`, `metrics_highlights`, `services_used`, `testimonial_reference` are all written but never rendered. This makes the editorial promise ("we capture the full story") false on the public surface.
+- **Why it matters:** Marketing will brief writers on the rich field set, writers will fill it in, the published page will show only three short summary cards. Highest-value fields invisible.
+- **Suggested fix:** Build the `/stories` listing and `/stories/[slug]` detail to mirror blog: hero with `hero_image` and `customer` logo, the 3-up summary cards, full body via `ArticleBody`, metrics tiles from `metrics_highlights`, testimonial quote from a dereferenced `testimonial_reference`, related-stories rail from `relatedStoryRefs`. Until then, drop the `required: true` flag on `full_story_body`, `customer`, `industry`, `publish_date` to avoid forcing editors to fill orphan fields.
+- **Risk if changed:** medium — net-new route + dereferencing logic; needs design.
+
+#### STORY-002 [P1] `customer` (publish) duplicates `customerRef` (relations); `testimonial_reference` (publish) duplicates `reviewRefs` (relations)
+- **File:** `src/lib/cms/collectionDefinitions.ts:1273` (`customer`) vs `:897` (`customerRef`); `:1283` (`testimonial_reference`) vs `:901` (`reviewRefs`).
+- **Observation:** Both pairs are the same multi/single reference declared twice with different names. None is in `LEGACY_FIELDS_BY_COLLECTION.customer_stories`, so the editor sees both. There is no merge logic; whichever the editor fills will be the one that "wins" only if the corresponding renderer reads it.
+- **Why it matters:** Editorial duplication. Same as BLOG-001 / GLOSS-004, but compounded by two pairs in one collection.
+- **Suggested fix:** Pick `customerRef` and `reviewRefs` as canonical (consistent with sibling collections), drop `customer` and `testimonial_reference` from publish, and update `LEGACY_FIELDS_BY_COLLECTION` accordingly. Backfill is a no-op given Sample size = 0.
+- **Risk if changed:** low.
+
+#### STORY-003 [P2] Six universal-core fields (`title`, `excerpt`, `short_description`, `featured_image`, `body`, `published_at`) duplicate collection-specific fields and inflate the editor with no upside
+- **File:** `src/lib/cms/collectionDefinitions.ts:438-462` (`globalCoreFields`); collection definition `:1268-1287`.
+- **Observation:** Because `customer_stories` does not strip global core fields (no entry in `STRIP_PUBLISH_FIELDS_BY_COLLECTION`), the publish section ends up with two title fields (`title` + `story_title`), two short-description fields (`excerpt` + `short_description` + `challenge_summary`), two body fields (`body` + `full_story_body`), two date fields (`published_at` + `publish_date`), and two image fields (`featured_image` + `hero_image`). Same root cause as CR-056, but stories is the worst offender.
+- **Why it matters:** Editor confusion is highest where fields are most semantically loaded.
+- **Suggested fix:** Add `customer_stories: ['title','excerpt','short_description','featured_image','body','published_at','tags','categories','related_content','cta_label','cta_link','author','sort_order','updated_at']` to `STRIP_PUBLISH_FIELDS_BY_COLLECTION`. Keeps the collection-specific named fields and removes the universal duplicates.
+- **Risk if changed:** low — fields are unread.
+
+---
 <!-- TASK-4B -->
 <!-- TASK-4C -->
 
