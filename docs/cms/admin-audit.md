@@ -593,9 +593,9 @@ All 15 blocks defined in `CMS_BLOCK_TYPES` (`collectionDefinitions.ts:89-336`) h
 | download | Tier 1 — full | heading, description, fileUrl, coverImageUrl | gated, formId | keep — add gate logic |
 | table | Tier 1 — full | heading, data (JSON headers+rows) | — | keep |
 | timeline | Tier 1 — full | heading, items (JSON) | — | keep |
-| tool_embed | Tier 2 — stub | toolUrl → CtaBlock primaryUrl only | heading, description, toolRef | keep-but-rework — implement ToolEmbedBlock (see MM-008) |
+| tool_embed | Tier 2 — stub | heading/subheading ride spread; toolUrl → primaryUrl | description, toolRef, embed UI | keep-but-rework — implement ToolEmbedBlock (see MM-008) |
 | form | Tier 2 — stub | block passed as CtaBlock | formId, submitLabel, embedUrl | keep-but-rework — implement FormBlock (see MM-008) |
-| speaker | Tier 2 — stub | hardcoded heading only | memberRefs, heading | keep-but-rework — implement SpeakerBlock (see MM-008) |
+| speaker | Tier 2 — stub | heading used (with `'Featured speakers'` fallback) | memberRefs (no team-member cards) | keep-but-rework — implement SpeakerBlock (see MM-008) |
 | related_content | Tier 3 — null | nothing | all 5 fields | flag-for-product — implement or remove (see MM-009; corroborates CR-054) |
 
 ---
@@ -656,10 +656,10 @@ All 15 blocks defined in `CMS_BLOCK_TYPES` (`collectionDefinitions.ts:89-336`) h
 - **Suggested fix:** Short-term: hide the GEO tab behind a feature flag (`NEXT_PUBLIC_CMS_GEO_ENABLED=false`) so editors do not fill data that does nothing. Medium-term: implement `citations` as `citation` JSON-LD on `Article` schema, `keyStatistics` and `expertQuotes` as visible body components, then re-enable the tab. If the product decision is to not pursue GEO, remove the section and drop the 8 fields from the schema.
 - **Risk if changed:** low — hiding the tab does not affect Firestore data; any previously stored GEO values persist and become visible again when the tab is re-enabled.
 
-### MM-008 [P1] Three block types (`tool_embed`, `form`, `speaker`) render as generic `CtaBlock` stubs, silently discarding all their unique fields
+### MM-008 [P1] Three block types (`tool_embed`, `form`, `speaker`) render as generic `CtaBlock` stubs, silently discarding their unique semantic fields
 
 - **File:** `src/components/cms/PageBlocksRenderer.tsx:299-309` (the three stub cases).
-- **Observation:** `tool_embed` (case line 299) extracts only `toolUrl` and passes it to `CtaBlock` as `primaryUrl`. The block's `heading`, `description`, and `toolRef` fields are discarded. `form` (line 301) passes the raw block to `CtaBlock`; `formId`, `submitLabel`, and `embedUrl` are never read by `CtaBlock`. `speaker` (lines 304-309) constructs a `CtaBlock` with a hardcoded heading `'Featured speakers'`, ignoring the block's own `heading` and discarding `memberRefs` entirely — no team member data appears. All three blocks are editable in the admin (editors fill unique fields) but the renderer ignores those fields.
+- **Observation:** `tool_embed` (case line 299) spreads the block into a `CtaBlock` with `primaryUrl` set from `toolUrl`. `heading` and `subheading` ride through the spread and *do* render via `CtaBlock`, but `description`, `toolRef`, and the conceptual "tool embed" rendering itself are discarded. `form` (line 301) passes the raw block to `CtaBlock`; `formId`, `submitLabel`, and `embedUrl` are never read by `CtaBlock`. `speaker` (lines 304-309) constructs a `CtaBlock` with `heading: readString(block.heading) || 'Featured speakers'` (so an editor-set heading IS used; the hardcoded string is only a fallback) — but `memberRefs` is discarded entirely, so the team-member cards the editor expects never appear. In all three cases, editors fill unique semantic fields (`toolRef`, `embedUrl`, `memberRefs`) that the renderer never consumes; the page silently renders a generic CTA where the editor intended a tool, form, or speaker card.
 - **Why it matters:** Editors who build tool-embed or speaker blocks are creating data that is not only unrendered but actively masked by a generic CTA. The output is misleading: the page appears to have a CTA where the editor intended a tool or a team-member card.
 - **Suggested fix:** Implement `ToolEmbedBlock`, `FormBlock`, and `SpeakerBlock` components in `PageBlocksRenderer.tsx`. `ToolEmbedBlock` should render an iframe or link with heading/description. `FormBlock` should render the `embedUrl` in an iframe or `formId` as a hook. `SpeakerBlock` should follow `memberRefs` to render team-member cards (requires a data-fetch which may need a Server Component wrapper). Until proper implementations exist, consider rendering `null` rather than a misleading CTA stub — at least `null` signals an implementation gap rather than false content.
 - **Risk if changed:** low for `null` path; medium for full implementation (SpeakerBlock requires async data fetch).
