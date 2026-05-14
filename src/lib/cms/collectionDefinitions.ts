@@ -32,6 +32,11 @@ export type CmsFieldType =
   | 'reference'
   | 'multi_reference'
   | 'blocks'
+  // Structured rows: stored as an array of objects (typed by `rowFormat`), but
+  // the editor sees a single textarea with one row per line and `|` between
+  // attributes. Codec in fieldCodec.ts converts in both directions. Used for
+  // GEO citations/statistics/quotes so content writers never type raw JSON.
+  | 'rows'
 
 export type CmsFieldDefinition = {
   name: string
@@ -45,6 +50,11 @@ export type CmsFieldDefinition = {
   // carry typed defaults without casting. Callers must narrow before use.
   defaultValue?: unknown
   description?: string
+  // Only used when `type === 'rows'`. The ordered list of attribute names
+  // produced by splitting each line on `|`. Example for citations:
+  // `rowFormat: ['title', 'url', 'publisher']` produces rows like
+  // `{ title: 'X', url: 'Y', publisher: 'Z' }`.
+  rowFormat?: string[]
 }
 
 export type CmsSectionKey =
@@ -280,23 +290,33 @@ function commonGeoFields(): CmsFieldDefinition[] {
       type: 'text',
       placeholder: 'YYYY-MM-DD',
     },
+    // CMO-redesign: was `type: 'json'` — editors had to write JSON by hand.
+    // Now `type: 'rows'` with a `rowFormat`. The editor writes one row per
+    // line with attributes separated by `|`. Backend serializes to an array
+    // of objects on save. See src/lib/cms/fieldCodec.ts.
     {
       name: 'citations',
-      label: 'Citations / sources JSON',
-      type: 'json',
-      placeholder: '[{"title":"...","url":"...","publisher":"..."}]',
+      label: 'Citations / sources',
+      type: 'rows',
+      rowFormat: ['title', 'url', 'publisher'],
+      placeholder: 'The State of UAE Tax | https://example.com/report | EY',
+      description: 'One per line. Format: Title | URL | Publisher',
     },
     {
       name: 'keyStatistics',
-      label: 'Key statistics JSON',
-      type: 'json',
-      placeholder: '[{"stat":"...","source":"..."}]',
+      label: 'Key statistics',
+      type: 'rows',
+      rowFormat: ['stat', 'source'],
+      placeholder: '94% of UAE SMEs miss VAT deadlines | https://example.com/research',
+      description: 'One per line. Format: Stat | Source URL',
     },
     {
       name: 'expertQuotes',
-      label: 'Expert quotes JSON',
-      type: 'json',
-      placeholder: '[{"quote":"...","name":"...","role":"..."}]',
+      label: 'Expert quotes',
+      type: 'rows',
+      rowFormat: ['quote', 'name', 'role'],
+      placeholder: 'Compliance is a feature, not a tax. | Jane Doe | CFO, Acme',
+      description: 'One per line. Format: Quote | Name | Role',
     },
     {
       name: 'relatedEntities',

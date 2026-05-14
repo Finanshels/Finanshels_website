@@ -152,6 +152,7 @@ function fieldColumnSpan(field: CmsFieldDefinition): string {
   if (field.type === 'blocks') return 'md:col-span-2'
   if (field.type === 'textarea') return 'md:col-span-2'
   if (field.type === 'json') return 'md:col-span-2'
+  if (field.type === 'rows') return 'md:col-span-2'
   return 'md:col-span-1'
 }
 
@@ -562,21 +563,28 @@ function FieldRenderer({
       />
     )
   }
-  if (field.type === 'textarea' || field.type === 'json') {
+  if (field.type === 'textarea' || field.type === 'json' || field.type === 'rows') {
     if (field.type === 'textarea' && isLongBodyField(field)) {
       return <RichTextField name={field.name} initialValue={value} placeholder={field.placeholder} />
     }
+    const isCode = field.type === 'json' || field.type === 'rows'
+    const rowsAttr = field.type === 'json' ? 12 : field.type === 'rows' ? 6 : isLongBodyField(field) ? 16 : 5
+    const rowsHint =
+      field.type === 'rows'
+        ? field.description ||
+          (field.rowFormat ? `One per line. Format: ${field.rowFormat.join(' | ')}` : 'One per line.')
+        : hint
     return (
       <>
         <textarea
           name={field.name}
           required={field.required}
-          rows={field.type === 'json' ? 12 : isLongBodyField(field) ? 16 : 5}
+          rows={rowsAttr}
           defaultValue={value}
           placeholder={field.placeholder}
-          className={`${common} ${field.type === 'json' ? 'font-mono text-xs' : ''}`}
+          className={`${common} ${isCode ? 'font-mono text-xs' : ''}`}
         />
-        {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+        {rowsHint ? <p className="mt-1 text-xs text-slate-500">{rowsHint}</p> : null}
       </>
     )
   }

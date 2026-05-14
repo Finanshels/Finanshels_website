@@ -21,7 +21,7 @@ export class InvalidFieldValueError extends Error {
 }
 
 type Codec = {
-  encode(value: unknown): string
+  encode(value: unknown, field: CmsFieldDefinition): string
   decode(raw: string, field: CmsFieldDefinition): unknown
 }
 
@@ -31,6 +31,9 @@ const PASS_THROUGH_STRING: Codec = {
   encode: (v) => (v === undefined || v === null ? '' : String(v)),
   decode: (raw) => (raw.trim() ? raw : undefined),
 }
+
+/** Pipe-separated row separator. Pick something an editor is unlikely to type in normal prose. */
+const ROW_FIELD_SEPARATOR = '|'
 
 const FIELD_CODECS: Record<CmsFieldType, Codec> = {
   text: PASS_THROUGH_STRING,
@@ -119,10 +122,53 @@ const FIELD_CODECS: Record<CmsFieldType, Codec> = {
       return parsed
     },
   },
+  // Structured rows. Editor sees a textarea, one row per line, fields
+  // separated by `|`. Backend stores an array of objects keyed by `rowFormat`.
+  //
+  //   rowFormat: ['title', 'url', 'publisher']
+  //   textarea:  "The State of UAE Tax | https://x.com | EY"
+  //   stored:    [{ title: 'The State of UAE Tax', url: 'https://x.com', publisher: 'EY' }]
+  //
+  // Editors with `|` in their content can escape with `\|` (decoded back).
+  rows: {
+    encode: (v, field) => {
+      if (!Array.isArray(v) || !field.rowFormat) return ''
+      const keys = field.rowFormat
+      return v
+        .map((row) => {
+          const obj = (row as Record<string, unknown>) ?? {}
+          return keys
+            .map((k) => String(obj[k] ?? '').replace(/\|/g, '\\|'))
+            .join(` ${ROW_FIELD_SEPARATOR} `)
+        })
+        .join('\n')
+    },
+    decode: (raw, field) => {
+      if (!raw.trim()) return undefined
+      if (!field.rowFormat || field.rowFormat.length === 0) {
+        throw new InvalidFieldValueError(field.name, 'rowFormat missing on field definition')
+      }
+      const keys = field.rowFormat
+      const rows = raw
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) => {
+          // Split on un-escaped `|`, then unescape.
+          const parts = line.split(/(?<!\\)\|/).map((p) => p.trim().replace(/\\\|/g, '|'))
+          const obj: Record<string, string> = {}
+          keys.forEach((key, i) => {
+            obj[key] = parts[i] ?? ''
+          })
+          return obj
+        })
+      return rows.length > 0 ? rows : undefined
+    },
+  },
 }
 
 export function encodeFieldValue(field: CmsFieldDefinition, value: unknown): string {
-  return FIELD_CODECS[field.type].encode(value)
+  return FIELD_CODECS[field.type].encode(value, field)
 }
 
 export function decodeFieldValue(field: CmsFieldDefinition, raw: string): unknown {
