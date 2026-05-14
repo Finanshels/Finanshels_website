@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import RichTextField from '@/components/cms/admin/RichTextField'
 import PageBlocksEditor from '@/components/cms/admin/PageBlocksEditor'
@@ -271,14 +271,43 @@ function renderChecklistCard(
   )
 }
 
-function buildRevalidateTargets(collection: CmsCollectionKey, slug: string): string[] {
+// FIX-011: slug-specific path targets only. Sitemap, llms.txt, and listing
+// routes are invalidated once via revalidateTag('cms-content') in
+// invalidateCmsCaches(); a bulk publish of N items triggers one tag
+// invalidation, not 3+N path invalidations.
+const CMS_CONTENT_CACHE_TAG = 'cms-content'
+
+function buildRevalidatePathTargets(collection: CmsCollectionKey, slug: string): string[] {
   const def = CMS_COLLECTION_DEFINITION_MAP[collection]
-  const base = ['/sitemap.xml', '/llms.txt', `/content/${collection}/${slug}`]
-  if (!def) return base
-  const targets = new Set(base)
-  if (def.listingRoute) targets.add(def.listingRoute)
-  if (def.routePattern) targets.add(def.routePattern.replace('[slug]', slug))
+  const targets = new Set<string>([`/content/${collection}/${slug}`])
+  if (def?.routePattern) targets.add(def.routePattern.replace('[slug]', slug))
   return [...targets]
+}
+
+function invalidateGlobalCmsCaches(): void {
+  // Per-collection-driven aggregates. Each is hit once regardless of bulk size.
+  revalidatePath('/sitemap.xml')
+  revalidatePath('/llms.txt')
+  // For any future fetch tagged with 'cms-content' (e.g. unstable_cache-wrapped
+  // listing fetches), one tag invalidation covers all of them.
+  revalidateTag(CMS_CONTENT_CACHE_TAG)
+}
+
+function invalidateCmsCaches(collection: CmsCollectionKey, slug: string): void {
+  for (const target of buildRevalidatePathTargets(collection, slug)) {
+    revalidatePath(target)
+  }
+  invalidateGlobalCmsCaches()
+}
+
+function invalidateCmsCachesForBulk(collection: CmsCollectionKey, slugs: string[]): void {
+  for (const slug of slugs) {
+    for (const target of buildRevalidatePathTargets(collection, slug)) {
+      revalidatePath(target)
+    }
+  }
+  // Aggregates are invalidated once for the whole batch, not once per slug.
+  invalidateGlobalCmsCaches()
 }
 
 async function saveCmsDocumentAction(formData: FormData) {
@@ -421,9 +450,7 @@ async function saveCmsDocumentAction(formData: FormData) {
     redirect(`${isCreate ? editorBaseCreate : editorBaseEdit(slug)}&error=save-failed`)
   }
 
-  for (const target of buildRevalidateTargets(definition.key, slug)) {
-    revalidatePath(target)
-  }
+  invalidateCmsCaches(definition.key, slug)
   redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(slug)}&saved=1`)
 }
 
@@ -443,9 +470,7 @@ async function rollbackCmsRevisionAction(revisionId: string, formData: FormData)
   } catch {
     redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(id)}&error=rollback-failed`)
   }
-  for (const target of buildRevalidateTargets(definition.key, id)) {
-    revalidatePath(target)
-  }
+  invalidateCmsCaches(definition.key, id)
   redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(id)}&saved=1`)
 }
 
@@ -477,11 +502,7 @@ async function bulkUpdateStatusAction(formData: FormData) {
     redirect(`/admin/cms?collection=${definition.key}&error=bulk-update-failed`)
   }
 
-  for (const id of ids) {
-    for (const target of buildRevalidateTargets(definition.key, id)) {
-      revalidatePath(target)
-    }
-  }
+  invalidateCmsCachesForBulk(definition.key, ids)
   redirect(`/admin/cms?collection=${definition.key}&saved=1`)
 }
 
@@ -499,9 +520,7 @@ async function duplicateCmsDocumentAction(formData: FormData) {
   } catch {
     redirect(`/admin/cms?collection=${definition.key}&error=duplicate-failed`)
   }
-  for (const target of buildRevalidateTargets(definition.key, result.id)) {
-    revalidatePath(target)
-  }
+  invalidateCmsCaches(definition.key, result.id)
   redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(result.id)}&saved=1`)
 }
 
@@ -517,9 +536,7 @@ async function deleteCmsDocumentAction(formData: FormData) {
   } catch {
     redirect(`/admin/cms?collection=${definition.key}&error=delete-failed`)
   }
-  for (const target of buildRevalidateTargets(definition.key, id)) {
-    revalidatePath(target)
-  }
+  invalidateCmsCaches(definition.key, id)
   redirect(`/admin/cms?collection=${definition.key}&saved=1`)
 }
 
@@ -540,11 +557,7 @@ async function bulkDeleteAction(formData: FormData) {
     redirect(`/admin/cms?collection=${definition.key}&error=bulk-delete-failed`)
   }
 
-  for (const id of ids) {
-    for (const target of buildRevalidateTargets(definition.key, id)) {
-      revalidatePath(target)
-    }
-  }
+  invalidateCmsCachesForBulk(definition.key, ids)
   redirect(`/admin/cms?collection=${definition.key}&saved=1`)
 }
 
@@ -1015,6 +1028,23 @@ function CmsSidebar({
         </ul>
       </div>
 
+      <div className="mt-5 border-t border-[#eee2d3] pt-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Marketing</p>
+        <Link
+          href="/admin/cms/landing-pages"
+          className="flex items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#eadfce] hover:bg-[#fff8f1]"
+        >
+          <span>Landing pages</span>
+          <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Ad-only</span>
+        </Link>
+        <Link
+          href="/admin/cms/landing-page-leads"
+          className="mt-1 flex items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm text-slate-700 transition hover:border-[#eadfce] hover:bg-[#fff8f1]"
+        >
+          <span>Lead inbox</span>
+        </Link>
+      </div>
+
       <div className="mt-5 space-y-1 border-t border-[#eee2d3] pt-4 text-sm text-slate-700">
         {canManageUsers ? (
           <Link
@@ -1111,15 +1141,17 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
           blog_posts: (referenceOptionsBase.blog_posts ?? []).filter((o) => o.id !== editingBlogSlug),
         }
       : referenceOptionsBase
-  const mediaAssetDocUrls = isEditorView
-    ? await Promise.all(
-        mediaAssets.slice(0, 120).map(async (asset) => {
-          const doc = await getCmsDocument('media_assets', asset.id)
-          return typeof doc?.assetUrl === 'string' ? doc.assetUrl : ''
-        })
-      )
-    : []
-  const allMediaUrls = [...new Set(mediaAssetDocUrls.filter(Boolean))]
+  // FIX-010: was Promise.all over 120 getCmsDocument() calls just to grab
+  // assetUrl strings for the <datalist>. listCmsMediaLibraryItems already
+  // returns assetUrl on each item; one read replaces the waterfall.
+  const mediaLibraryForDatalist = isEditorView ? await listCmsMediaLibraryItems(120) : []
+  const allMediaUrls = [
+    ...new Set(
+      mediaLibraryForDatalist
+        .map((item) => (typeof item.assetUrl === 'string' ? item.assetUrl : ''))
+        .filter(Boolean)
+    ),
+  ]
 
   const saved = params.saved === '1'
   const errorRaw = params.error

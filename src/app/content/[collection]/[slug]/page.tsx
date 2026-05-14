@@ -241,6 +241,23 @@ export default async function CmsCollectionContentPage({ params }: Props) {
     notFound()
   }
 
+  // FIX-037: collections that have NO dedicated render branch on this generic
+  // route would otherwise fall through to the <pre>JSON.stringify(doc)</pre>
+  // fallback below, dumping every field — including ebook download URLs,
+  // team-member email/phone PII, raw customer records, and review-source
+  // backlinks. These collections must be served from dedicated routes (or not
+  // at all on the public site); the generic route refuses them entirely.
+  const SENSITIVE_GENERIC_ROUTE_BLOCKLIST = new Set([
+    'ebooks',
+    'team_members',
+    'our_customers',
+    'review_sources',
+    'media_assets',
+  ])
+  if (SENSITIVE_GENERIC_ROUTE_BLOCKLIST.has(collection)) {
+    notFound()
+  }
+
   const faqItems = Array.isArray(doc.faqItems) ? doc.faqItems : []
   const faqSchema =
     faqItems.length > 0
