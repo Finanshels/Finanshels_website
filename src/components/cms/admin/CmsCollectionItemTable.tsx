@@ -284,6 +284,10 @@ export function CmsCollectionItemTable({
           className="w-full rounded-lg border border-[#e8dccf] bg-white pl-9 pr-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
           aria-label="Filter items"
         />
+        {/* FIX-018: announce filter result count to screen readers. */}
+        <span aria-live="polite" className="sr-only">
+          {q.trim() ? `${visible.length} ${visible.length === 1 ? 'result' : 'results'}` : ''}
+        </span>
       </div>
 
       {/* Tabs */}

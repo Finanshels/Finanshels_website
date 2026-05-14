@@ -46,6 +46,9 @@ export function CmsMultiReferencePick({
     return o.id.toLowerCase().includes(qq) || o.label.toLowerCase().includes(qq)
   }
 
+  // FIX-018: aria-live count announces filter results to screen readers.
+  const visibleCount = mergedOptions.filter(match).length
+
   const inputCls =
     'w-full rounded-xl border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20'
 
@@ -60,6 +63,9 @@ export function CmsMultiReferencePick({
         autoComplete="off"
         aria-label={`Filter ${label}`}
       />
+      <span aria-live="polite" className="sr-only">
+        {q.trim() ? `${visibleCount} ${visibleCount === 1 ? 'result' : 'results'}` : ''}
+      </span>
       <fieldset className="max-h-56 space-y-0.5 overflow-y-auto rounded-xl border border-[#e8dccf] bg-white p-2">
         <legend className="sr-only">{label}</legend>
         {mergedOptions.length === 0 ? (

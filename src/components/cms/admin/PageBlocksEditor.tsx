@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronDown,
   ChevronUp,
@@ -357,31 +357,116 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
         </ol>
       )}
 
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setPickerOpen((o) => !o)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-brand-primary/60 bg-brand-primary/5 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-brand-primary/10"
+      <BlockTypePicker open={pickerOpen} onOpen={() => setPickerOpen(true)} onClose={() => setPickerOpen(false)} onPick={insertBlock} />
+    </div>
+  )
+}
+
+/**
+ * FIX-019: accessible block-type menu — role=menu, focus trap, ESC closes,
+ * arrow keys move, click-outside closes, focus returns to the trigger.
+ */
+function BlockTypePicker({
+  open,
+  onOpen,
+  onClose,
+  onPick,
+}: {
+  open: boolean
+  onOpen: () => void
+  onClose: () => void
+  onPick: (type: (typeof CMS_BLOCK_TYPES)[number]) => void
+}) {
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([])
+
+  useEffect(() => {
+    if (!open) return
+    // Move focus to the first menu item when the menu opens.
+    requestAnimationFrame(() => itemRefs.current[0]?.focus())
+
+    function onDown(e: MouseEvent) {
+      const t = e.target as Node | null
+      if (!t) return
+      if (menuRef.current?.contains(t) || triggerRef.current?.contains(t)) return
+      onClose()
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+        triggerRef.current?.focus()
+        return
+      }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        const items = itemRefs.current.filter(Boolean) as HTMLButtonElement[]
+        if (items.length === 0) return
+        const active = document.activeElement as HTMLElement | null
+        const idx = items.findIndex((el) => el === active)
+        const next = e.key === 'ArrowDown' ? (idx + 1) % items.length : (idx - 1 + items.length) % items.length
+        items[next].focus()
+      }
+      if (e.key === 'Home') {
+        e.preventDefault()
+        itemRefs.current[0]?.focus()
+      }
+      if (e.key === 'End') {
+        e.preventDefault()
+        const items = itemRefs.current.filter(Boolean) as HTMLButtonElement[]
+        items[items.length - 1]?.focus()
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open, onClose])
+
+  return (
+    <div className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => (open ? onClose() : onOpen())}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-brand-primary/60 bg-brand-primary/5 px-3 py-2 text-sm font-semibold text-brand-primary hover:bg-brand-primary/10"
+      >
+        <Plus className="h-4 w-4" />
+        Add block
+      </button>
+      {open ? (
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label="Insert block"
+          className="absolute z-30 mt-1.5 grid w-[min(640px,calc(100vw-2rem))] grid-cols-1 gap-1 overflow-hidden rounded-2xl border border-[#e8dccf] bg-white p-2 text-sm shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:grid-cols-2"
         >
-          <Plus className="h-4 w-4" />
-          Add block
-        </button>
-        {pickerOpen ? (
-          <div className="absolute z-30 mt-1.5 grid w-[min(640px,calc(100vw-2rem))] grid-cols-1 gap-1 overflow-hidden rounded-2xl border border-[#e8dccf] bg-white p-2 text-sm shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:grid-cols-2">
-            {CMS_BLOCK_TYPES.map((type) => (
-              <button
-                key={type.type}
-                type="button"
-                onClick={() => insertBlock(type)}
-                className="flex flex-col items-start rounded-lg border border-transparent px-3 py-2 text-left hover:border-[#e8dccf] hover:bg-[#fff8f1]"
-              >
-                <span className="text-sm font-semibold text-slate-900">{type.label}</span>
-                <span className="mt-0.5 text-xs text-slate-500">{type.description}</span>
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </div>
+          {CMS_BLOCK_TYPES.map((type, i) => (
+            <button
+              key={type.type}
+              ref={(el) => {
+                itemRefs.current[i] = el
+              }}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onPick(type)
+                onClose()
+                triggerRef.current?.focus()
+              }}
+              className="flex flex-col items-start rounded-lg border border-transparent px-3 py-2 text-left hover:border-[#e8dccf] hover:bg-[#fff8f1] focus:border-brand-primary focus:bg-brand-primary/5 focus:outline-none"
+            >
+              <span className="text-sm font-semibold text-slate-900">{type.label}</span>
+              <span className="mt-0.5 text-xs text-slate-500">{type.description}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }
