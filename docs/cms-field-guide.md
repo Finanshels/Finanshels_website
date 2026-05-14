@@ -21,6 +21,10 @@ Related: operational setup in [CMS on GCP + Next.js](./cms-firestore.md).
 | **AEO** | “Answer engine” extras: direct answer, FAQ JSON, HowTo steps, speakable text. |
 | **GEO** | Generative-search signals: citations, statistics JSON, expert quotes, related entities. |
 
+### Creating new documents
+
+Clicking **+ New …** opens a focused per-type page at `/admin/cms/new/[collection]` that asks only for the essentials needed to ship a draft of that content type. The full editor (sections, SEO, AEO, GEO, blocks) opens automatically after Save. The mapping of essentials per collection lives in `src/lib/cms/createProfiles.ts`; Blog posts and Customer stories also offer optional starter templates on the create page.
+
 ---
 
 ## Field types (format → stored value)

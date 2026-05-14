@@ -86,8 +86,9 @@ Table below = the contents of `src/lib/cms/createProfiles.ts`. Field names use t
 | `faq_questions` | `question`, `answer`, `topic` (ref → faq_topics) | — |
 | `faq_topics` | `name`, `short_description` | — |
 | `team_members` | `full_name`, `role`, `photo_url` | — |
-| `media_assets` | `file_url`, `alt_text`, `filename` | — |
-| `landing_pages` | `title`, `slug`, (template choice drives initial block payload) | "Blank", "Lead-gen", "Product launch" |
+| `media_assets` | `assetUrl`, `altText`, `assetType` | — |
+
+**Out of scope: `landing_pages`.** Landing pages are not part of `CMS_COLLECTION_DEFINITIONS` — they're a separate system under `src/lib/landingPages/` with their own creation flow. Templates for landing pages remain a follow-up tracked separately.
 
 **Field-name verification step** during implementation: open `collectionDefinitions.ts` and confirm each name in the table above exists in the merged section list for the collection. If a name does not exist (e.g. `outcome_summary` vs `outcome` vs `summary`), pick the closest existing field and update the profile — do not add new fields to the collection definition as part of this work. If no acceptable field exists for a slot, drop the slot from the profile rather than inventing one.
 
@@ -189,6 +190,6 @@ Full editor renders; existing edit experience unchanged
 None at design time. All shape decisions resolved during brainstorming:
 - B chosen for ambition (tailored create flow per type, same edit shell).
 - B chosen for entry point (dedicated `/new` page, not modal, not collapsed-section variant).
-- Templates limited to blog_posts, customer_stories, landing_pages.
+- Templates limited to blog_posts and customer_stories (landing_pages dropped from scope; see §4.3).
 - URL auto-fill deferred.
 - Scroll fix bundled.

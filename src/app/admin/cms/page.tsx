@@ -57,7 +57,6 @@ type SearchParams = Promise<{
   error?: string
   collection?: string
   slug?: string
-  new?: string
 }>
 
 type FieldValueMap = Record<string, unknown>
@@ -261,7 +260,7 @@ async function saveCmsDocumentAction(formData: FormData) {
   const cmsIntent = String(formData.get('cmsIntent') ?? '')
   const isCreate = cmsIntent === 'create'
   const cmsOriginalSlug = String(formData.get('cmsOriginalSlug') ?? '').trim()
-  const editorBaseCreate = `/admin/cms?collection=${definition.key}&new=1`
+  const editorBaseCreate = `/admin/cms/new/${definition.key}`
   const editorBaseEdit = (s: string) => `/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(s)}`
 
   const slugField = definition.slugField
@@ -961,13 +960,13 @@ function CmsSidebar({
   const userName = sessionDisplayName(session)
   const userEmail = session.kind === 'user' ? session.user.email : null
   return (
-          <aside className="flex min-h-0 flex-col rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
+          <aside className="flex min-h-0 flex-col rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
             <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-brand-primary">Finanshels CMS</p>
       <Link
         href={
           definition.key === 'media_assets'
             ? `/admin/cms?collection=${definition.key}#cms-media-upload`
-            : `/admin/cms?collection=${definition.key}&new=1`
+            : `/admin/cms/new/${definition.key}`
         }
         className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-gradient-brand px-4 py-2.5 text-sm font-semibold text-brand-dark shadow-[0_12px_30px_rgba(241,102,16,0.25)] transition hover:brightness-110"
       >
@@ -1070,8 +1069,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     : 'blog_posts') as CmsCollectionKey
   const definition = CMS_COLLECTION_DEFINITION_MAP[activeCollection]
 
-  const openNew = params.new === '1'
-  const isEditorView = Boolean(params.slug) || openNew
+  const isEditorView = Boolean(params.slug)
   const fieldReferencedCollections = getReferencedCollections(definition)
   const allReferencedCollections = [
     ...new Set<CmsCollectionKey>([...fieldReferencedCollections, ...BLOCKS_REFERENCED_COLLECTIONS]),
@@ -1220,7 +1218,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
   const formValues: FieldValueMap = selectedDocument ?? {}
   const activeSlug = params.slug ?? ''
   const publicSlug = readText(formValues[definition.slugField]) || activeSlug
-  const editorDocKey = typeof params.slug === 'string' && params.slug.trim() ? params.slug.trim() : openNew ? '__create__' : '__edit__'
+  const editorDocKey = typeof params.slug === 'string' && params.slug.trim() ? params.slug.trim() : '__edit__'
 
   const primaryPublishFieldsRaw = definition.sections.publish.filter((f) => isPrimaryEditorField(f, definition.slugField, definition.titleField))
   const primaryPublishFields = sortPrimaryFields(primaryPublishFieldsRaw, definition.slugField, definition.titleField)
@@ -1291,16 +1289,16 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
   )
 
   return (
-    <section className="min-h-dvh bg-[#f7f3ee] text-slate-900">
-      <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
-        <div className="grid gap-3 xl:h-[calc(100dvh-1.5rem)] xl:min-h-0 xl:grid-cols-[minmax(260px,320px)_minmax(0,60fr)_minmax(0,25fr)] xl:overflow-hidden xl:items-stretch">
+    <section className="h-dvh overflow-hidden bg-[#f7f3ee] text-slate-900">
+      <div className="mx-auto h-full max-w-[1900px] px-3 py-3 sm:px-5">
+        <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(260px,320px)_minmax(0,60fr)_minmax(0,25fr)] lg:overflow-hidden lg:items-stretch">
           <CmsSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
 
           <form
             action={saveCmsDocumentAction}
             id="cms-editor-form"
             data-cms-editor=""
-            className="xl:col-span-2 grid min-h-0 gap-3 xl:h-full xl:grid-cols-[minmax(0,60fr)_minmax(0,25fr)] xl:overflow-hidden"
+            className="grid min-h-0 gap-3 lg:col-span-2 lg:h-full lg:grid-cols-[minmax(0,60fr)_minmax(0,25fr)] lg:overflow-hidden"
           >
             <input type="hidden" name="collection" value={definition.key} />
             <input type="hidden" name="cmsIntent" value={params.slug ? 'edit' : 'create'} />
@@ -1308,7 +1306,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
             {params.slug ? <input type="hidden" name="id" value={params.slug} /> : null}
             <input type="hidden" name="cmsCurrentStatus" value={currentStatus} />
 
-            <div className="flex min-h-0 flex-col space-y-0 overflow-hidden rounded-2xl border border-[#e8dccf] bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
+            <div className="flex min-h-0 flex-col space-y-0 overflow-hidden rounded-2xl border border-[#e8dccf] bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
               {/* Sticky editor header — Webflow style */}
               <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-[#e8dccf] bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/85">
                 <Link
@@ -1397,7 +1395,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     allMediaUrls,
                     editorDocKey,
                     {
-                      slugAutoSync: openNew && !params.slug,
+                      slugAutoSync: false,
                       titleFieldName: definition.titleField,
                       slugFieldName: definition.slugField,
                     }
@@ -1493,7 +1491,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
               </div>
             </div>
 
-            <aside className="group/cms-aside flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#e8dccf] bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
+            <aside className="group/cms-aside flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#e8dccf] bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
               {/*
                 Tab visibility: Tailwind `peer-checked` only works for *following siblings* of `.peer`.
                 Panels lived inside a wrapper div, so they were never siblings of the radios and every

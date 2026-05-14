@@ -11,9 +11,15 @@ import Navbar from './Navbar'
 export default function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isAdmin = pathname.startsWith('/admin')
+  const isLandingPage = pathname.startsWith('/landing-pages')
 
   if (isAdmin) {
     return <div className="min-h-dvh bg-[#f7f3ee]">{children}</div>
+  }
+
+  if (isLandingPage) {
+    // Landing pages bring their own minimal header/footer to keep visitors focused on conversion.
+    return <div className="min-h-screen bg-white">{children}</div>
   }
 
   return (

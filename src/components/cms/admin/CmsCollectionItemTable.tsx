@@ -262,7 +262,11 @@ export function CmsCollectionItemTable({
             Export
           </button>
           <Link
-            href={`/admin/cms?collection=${collectionKey}&new=1`}
+            href={
+              collectionKey === 'media_assets'
+                ? `/admin/cms?collection=${collectionKey}#cms-media-upload`
+                : `/admin/cms/new/${collectionKey}`
+            }
             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-brand px-4 py-2 text-sm font-semibold text-brand-dark shadow-[0_10px_30px_rgba(241,102,16,0.35)] hover:brightness-110"
           >
             <Plus className="h-4 w-4" />
@@ -390,7 +394,14 @@ export function CmsCollectionItemTable({
             {items.length === 0 ? (
               <>
                 No entries yet in this collection.{' '}
-                <Link href={`/admin/cms?collection=${collectionKey}&new=1`} className="font-medium text-brand-primary underline-offset-4 hover:underline">
+                <Link
+                  href={
+                    collectionKey === 'media_assets'
+                      ? `/admin/cms?collection=${collectionKey}#cms-media-upload`
+                      : `/admin/cms/new/${collectionKey}`
+                  }
+                  className="font-medium text-brand-primary underline-offset-4 hover:underline"
+                >
                   Create your first {singularLabel.toLowerCase()}
                 </Link>
               </>
