@@ -41,7 +41,9 @@ export type CmsFieldDefinition = {
   required?: boolean
   options?: string[]
   referenceCollection?: CmsCollectionKey
-  defaultValue?: string | number | boolean
+  // FIX-031: widened to `unknown` so future field types (e.g. blocks/json) can
+  // carry typed defaults without casting. Callers must narrow before use.
+  defaultValue?: unknown
   description?: string
 }
 
@@ -1090,7 +1092,7 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     template: 'Customer logo + profile template',
     routePattern: '/customers/[slug]',
     listingRoute: '/customers',
-    titleField: 'companyName',
+    titleField: 'company_name',
     slugField: 'slug',
     defaultSchemaType: 'Organization',
     sections: {
@@ -1122,7 +1124,7 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     template: 'Tool landing + CTA template',
     routePattern: '/tools/[slug]',
     listingRoute: '/tools',
-    titleField: 'name',
+    titleField: 'tool_name',
     slugField: 'slug',
     defaultSchemaType: 'SoftwareApplication',
     sections: {
@@ -1156,7 +1158,7 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     template: 'Review source list template',
     routePattern: '/reviews/sources/[slug]',
     listingRoute: '/reviews/sources',
-    titleField: 'sourceName',
+    titleField: 'source_name',
     slugField: 'slug',
     defaultSchemaType: 'Organization',
     sections: {
@@ -1184,7 +1186,7 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     template: 'Review quote template',
     routePattern: '/reviews/[slug]',
     listingRoute: '/reviews',
-    titleField: 'title',
+    titleField: 'review_title',
     slugField: 'slug',
     defaultSchemaType: 'Review',
     sections: {
@@ -1218,7 +1220,7 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     template: 'Podcast episode template',
     routePattern: '/podcasts/[slug]',
     listingRoute: '/podcasts',
-    titleField: 'title',
+    titleField: 'episode_title',
     slugField: 'slug',
     defaultSchemaType: 'PodcastEpisode',
     sections: {
@@ -1278,7 +1280,7 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     template: 'FAQ topic template',
     routePattern: '/faq/[slug]',
     listingRoute: '/faq',
-    titleField: 'name',
+    titleField: 'topic_name',
     slugField: 'slug',
     defaultSchemaType: 'CollectionPage',
     sections: {
@@ -1302,7 +1304,7 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     template: 'Story/case-study template',
     routePattern: '/stories/[slug]',
     listingRoute: '/stories',
-    titleField: 'title',
+    titleField: 'story_title',
     slugField: 'slug',
     defaultSchemaType: 'Article',
     sections: {
@@ -1334,7 +1336,7 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     template: 'Ebook listing + download template',
     routePattern: '/ebooks/[slug]',
     listingRoute: '/ebooks',
-    titleField: 'title',
+    titleField: 'ebook_title',
     slugField: 'slug',
     defaultSchemaType: 'Book',
     sections: {
@@ -1367,7 +1369,7 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     template: 'Webinar listing template',
     routePattern: '/webinars/[slug]',
     listingRoute: '/webinars',
-    titleField: 'title',
+    titleField: 'webinar_title',
     slugField: 'slug',
     defaultSchemaType: 'Event',
     sections: {
@@ -1401,7 +1403,7 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     template: 'Team card/profile template',
     routePattern: '/team/[slug]',
     listingRoute: '/team',
-    titleField: 'name',
+    titleField: 'full_name',
     slugField: 'slug',
     defaultSchemaType: 'Person',
     sections: {
@@ -1428,19 +1430,6 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     },
   },
 ]
-
-const NORMALIZED_TITLE_FIELD_BY_COLLECTION: Partial<Record<CmsCollectionKey, string>> = {
-  tools: 'tool_name',
-  review_sources: 'source_name',
-  customer_reviews: 'review_title',
-  podcasts: 'episode_title',
-  faq_topics: 'topic_name',
-  customer_stories: 'story_title',
-  ebooks: 'ebook_title',
-  webinars: 'webinar_title',
-  team_members: 'full_name',
-  our_customers: 'company_name',
-}
 
 /**
  * FIX-009: single map governs per-collection field hiding. Two sub-keys:
@@ -1554,7 +1543,6 @@ export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECT
 
   return {
     ...definition,
-    titleField: NORMALIZED_TITLE_FIELD_BY_COLLECTION[definition.key] ?? definition.titleField,
     sections: {
       publish: normalizedPublish,
       card: suppressed.has('card') ? empty : cardFields,
@@ -1578,6 +1566,32 @@ export const CMS_COLLECTION_DEFINITION_MAP: Record<CmsCollectionKey, CmsCollecti
 
 export function getCmsCollectionDefinition(collection: string): CmsCollectionDefinition | null {
   return CMS_COLLECTION_DEFINITION_MAP[collection as CmsCollectionKey] ?? null
+}
+
+/**
+ * FIX-029: single title-resolution helper for any CMS document.
+ *
+ * Reads the title field declared on the collection definition (now the source
+ * of truth — `NORMALIZED_TITLE_FIELD_BY_COLLECTION` is deleted). Falls back
+ * through a small set of well-known legacy aliases (`title`, `name`) so
+ * pre-migration documents still produce a readable title in admin lists. The
+ * final fallback is supplied by the caller (e.g. 'Untitled').
+ */
+export function resolveDocumentTitle(
+  definition: Pick<CmsCollectionDefinition, 'titleField'>,
+  doc: Record<string, unknown> | null | undefined,
+  fallback = 'Untitled'
+): string {
+  if (!doc) return fallback
+  const primary = doc[definition.titleField]
+  if (typeof primary === 'string' && primary.trim()) return primary
+  // Legacy aliases that some pre-migration docs still carry as the title.
+  for (const alias of ['title', 'name'] as const) {
+    if (alias === definition.titleField) continue
+    const v = doc[alias]
+    if (typeof v === 'string' && v.trim()) return v
+  }
+  return fallback
 }
 
 /**

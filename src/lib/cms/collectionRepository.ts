@@ -5,6 +5,7 @@ import {
   CMS_COLLECTION_DEFINITIONS,
   CMS_COLLECTION_DEFINITION_MAP,
   CMS_INCOMING_REFERENCES,
+  resolveDocumentTitle,
   type CmsCollectionDefinition,
   type CmsCollectionKey,
 } from './collectionDefinitions'
@@ -50,13 +51,11 @@ function referenceOptionLabel(
   normalized: Record<string, unknown>,
   def: CmsCollectionDefinition
 ): string {
-  const primary = normalized[def.titleField]
-  if (typeof primary === 'string' && primary.trim()) return primary.trim()
-  if (def.key === 'team_members') {
-    const legacyName = normalized.name
-    if (typeof legacyName === 'string' && legacyName.trim()) return legacyName.trim()
-  }
-  return readSlug(docId, normalized, def.slugField)
+  // FIX-029: resolveDocumentTitle handles canonical + legacy alias fallbacks.
+  // Use the slug as the ultimate fallback (different from resolveDocumentTitle's
+  // 'Untitled' default) so reference dropdowns always show *something* clickable.
+  const slug = readSlug(docId, normalized, def.slugField)
+  return resolveDocumentTitle(def, normalized, slug)
 }
 
 function readSlug(id: string, raw: Record<string, unknown>, slugField: string): string {
@@ -119,15 +118,22 @@ export async function getCmsCollectionItemCounts(): Promise<Partial<Record<CmsCo
   return Object.fromEntries(results) as Partial<Record<CmsCollectionKey, number>>
 }
 
-export async function listCmsDocuments(
-  collection: CmsCollectionKey,
-  titleField: string,
+/**
+ * FIX-030: shared listing-query fallback ladder. Firestore can refuse an
+ * ordered query when the indexed field doesn't exist on every document (common
+ * mid-migration). We try the canonical sort (`updatedAt desc`), then a
+ * structural sort by slug, then an unordered fetch — each path independently
+ * caught so a single bad query doesn't kill the whole listing.
+ *
+ * Returns the snapshot plus a `truncated` flag indicating whether the result
+ * hit the limit (callers surface this in the admin UI).
+ */
+async function safeOrderedQuery(
+  db: FirebaseFirestore.Firestore,
+  collection: string,
   slugField: string,
-  limit = 150
-): Promise<CmsDocumentListItem[]> {
-  const db = getDb()
-  if (!db) return []
-
+  limit: number
+): Promise<{ snap: FirebaseFirestore.QuerySnapshot; truncated: boolean }> {
   let snap: FirebaseFirestore.QuerySnapshot
   try {
     snap = await db.collection(collection).orderBy('updatedAt', 'desc').limit(limit).get()
@@ -138,6 +144,19 @@ export async function listCmsDocuments(
       snap = await db.collection(collection).limit(limit).get()
     }
   }
+  return { snap, truncated: snap.size >= limit }
+}
+
+export async function listCmsDocuments(
+  collection: CmsCollectionKey,
+  titleField: string,
+  slugField: string,
+  limit = 150
+): Promise<CmsDocumentListItem[]> {
+  const db = getDb()
+  if (!db) return []
+
+  const { snap } = await safeOrderedQuery(db, collection, slugField, limit)
   return snap.docs.map((doc) => {
     const normalized = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
     return {
@@ -174,16 +193,7 @@ export async function listCmsMediaLibraryItems(limit = 400): Promise<CmsMediaLib
   const def = CMS_COLLECTION_DEFINITION_MAP.media_assets
   const titleField = def.titleField
 
-  let snap: FirebaseFirestore.QuerySnapshot
-  try {
-    snap = await db.collection('media_assets').orderBy('updatedAt', 'desc').limit(limit).get()
-  } catch {
-    try {
-      snap = await db.collection('media_assets').orderBy(def.slugField).limit(limit).get()
-    } catch {
-      snap = await db.collection('media_assets').limit(limit).get()
-    }
-  }
+  const { snap } = await safeOrderedQuery(db, 'media_assets', def.slugField, limit)
 
   return snap.docs.map((doc) => {
     const normalized = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
@@ -293,7 +303,7 @@ export async function duplicateCmsDocument(
   const data = normalizeFirestoreTimestamps(src.data() as Record<string, unknown>)
 
   const baseSlug = typeof data[def.slugField] === 'string' && data[def.slugField] ? String(data[def.slugField]) : sourceId
-  const baseTitle = typeof data[def.titleField] === 'string' && data[def.titleField] ? String(data[def.titleField]) : 'Untitled'
+  const baseTitle = resolveDocumentTitle(def, data)
 
   // Find a free slug: "{slug}-copy", "{slug}-copy-2", …
   let candidate = `${baseSlug}-copy`
@@ -469,16 +479,7 @@ export async function listReferenceOptions(
   const db = getDb()
   if (!db) return []
 
-  let snap: FirebaseFirestore.QuerySnapshot
-  try {
-    snap = await db.collection(collection).orderBy('updatedAt', 'desc').limit(limit).get()
-  } catch {
-    try {
-      snap = await db.collection(collection).orderBy(def.slugField).limit(limit).get()
-    } catch {
-      snap = await db.collection(collection).limit(limit).get()
-    }
-  }
+  const { snap } = await safeOrderedQuery(db, collection, def.slugField, limit)
 
   return snap.docs.map((doc) => {
     const normalized = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
@@ -535,7 +536,7 @@ export async function listReverseReferences(
           const data = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
           return {
             id: doc.id,
-            title: readTitle(data[def.titleField]),
+            title: resolveDocumentTitle(def, data),
             status: readStatus(data.status),
           }
         })

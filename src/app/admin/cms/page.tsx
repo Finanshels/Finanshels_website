@@ -50,6 +50,7 @@ import {
   type CmsReverseReferenceGroup,
 } from '@/lib/cms/collectionRepository'
 import { isCmsConfigured } from '@/lib/cms/config'
+import { decodeFieldValue, encodeFieldValue, InvalidFieldValueError } from '@/lib/cms/fieldCodec'
 
 type SearchParams = Promise<{
   saved?: string
@@ -63,78 +64,13 @@ type FieldValueMap = Record<string, unknown>
 
 export const dynamic = 'force-dynamic'
 
-class InvalidFieldValueError extends Error {
-  constructor(public readonly fieldName: string, public readonly reason: string) {
-    super(`Invalid value for field ${fieldName}: ${reason}`)
-    this.name = 'InvalidFieldValueError'
-  }
-}
-
+// FIX-031: encode/decode delegated to the FIELD_CODECS registry.
 function parseFieldValue(field: CmsFieldDefinition, raw: string): unknown {
-  if (field.type === 'boolean') {
-    const normalized = raw.trim().toLowerCase()
-    if (normalized === 'true' || normalized === '1' || normalized === 'on' || normalized === 'yes') return true
-    return false
-  }
-  if (field.type === 'blocks') {
-    if (!raw.trim()) return []
-    let parsed: unknown
-    try {
-      parsed = JSON.parse(raw)
-    } catch {
-      throw new InvalidFieldValueError(field.name, 'invalid JSON for blocks')
-    }
-    if (!Array.isArray(parsed)) {
-      throw new InvalidFieldValueError(field.name, 'blocks must be a JSON array')
-    }
-    return parsed
-  }
-  if (!raw.trim()) return undefined
-  if (field.type === 'number') {
-    const num = Number(raw)
-    if (!Number.isFinite(num)) throw new InvalidFieldValueError(field.name, 'not a finite number')
-    return num
-  }
-  if (field.type === 'tags') {
-    return raw
-      .split(',')
-      .map((x) => x.trim())
-      .filter(Boolean)
-  }
-  if (field.type === 'json') {
-    try {
-      return JSON.parse(raw)
-    } catch {
-      throw new InvalidFieldValueError(field.name, 'invalid JSON')
-    }
-  }
-  if (field.type === 'reference') {
-    const t = raw.trim()
-    return t.length > 0 ? t : undefined
-  }
-  // multi_reference is exclusively delivered via formData.getAll() in the save action.
-  return raw
+  return decodeFieldValue(field, raw)
 }
 
 function stringifyFieldValue(field: CmsFieldDefinition, value: unknown): string {
-  if (field.type === 'boolean') {
-    if (value === true || value === 'true' || value === 'on' || value === 1 || value === '1') return 'true'
-    return 'false'
-  }
-  if (field.type === 'blocks') {
-    if (Array.isArray(value)) return JSON.stringify(value)
-    if (typeof value === 'string' && value.trim().startsWith('[')) return value
-    return '[]'
-  }
-  if (value === undefined || value === null) return ''
-  if (field.type === 'datetime') {
-    if (value instanceof Date) return value.toISOString().slice(0, 16)
-    if (typeof value === 'string') return value.slice(0, 16)
-    return ''
-  }
-  if ((field.type === 'tags' || field.type === 'multi_reference') && Array.isArray(value)) return value.join(', ')
-  if (field.type === 'json') return JSON.stringify(value, null, 2)
-  return String(value)
+  return encodeFieldValue(field, value)
 }
 
 function getReferencedCollections(definition: CmsCollectionDefinition): CmsCollectionKey[] {
