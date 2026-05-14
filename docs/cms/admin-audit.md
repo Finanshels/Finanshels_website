@@ -1455,7 +1455,7 @@ All 15 blocks defined in `CMS_BLOCK_TYPES` (`collectionDefinitions.ts:89-336`) h
 - **Suggested fix:** Strip `hero_image` from the tools publish section and document that `featured_image` is the canonical OG/hero image.
 - **Risk if changed:** low — `hero_image` is unread.
 
-#### TOOL-005 [P3] Six global-core fields (`title`, `excerpt`, `thumbnail_image`, `author`, `published_at`, `sort_order`) are presented to tool editors but have no meaning for this collection type
+#### TOOL-005 [P2] Six global-core fields (`title`, `excerpt`, `thumbnail_image`, `author`, `published_at`, `sort_order`) are presented to tool editors but have no meaning for this collection type
 - **File:** `src/lib/cms/collectionDefinitions.ts:438-462` (`globalCoreFields`); no entry in `STRIP_PUBLISH_FIELDS_BY_COLLECTION['tools']`.
 - **Observation:** Tools are not authored editorial content — they have no "author", no "publish date" in an editorial sense, and no use for `thumbnail_image` or `sort_order`. These fields appear in the publish section because there is no strip list for `tools`.
 - **Why it matters:** Editor cognitive load and data-quality risk (editors may leave required-adjacent fields blank).
@@ -1596,12 +1596,12 @@ All 15 blocks defined in `CMS_BLOCK_TYPES` (`collectionDefinitions.ts:89-336`) h
 - **Suggested fix:** Add `team_members: ['title','excerpt','short_description','featured_image','thumbnail_image','icon','author','published_at','categories','related_content','cta_label','cta_link','updated_at']` to `STRIP_PUBLISH_FIELDS_BY_COLLECTION`. Merge `tags` into `expertise_tags`.
 - **Risk if changed:** low — all listed fields are unread.
 
-#### TEAM-004 [P2] `email` and `phone` fields in publish section may expose PII on the public site if a team page or generic route is built without access controls
-- **File:** `src/lib/cms/collectionDefinitions.ts:1377-1378`.
-- **Observation:** `email` (type `email`) and `phone` (type `text`) are in the publish section. The generic `/content/team_members/<slug>` route dumps the full document as a JSON `<pre>` block in the fallback template (`content/[collection]/[slug]/page.tsx:177-180`), making these fields publicly visible today if an editor navigates to that URL.
-- **Why it matters:** GDPR / UAE PDPL risk — personal contact details of employees may be indexed.
-- **Suggested fix:** Move `email` and `phone` to an `admin-only` section (or strip them from the serialized document before rendering on public routes). At minimum, ensure the fallback `<pre>` dump at `page.tsx:177` is gated to non-`published` status or admin auth.
-- **Risk if changed:** medium — requires template change to avoid rendering sensitive fields publicly.
+#### TEAM-004 [P1] `email` and `phone` fields in publish section currently expose PII on the public site via the generic fallback route
+- **File:** `src/lib/cms/collectionDefinitions.ts:1377-1378`; exposure path `src/app/content/[collection]/[slug]/page.tsx:177-180`.
+- **Observation:** `email` (type `email`) and `phone` (type `text`) are in the publish section. The generic `/content/team_members/<slug>` route already dumps the entire raw document via `JSON.stringify(doc, null, 2)` inside a `<pre>` block (lines 177-180 of the fallback render). `team_members` has no named branch in `renderTemplate`, so it falls through to this dump for every `status === 'published'` document. No field stripping occurs anywhere in `normalizeDoc.ts` or `collectionRepository.ts`. The exposure is live, not hypothetical — the only reason no employee data is currently public is that Firestore is empty.
+- **Why it matters:** GDPR / UAE PDPL personal-data exposure of employees on a public, crawlable URL. The first published team_member document creates an indexable page leaking name + email + phone.
+- **Suggested fix:** Either (a) strip `email`, `phone`, and any other PII fields from the document object before it reaches the fallback render (centralize in `normalizeDoc.ts` or a new `publicSafeView` helper), OR (b) remove the raw `<pre>` JSON dump from the fallback template entirely (replace with a "no public template for this collection — admin only" message), OR (c) restrict the fallback route to `status !== 'published'`. Recommend (b) plus (c) together: never leak raw documents to the public, regardless of collection.
+- **Risk if changed:** low for the wholesale `<pre>` removal; medium if you take the field-stripping path (need to enumerate every collection's PII fields and keep the list current).
 
 ---
 
@@ -1870,7 +1870,7 @@ All 15 blocks defined in `CMS_BLOCK_TYPES` (`collectionDefinitions.ts:89-336`) h
 - **Suggested fix:** Remove `featured` from the ebooks publish section (or rename to `is_featured_ebook`) and document that the universal `card.featured` is the canonical featured flag for ebooks.
 - **Risk if changed:** low.
 
-#### EBOOK-004 [P3] Three separate "related blog posts" fields for ebooks: `related_content` (global core, publish), `related_resources` is absent (webinars had it) but `relatedBlogRefs` (relations) duplicates intent — same de-duplication issue as WEBINAR-003
+#### EBOOK-004 [P2] Three separate "related blog posts" fields for ebooks: `related_content` (global core, publish), `related_resources` is absent (webinars had it) but `relatedBlogRefs` (relations) duplicates intent — same de-duplication issue as WEBINAR-003
 - **File:** `src/lib/cms/collectionDefinitions.ts:459` (global core `related_content`); `:848` (relations `relatedBlogRefs`).
 - **Observation:** For ebooks the global core `related_content` (multi_ref → `blog_posts`) and the relations `relatedBlogRefs` both link an ebook to blog posts. Neither is read. An editor filling `related_content` will see no result; data ends up fragmented.
 - **Why it matters:** Same triplication risk as WEBINAR-003 (here it is only two fields for ebooks specifically, but `relatedEbookRefs` adds a third dimension for self-referential links).
@@ -1879,7 +1879,802 @@ All 15 blocks defined in `CMS_BLOCK_TYPES` (`collectionDefinitions.ts:89-336`) h
 
 ---
 
-<!-- TASK-4C -->
+### Collection: `videos`
+
+**Purpose.** YouTube, Vimeo, Wistia, and self-hosted video assets for hub pages and detail views. Edited by the marketing team; intended to power a `/videos/[slug]` listing and detail route that does not yet exist.
+
+**Public surfaces.**
+- Generic CMS detail route — `src/app/content/[collection]/[slug]/page.tsx:119-133` handles `collection === 'videos'`: renders `episode_title` (via `resolveTitle`), `summary` / `episode_summary` / `short_description` as the description paragraph, and surfaces `video_url` / `videoUrl` as a plain text link inside a styled `<div>`. No embed player is rendered.
+- Metadata — `resolveTitle` at `:25,40` reads `episode_title`; `resolveDescription` at `:57` reads `short_description` / `summary`; OG image resolved from `og_image` → `ogImageUrl` → `card_image` → `featured_image` (`:199-205`).
+- `PageBlocksRenderer.tsx:118` — the video block type reads `block.videoUrl` (camelCase) to render a `<video>` or iframe, not a `videos` collection document directly.
+- Admin — `src/app/admin/cms/page.tsx` lists `videos` as a managed collection.
+- No dedicated `/videos` listing page or `/videos/[slug]` route reads from Firestore.
+
+**Sample size:** 0 documents (Firestore was empty at audit time).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | rendered | keep | — | path key on generic route. |
+| publish | `status` | select | yes | rendered | keep | — | gates visibility. |
+| publish | `video_platform` | select | yes | unread | keep-but-rework | — | no renderer checks this; will select embed strategy once a video route is built. |
+| publish | `video_url` | url | yes | rendered | keep | — | read on generic route as plain link (`:128`); also consumed by `PageBlocksRenderer` via camelCase alias `videoUrl`. |
+| publish | `embed_code` | textarea | — | unread | keep-but-rework | — | no renderer uses it yet; needed once a proper embed player is added. |
+| publish | `thumbnail_image` | image | yes | unread | keep-but-rework | — | collection-level `thumbnail_image` overrides global core; required but no public reader on any current route. |
+| publish | `duration` | text | — | unread | keep-but-rework | — | useful metadata for listing cards; unread until a video listing route exists. |
+| publish | `video_category` | text | yes | unread | keep-but-rework | — | no reader; will drive filtering on a future `/videos` listing. |
+| publish | `speaker` | reference (team_members) | — | unread | remove | — | duplicates the relations `speakerRefs` multi-reference; single-ref is less expressive. |
+| publish | `transcript` | textarea | — | unread | keep-but-rework | — | no public reader; valuable for SEO once a detail page is built. |
+| publish | `summary` | textarea | — | rendered | keep | — | read by `resolveTitle`/`resolveDescription` chain and the generic route description paragraph (`:124-125`). |
+| publish | `key_takeaways` | json | — | unread | keep-but-rework | — | `["..."]` list; no renderer yet. |
+| publish | `related_resources` | multi_reference (blog_posts) | — | unread | keep-but-rework | — | duplicates relations `relatedBlogRefs`; should be consolidated. See VID-002. |
+| publish | `cta_link` | url | — | unread | remove | — | global core inherited; no video-specific CTA reader. |
+| publish | `title` | text | yes | unread | merge-with-`summary` | — | global core; `resolveTitle` reads `episode_title` first; `title` is shadowed. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`summary` | — | global core; `summary` is canonical for videos. |
+| publish | `short_description` | textarea | — | rendered | keep | — | global core; read as fallback in `resolveDescription` and the generic route paragraph. |
+| publish | `featured_image` | image | — | rendered | keep | — | global core; read as OG image fallback (`:203`). |
+| publish | `thumbnail_image` (global core) | image | — | unread | merge-with-collection `thumbnail_image` | — | collection override wins in `mergeFieldSets`; see TOOL-003 pattern. |
+| publish | `icon` | icon | — | unread | remove | — | global core; no icon concept for videos. |
+| publish | `author` | reference | — | unread | remove | — | global core; videos use `speakerRefs` in relations. |
+| publish | `published_at` | datetime | — | unread | remove | — | global core; `publish_date` not on this collection — not needed. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed; should not be an editor field. |
+| publish | `sort_order` | number | — | unread | remove | — | global core; no sorted video listing. |
+| publish | `tags` | tags | — | unread | remove | — | global core; `key_takeaways` and `video_category` fill this role. |
+| publish | `categories` | tags | — | unread | remove | — | global core; `video_category` is canonical. |
+| publish | `related_content` | multi_reference | — | unread | remove | — | global core; `related_resources` and relations `relatedBlogRefs` already cover this. |
+| publish | `cta_label` | text | — | unread | remove | — | global core; no video CTA reader. |
+| card | (9 universal fields) | — | — | unread | remove | — | section-level — see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | section-level — see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | section-level — see CR-051. |
+| blocks | `page_blocks`, `schema_type_override` | blocks/select | — | rendered (generic route only) | keep | — | generic route renders blocks; `schema_type_override` passed to JSON-LD. |
+| relations | `speakerRefs` | multi_reference (team_members) | — | unread | keep-but-rework | — | see CR-054. |
+| relations | `relatedBlogRefs` | multi_reference (blog_posts) | — | unread | keep-but-rework | — | see CR-054. |
+| relations | `relatedVideoRefs` | multi_reference (videos) | — | unread | keep-but-rework | — | see CR-054. |
+| relations | `relatedToolRefs` | multi_reference (tools) | — | unread | keep-but-rework | — | see CR-054. |
+| seo | snake_case + camelCase pairs | various | — | partially read | see `tools` seo rows | — | MM-005. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+| publish | `videoUrl`, `thumbnailUrl`, `durationMinutes` (legacy, hidden) | — | — | unread | remove (after backfill) | — | listed in `LEGACY_FIELDS_BY_COLLECTION['videos']`; none read by public routes. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `video_url`
+- **Section:** publish · **Type:** url · **Required:** yes
+- **Format:** Full canonical URL to the video on its host platform. For YouTube use the standard watch URL (`https://www.youtube.com/watch?v=…`); for Vimeo use `https://vimeo.com/…`; for self-hosted use the direct `.mp4` URL.
+- **Good example:** `https://www.youtube.com/watch?v=dQw4w9WgXcQ`
+- **Bad example:** A YouTube short URL (`https://youtu.be/…`) — these redirect and may not embed reliably.
+- **Surfaces on:** Generic route as a plain text link (`content/[collection]/[slug]/page.tsx:128`); `PageBlocksRenderer` video block via `videoUrl` alias.
+
+#### `summary`
+- **Section:** publish · **Type:** textarea · **Required:** no
+- **Format:** 2–4 sentences describing what the video covers and who it is for. Plain text, ≤ 300 characters.
+- **Good example:** `A 12-minute walkthrough of UAE corporate tax registration for SMEs. Covers timeline, portal navigation, and common errors to avoid.`
+- **Bad example:** `Video about tax.`
+- **Surfaces on:** Description paragraph on the generic route; `meta description` fallback via `resolveDescription`.
+
+#### `video_platform`
+- **Section:** publish · **Type:** select · **Required:** yes
+- **Format:** Select the hosting platform. `youtube` · `vimeo` · `wistia` · `self_hosted`.
+- **Good example:** `youtube` for a YouTube-hosted video.
+- **Bad example:** Leaving as default placeholder while the actual video is on Wistia — the renderer (once built) will use the wrong embed strategy.
+- **Surfaces on:** No public reader yet; will control embed rendering once a dedicated `/videos/[slug]` route is built.
+
+#### `transcript`
+- **Section:** publish · **Type:** textarea · **Required:** no
+- **Format:** Full verbatim transcript, plain text. May be multi-paragraph. Intended for accessibility and SEO body indexing.
+- **Good example:** Full human-readable transcript with speaker labels.
+- **Bad example:** Auto-generated SRT captions pasted without cleanup.
+- **Surfaces on:** No public reader currently. Will become the article body once a dedicated video detail page is built.
+
+**Findings.**
+
+#### VID-001 [P1] `videos` collection has no dedicated public route — `/videos/[slug]` is declared but does not exist
+- **File:** `src/lib/cms/collectionDefinitions.ts:1021` (`routePattern: '/videos/[slug]'`); no `src/app/videos/[slug]/page.tsx` found.
+- **Observation:** The `routePattern` declares `/videos/[slug]`, but the route file does not exist. Video documents are only reachable via `/content/videos/<slug>`, where the generic route renders a minimal stub (plain `video_url` text link, no embed player). The `video_platform`, `embed_code`, `thumbnail_image`, `key_takeaways`, and `transcript` fields are permanently unread.
+- **Why it matters:** Published video docs are effectively invisible to users navigating `/videos/`. The thumbnail and embed code fields — which represent real editorial effort — produce no output.
+- **Suggested fix:** Create `src/app/videos/[slug]/page.tsx` that reads `video_platform`, `video_url`, `embed_code`, `summary`, `thumbnail_image`, `transcript`, and `key_takeaways`. Also create `src/app/videos/page.tsx` as a listing route reading `video_category` and `summary` for cards.
+- **Risk if changed:** low — no existing live `/videos/` route is indexed.
+
+#### VID-002 [P2] Duplicate "related blog posts" link: `related_resources` (publish) and `relatedBlogRefs` (relations)
+- **File:** `src/lib/cms/collectionDefinitions.ts:1040` (publish `related_resources`); `:832` (relations `relatedBlogRefs`).
+- **Observation:** The publish section defines `related_resources` (multi_reference → `blog_posts`) and the relations section adds `relatedBlogRefs` (same target). Both are unread on all public routes. This is the same triplication pattern as WEBINAR-003 and EBOOK-004.
+- **Why it matters:** Editors will populate one and not the other; no canonical pointer for future developers.
+- **Suggested fix:** Remove `related_resources` from the `videos` publish section. Use `relatedBlogRefs` in relations as the canonical link.
+- **Risk if changed:** low — both fields are unread.
+
+#### VID-003 [P2] `speaker` single-reference (publish) duplicates `speakerRefs` multi-reference (relations)
+- **File:** `src/lib/cms/collectionDefinitions.ts:1036` (publish `speaker`); `:831` (relations `speakerRefs`).
+- **Observation:** The publish section adds a `speaker` single-reference field alongside the relations `speakerRefs` multi-reference. A video can have multiple speakers; the publish field can only hold one.
+- **Why it matters:** Editors may populate `speaker` and leave `speakerRefs` empty. When a speaker card is rendered, the developer must choose which field to read — without documentation they may pick the weaker single-reference.
+- **Suggested fix:** Remove `speaker` from the publish section. Canonicalize on `speakerRefs` in relations.
+- **Risk if changed:** low — both are unread.
+
+---
+
+### Collection: `podcasts`
+
+**Purpose.** Podcast episode records linking to audio on Spotify, Apple Podcasts, or a self-hosted URL. Edited by the marketing team; intended to power a `/podcasts/[slug]` detail route that does not yet exist.
+
+**Public surfaces.**
+- Generic CMS detail route — `src/app/content/[collection]/[slug]/page.tsx:119-133` handles `collection === 'podcasts'` in the same branch as `videos`: renders `episode_title` (via `resolveTitle`), `summary` / `episode_summary` / `short_description` as description, and surfaces `audio_url` / `audioUrl` as a plain text link.
+- Navbar — `src/components/Navbar.jsx:141` contains a hard-coded navigation item labelled "Deep dives, podcasts…" that links to `/contact`; it does NOT read from Firestore.
+- Metadata — `resolveTitle` at `content/[collection]/[slug]/page.tsx:25,40` reads `episode_title`; `resolveDescription` reads `episode_summary` / `summary` / `short_description`.
+- No dedicated `/podcasts/[slug]` or `/podcasts` listing route reads from Firestore.
+
+**Sample size:** 0 documents (Firestore was empty at audit time).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | rendered | keep | — | path key on generic route. |
+| publish | `status` | select | yes | rendered | keep | — | gates visibility. |
+| publish | `episode_title` | text | yes | rendered | keep | — | `resolveTitle` reads at `:25,40`; rendered as `<h1>` on generic route. |
+| publish | `episode_number` | number | — | unread | keep-but-rework | — | no renderer; useful for episode ordering once a podcast listing exists. |
+| publish | `podcast_name` | text | yes | unread | keep-but-rework | — | required but no public reader; needed once a show-level page is built. |
+| publish | `audio_url` | url | yes | rendered | keep | — | read on generic route as plain text link (`:129`). |
+| publish | `embed_code` | textarea | — | unread | keep-but-rework | — | no renderer; needed once an audio player embed is added. |
+| publish | `thumbnail_image` | image | — | unread | keep-but-rework | — | collection-level overrides global core; no public reader. |
+| publish | `duration` | text | — | unread | keep-but-rework | — | useful for listing cards; unread until route exists. |
+| publish | `publish_date` | datetime | yes | unread | keep-but-rework | — | required; no public reader yet but needed for chronological ordering on listing. |
+| publish | `hosts` | multi_reference (team_members) | — | unread | remove | — | duplicates relations `hostRefs` multi-reference. See POD-002. |
+| publish | `guests` | tags | — | unread | keep-but-rework | — | free-text guest tags; relations `guestRefs` provides the typed reference alternative. See POD-002. |
+| publish | `episode_summary` | textarea | yes | rendered | keep | — | read as description paragraph on generic route (`:124-125`). |
+| publish | `show_notes` | textarea | — | unread | keep-but-rework | — | no renderer; will be the body content on a dedicated episode page. |
+| publish | `transcript` | textarea | — | unread | keep-but-rework | — | same pattern as VID. See `videos.transcript` in section above. |
+| publish | `key_topics` | tags | — | unread | keep-but-rework | — | no renderer; will drive filtering on future podcast listing. |
+| publish | `related_resources` | multi_reference (blog_posts) | — | unread | keep-but-rework | — | duplicates relations `relatedBlogRefs`; same issue as VID-002. See POD-003. |
+| publish | `title` | text | yes | unread | merge-with-`episode_title` | — | global core; shadowed by `episode_title` in `resolveTitle`. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`episode_summary` | — | global core; `episode_summary` is canonical. |
+| publish | `short_description` | textarea | — | rendered | keep | — | global core; read as fallback in `resolveDescription` and generic route paragraph. |
+| publish | `featured_image` | image | — | rendered | keep | — | global core; OG image fallback (`:203`). |
+| publish | `icon` | icon | — | unread | remove | — | global core; no icon concept for podcast episodes. |
+| publish | `author` | reference | — | unread | remove | — | global core; podcasts use `hostRefs` in relations. |
+| publish | `published_at` | datetime | — | unread | remove | — | global core; `publish_date` (collection-specific) is canonical. Duplicate. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed. |
+| publish | `sort_order` | number | — | unread | remove | — | global core; `episode_number` drives ordering. |
+| publish | `tags` | tags | — | unread | remove | — | global core; `key_topics` is canonical. |
+| publish | `categories` | tags | — | unread | remove | — | global core; `podcast_name` + `key_topics` serve categorization. |
+| publish | `related_content` | multi_reference | — | unread | remove | — | global core; `related_resources` and relations `relatedBlogRefs` cover this. |
+| publish | `cta_label`, `cta_link` | text/url | — | unread | remove | — | global core; no podcast-specific CTA reader. |
+| card | (9 universal fields) | — | — | unread | remove | — | see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | see CR-051. |
+| blocks | `page_blocks`, `schema_type_override` | blocks/select | — | rendered (generic route only) | keep | — | generic route renders blocks. |
+| relations | `hostRefs` | multi_reference (team_members) | — | unread | keep-but-rework | — | see CR-054. |
+| relations | `guestRefs` | multi_reference (team_members) | — | unread | keep-but-rework | — | see CR-054. |
+| relations | `relatedBlogRefs` | multi_reference (blog_posts) | — | unread | keep-but-rework | — | see CR-054. |
+| relations | `relatedPodcastRefs` | multi_reference (podcasts) | — | unread | keep-but-rework | — | see CR-054. |
+| seo | snake_case + camelCase pairs | various | — | partially read | see `tools` seo rows | — | MM-005. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+| publish | `title`, `summary`, `audioUrl`, `platformUrls` (legacy, hidden) | — | — | unread | remove (after backfill) | — | `LEGACY_FIELDS_BY_COLLECTION['podcasts']`. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `episode_title`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Short descriptive title, title case, ≤ 80 characters. Include the episode number only if the show uses numbered episodes consistently.
+- **Good example:** `Ep 12: UAE Corporate Tax for SMEs — What You Must Know Before Filing`
+- **Bad example:** `episode12final_v3`
+- **Surfaces on:** `<h1>` and `<title>` on generic route.
+
+#### `audio_url`
+- **Section:** publish · **Type:** url · **Required:** yes
+- **Format:** Direct URL to the audio file or the episode page on the hosting platform (Spotify, Apple Podcasts, Anchor, etc.).
+- **Good example:** `https://open.spotify.com/episode/…`
+- **Bad example:** A playlist URL that points to many episodes rather than a single episode.
+- **Surfaces on:** Generic route plain text link (`content/[collection]/[slug]/page.tsx:129`).
+
+#### `episode_summary`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** 2–4 sentences. What is discussed, who is speaking, and the key takeaway. Plain text, ≤ 300 characters.
+- **Good example:** `Meet and Nour discuss the top 5 audit triggers for UAE SMEs and how to prepare your books proactively.`
+- **Bad example:** `Podcast episode.`
+- **Surfaces on:** Description paragraph on generic route; `meta description` fallback.
+
+**Findings.**
+
+#### POD-001 [P1] `podcasts` collection has no dedicated public route — `/podcasts/[slug]` is declared but does not exist
+- **File:** `src/lib/cms/collectionDefinitions.ts:1179` (`routePattern: '/podcasts/[slug]'`); no `src/app/podcasts/[slug]/page.tsx` found.
+- **Observation:** Identical structural gap to VID-001. The generic route renders a minimal audio-URL text link only. `embed_code`, `show_notes`, `transcript`, `key_topics`, `publish_date`, and `episode_number` are all unread. The Navbar link to "podcasts" points to `/contact`, not a podcast listing.
+- **Why it matters:** Editors creating podcast episodes get no public payoff. The `PodcastEpisode` schema type is declared but the JSON-LD it emits has no audio-specific properties because no audio fields are passed to the base schema.
+- **Suggested fix:** Create `src/app/podcasts/[slug]/page.tsx` that renders `episode_title`, `audio_url`/`embed_code`, `episode_summary`, `show_notes`, `guests`, and `key_topics`. Update the Navbar "podcasts" nav item to link to `/podcasts` when a listing exists.
+- **Risk if changed:** low — no existing indexed `/podcasts/` route.
+
+#### POD-002 [P2] Authorship triplication: `hosts` (publish, multi_reference), `hostRefs` (relations), and `guestRefs` (relations) — three fields for the same concept
+- **File:** `src/lib/cms/collectionDefinitions.ts:1196` (publish `hosts`); `:839-840` (relations `hostRefs`, `guestRefs`).
+- **Observation:** The publish section has `hosts` (multi_reference → `team_members`) and the relations section has `hostRefs` (same target) and `guestRefs`. An editor can fill both `hosts` and `hostRefs` independently, creating divergent data.
+- **Why it matters:** Any future host-attribution renderer must pick one field; without canonical guidance it will likely read one and silently miss the other.
+- **Suggested fix:** Remove `hosts` from the publish section. Canonicalize on `hostRefs` and `guestRefs` in relations. Strip global core `author` field as well.
+- **Risk if changed:** low — all are unread.
+
+#### POD-003 [P2] `related_resources` (publish) duplicates `relatedBlogRefs` (relations) — same pattern as VID-002
+- **File:** `src/lib/cms/collectionDefinitions.ts:1202` (publish `related_resources`); `:841` (relations `relatedBlogRefs`).
+- **Observation:** Identical to VID-002. Both fields reference `blog_posts`; both are unread.
+- **Suggested fix:** Remove `related_resources` from the podcasts publish section; retain `relatedBlogRefs` in relations.
+- **Risk if changed:** low.
+
+---
+
+### Collection: `faq_topics`
+
+**Purpose.** Topic groupings (e.g., "Corporate Tax", "Payroll") that organize `faq_questions` into sections on FAQ pages. Edited by the marketing or product team; the primary navigation scaffold for the `/faq` experience.
+
+**Public surfaces.**
+- Generic CMS detail route — `src/app/content/[collection]/[slug]/page.tsx:136-153` handles `faq_topics` in the shared FAQ branch: renders `topic_name` (via `resolveTitle`) as `<h1>` and `topic_description` / `description` as a paragraph.
+- Metadata — `resolveTitle` at `:26,41` reads `topic_name`.
+- No dedicated `/faq/[slug]` route reads from Firestore; the `routePattern: '/faq/[slug]'` points to a non-existent file.
+
+**Sample size:** 0 documents (Firestore was empty at audit time).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | rendered | keep | — | path key; must match `/faq/<slug>`. |
+| publish | `status` | select | yes | rendered | keep | — | gates visibility. |
+| publish | `topic_name` | text | yes | rendered | keep | — | `resolveTitle` reads at `:26,41`; rendered as `<h1>` on generic route. |
+| publish | `topic_description` | textarea | — | rendered | keep | — | rendered as description paragraph on generic route (`:148-150`). |
+| publish | `icon` | icon | — | unread | keep-but-rework | — | useful for FAQ navigation UIs; no reader yet. |
+| publish | `sort_order` | number | — | unread | keep-but-rework | — | will drive topic ordering on `/faq` page. Conflicts with global core `sort_order` — collection override wins (same name pattern as TEAM-sort_order note). |
+| publish | `featured` | boolean | — | unread | keep-but-rework | — | flag for surfacing priority topics; no reader. |
+| publish | `related_services` | tags | — | unread | keep-but-rework | — | no renderer; will link topics to service pages once an FAQ-to-service mapping component exists. |
+| publish | `title` | text | yes | unread | merge-with-`topic_name` | — | global core; shadowed by `topic_name` in `resolveTitle`. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`topic_description` | — | global core; `topic_description` is canonical. |
+| publish | `short_description` | textarea | — | unread | merge-with-`topic_description` | — | global core; third duplicate of description concept. |
+| publish | `featured_image` | image | — | unread | flag-for-product | — | global core; clarify if topic pages ever show a hero image. |
+| publish | `thumbnail_image` | image | — | unread | remove | — | global core; no thumbnail concept for topic groups. |
+| publish | `icon` (global core) | icon | — | unread | merge-with-collection `icon` | — | collection override wins; see `faq_topics.icon` above. |
+| publish | `author` | reference | — | unread | remove | — | global core; FAQ topics are not authored content. |
+| publish | `published_at` | datetime | — | unread | remove | — | global core; not meaningful for evergreen topic groups. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed. |
+| publish | `tags` | tags | — | unread | remove | — | global core; `related_services` fills the tagging role. |
+| publish | `categories` | tags | — | unread | remove | — | global core; topic is itself a category. |
+| publish | `related_content` | multi_reference | — | unread | remove | — | global core; relations `featuredQuestionRefs` is canonical. |
+| publish | `cta_label`, `cta_link` | text/url | — | unread | remove | — | global core; no topic-level CTA reader. |
+| card | (9 universal fields) | — | — | unread | remove | — | see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | see CR-051. |
+| blocks | `page_blocks`, `schema_type_override` | blocks/select | — | rendered (generic route only) | keep | — | generic route renders blocks. |
+| relations | `featuredQuestionRefs` | multi_reference (faq_questions) | — | unread | keep-but-rework | — | see CR-054. |
+| relations | `relatedTopicRefs` | multi_reference (faq_topics) | — | unread | keep-but-rework | — | see CR-054. |
+| seo | snake_case + camelCase pairs | various | — | partially read | see `tools` seo rows | — | MM-005. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+| publish | `name`, `description` (legacy, hidden) | — | — | unread | remove (after backfill) | — | `LEGACY_FIELDS_BY_COLLECTION['faq_topics']`. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `topic_name`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Short noun phrase, title case, ≤ 50 characters. This is the section heading on the FAQ page.
+- **Good example:** `Corporate Tax`
+- **Bad example:** `things-about-corporate-tax` (URL slug format instead of display label).
+- **Surfaces on:** `<h1>` on generic route; `<title>` via `resolveTitle`.
+
+#### `topic_description`
+- **Section:** publish · **Type:** textarea · **Required:** no
+- **Format:** 1–2 sentences describing what questions belong in this topic group. Plain text.
+- **Good example:** `Covers UAE corporate tax registration, filing deadlines, and exemption thresholds for small businesses.`
+- **Bad example:** `FAQ topic.`
+- **Surfaces on:** Description paragraph on generic route.
+
+**Findings.**
+
+#### FAQT-001 [P1] No dedicated `/faq/[slug]` route exists — topic pages are unreachable via canonical URL
+- **File:** `src/lib/cms/collectionDefinitions.ts:1239` (`routePattern: '/faq/[slug]'`); no `src/app/faq/[slug]/page.tsx` found.
+- **Observation:** The `faq_topics` route is declared but not implemented. Topic documents are only accessible via `/content/faq_topics/<slug>`. The `featuredQuestionRefs` relationship — intended to drive the question list on each topic page — is permanently unread.
+- **Why it matters:** The entire FAQ hub depends on topic pages existing. Without a route, editors cannot preview how their topic groups will look, and the FAQ schema (`CollectionPage`) produces no meaningful JSON-LD.
+- **Suggested fix:** Create `src/app/faq/[slug]/page.tsx` that reads the topic doc, resolves `featuredQuestionRefs` to render an accordion of questions and answers, and emits `FAQPage` JSON-LD.
+- **Risk if changed:** low — no indexed `/faq/` topic route currently exists.
+
+#### FAQT-002 [P2] `faq_topics` `routePattern` uses `/faq/[slug]` but `faq_questions` route uses `/faq/[topic]/[slug]` — incompatible nested route pattern
+- **File:** `src/lib/cms/collectionDefinitions.ts:1239` (`faq_topics` route); `:1212` (`faq_questions` route `/faq/[topic]/[slug]`).
+- **Observation:** Topics use a flat `/faq/[slug]` pattern while questions use a nested `/faq/[topic]/[slug]` pattern. Both routes are unimplemented, but the declared patterns already conflict: a folder named `[slug]` at `src/app/faq/` cannot also be a `[topic]` folder for the nested question route.
+- **Why it matters:** When the FAQ routes are built, the developer must choose one URL architecture. Building the topic route as declared would block the nested question route or require a parallel folder.
+- **Suggested fix:** Align on one URL architecture before building either route. Recommend `/faq/[topic]/page.tsx` (list questions) and `/faq/[topic]/[slug]/page.tsx` (individual question). Update `faq_topics.routePattern` to `/faq/[slug]` only if the topic page truly lives at a flat path.
+- **Risk if changed:** low — neither route is live.
+
+---
+
+### Collection: `faq_questions`
+
+**Purpose.** Individual question/answer entries linked to a parent `faq_topic`. Edited by the marketing or product team; the atomic unit of FAQ content, consumed by FAQ pages, tool detail pages, blog posts, and glossary terms via `multi_reference` fields.
+
+**Public surfaces.**
+- Generic CMS detail route — `src/app/content/[collection]/[slug]/page.tsx:136-153` handles `faq_questions`: renders `question` (via `resolveTitle`) as `<h1>`, plus `question` and `answer` fields in labelled sections.
+- Metadata — `resolveTitle` at `:32,47` reads `question`; `resolveDescription` does not have a direct `answer` read but falls through to `short_description`/`summary` global core fields.
+- Consumed indirectly — several other collections reference `faq_questions` via `multi_reference`: `tools.faq_items` (publish), `glossary_terms.faq_items` (publish), `faq_topics.featuredQuestionRefs` (relations), `blog_posts.relatedFaqRefs` (relations), `glossary_terms.relatedFaqRefs` (relations). All of these references are unread on public routes (see CR-054).
+- No dedicated `/faq/[topic]/[slug]` route reads from Firestore.
+
+**Sample size:** 0 documents (Firestore was empty at audit time).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | rendered | keep | — | path key. |
+| publish | `status` | select | yes | rendered | keep | — | gates visibility. |
+| publish | `question` | text | yes | rendered | keep | — | `resolveTitle` at `:32,47`; rendered as `<h1>` and question label on generic route (`:141-142`). |
+| publish | `answer` | textarea | yes | rendered | keep | — | rendered in the answer block on generic route (`:142-147`). |
+| publish | `faq_topic` | reference (faq_topics) | yes | unread | keep-but-rework | — | required; links this question to its parent topic. Unread — no resolver traverses this reference on any public route. |
+| publish | `related_service` | tags | — | unread | keep-but-rework | — | will drive FAQ filtering by service page; no reader yet. |
+| publish | `related_blog_posts` | multi_reference (blog_posts) | — | unread | keep-but-rework | — | duplicates relations `relatedBlogRefs`. See FAQQ-002. |
+| publish | `related_tools` | multi_reference (tools) | — | unread | keep-but-rework | — | no reader; tools link back to FAQ questions via `faq_items`, so this is a bidirectional reference. |
+| publish | `search_keywords` | tags | — | unread | keep-but-rework | — | no search component reads these; useful for future site-search indexing. |
+| publish | `featured` | boolean | — | unread | keep-but-rework | — | flag for surfacing on homepage FAQ widgets; no reader yet. |
+| publish | `sort_order` | number | — | unread | keep-but-rework | — | drives question ordering within a topic; no renderer reads it yet. |
+| publish | `title` | text | yes | unread | merge-with-`question` | — | global core; shadowed by `question` in `resolveTitle`. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`answer` | — | global core; `answer` is canonical. |
+| publish | `short_description` | textarea | — | unread | merge-with-`answer` | — | global core; `answer` is canonical. |
+| publish | `featured_image` | image | — | unread | flag-for-product | — | global core; clarify if FAQ questions ever render an image. |
+| publish | `thumbnail_image` | image | — | unread | remove | — | global core; no thumbnail concept for Q&A entries. |
+| publish | `icon` | icon | — | unread | remove | — | global core; no icon concept for individual FAQ entries. |
+| publish | `author` | reference | — | unread | remove | — | global core; FAQ answers are not authored editorial content. |
+| publish | `published_at` | datetime | — | unread | remove | — | global core; not meaningful for evergreen Q&A. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed. |
+| publish | `sort_order` (global core) | number | — | unread | merge-with-collection `sort_order` | — | collection override wins in `mergeFieldSets`. |
+| publish | `tags` | tags | — | unread | remove | — | global core; `search_keywords` and `related_service` fill this role. |
+| publish | `categories` | tags | — | unread | remove | — | global core; `faq_topic` is canonical category. |
+| publish | `related_content` | multi_reference | — | unread | remove | — | global core; `related_blog_posts` and relations `relatedBlogRefs` cover this. |
+| publish | `cta_label`, `cta_link` | text/url | — | unread | remove | — | global core; no FAQ-level CTA reader. |
+| card | (9 universal fields) | — | — | unread | remove | — | see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | see CR-051. |
+| blocks | `page_blocks`, `schema_type_override` | blocks/select | — | rendered (generic route only) | keep | — | generic route renders blocks. |
+| relations | `topicRef` | reference (faq_topics) | — | unread | keep-but-rework | — | see CR-054; duplicates publish `faq_topic`. See FAQQ-003. |
+| relations | `relatedQuestionRefs` | multi_reference (faq_questions) | — | unread | keep-but-rework | — | see CR-054. |
+| relations | `relatedGlossaryRefs` | multi_reference (glossary_terms) | — | unread | keep-but-rework | — | see CR-054. |
+| relations | `relatedBlogRefs` | multi_reference (blog_posts) | — | unread | keep-but-rework | — | see CR-054. |
+| seo | snake_case + camelCase pairs | various | — | partially read | see `tools` seo rows | — | MM-005. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `question`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Full interrogative sentence ending with a question mark. Title case, ≤ 120 characters. Should match the natural-language query a user would type into a search engine.
+- **Good example:** `Do UAE free-zone companies need to register for corporate tax?`
+- **Bad example:** `corporate tax free zone` (keyword phrase, not a question).
+- **Surfaces on:** `<h1>` and "Question" label block on generic route; `<title>` via `resolveTitle`.
+
+#### `answer`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** Concise, plain-text answer. 2–5 sentences for simple questions; bulleted list (using newlines) for multi-step answers. Should directly answer the question without preamble.
+- **Good example:** `Yes. Free-zone companies that earn qualifying income may benefit from a 0% corporate tax rate, but they must still register with the FTA by the applicable deadline.`
+- **Bad example:** `It depends on a lot of factors. Please consult your accountant.`
+- **Surfaces on:** Answer block on generic route; feeds `FAQPage` JSON-LD via `faqItems` AEO field on parent collections.
+
+**Findings.**
+
+#### FAQQ-001 [P1] No dedicated `/faq/[topic]/[slug]` route exists — FAQ question pages are unreachable via their declared canonical URL
+- **File:** `src/lib/cms/collectionDefinitions.ts:1212` (`routePattern: '/faq/[topic]/[slug]'`); no `src/app/faq/[topic]/[slug]/page.tsx` found.
+- **Observation:** FAQ questions are only reachable at `/content/faq_questions/<slug>`. The `faq_topic` reference field, `sort_order`, `search_keywords`, `featured` flag, `related_tools`, and `related_blog_posts` are all permanently unread. The `Question` schema type emits bare JSON-LD with no `acceptedAnswer` property because the answer is not passed to the base schema object.
+- **Why it matters:** FAQ content is a primary SEO asset. Without a real route and `FAQPage` / `Question` schema, none of the Q&A pairs are eligible for Google's FAQ rich results.
+- **Suggested fix:** Create `src/app/faq/[topic]/[slug]/page.tsx` that reads `question`, `answer`, `faq_topic`, and `sort_order`, and emits `Question` + `Answer` JSON-LD. Ensure the `faq_topic` reference is resolved to build the breadcrumb.
+- **Risk if changed:** low — no indexed FAQ question route currently exists.
+
+#### FAQQ-002 [P2] `related_blog_posts` (publish) duplicates `relatedBlogRefs` (relations) — same pattern as VID-002, POD-003
+- **File:** `src/lib/cms/collectionDefinitions.ts:1225` (publish `related_blog_posts`); `:883` (relations `relatedBlogRefs`).
+- **Observation:** Both fields reference `blog_posts`. Both are unread. An editor can populate either without the other having any effect.
+- **Suggested fix:** Remove `related_blog_posts` from the `faq_questions` publish section. Canonicalize on `relatedBlogRefs` in relations.
+- **Risk if changed:** low — both unread.
+
+#### FAQQ-003 [P2] `faq_topic` (publish, required reference) duplicates `topicRef` (relations reference)
+- **File:** `src/lib/cms/collectionDefinitions.ts:1223` (publish `faq_topic`); `:878` (relations `topicRef`).
+- **Observation:** The publish section has a required `faq_topic` reference to `faq_topics`, and the relations section has a `topicRef` reference to the same collection. These are two separate Firestore fields for the same logical parent relationship. An editor fills one; the relation resolver reads the other.
+- **Why it matters:** If the FAQ topic route is built to resolve parent questions via `topicRef` (the relations field), it will miss documents that only have `faq_topic` populated, and vice versa. Data integrity depends on editors filling the right field.
+- **Suggested fix:** Remove `topicRef` from the relations section for `faq_questions`. Use the publish `faq_topic` required reference as the canonical parent pointer. Document this as the source of truth for topic membership.
+- **Risk if changed:** low — both are unread on any public surface.
+
+---
+
+### Collection: `customer_reviews`
+
+**Purpose.** Testimonials and star-rated quotes from individual customers, linked to a `our_customers` profile and a `review_sources` platform record. Edited by the marketing team; the primary source for trust widgets, review carousels, and schema `Review` markup.
+
+**Public surfaces.**
+- Generic CMS detail route — `src/app/content/[collection]/[slug]/page.tsx:155-171` handles `customer_reviews` in the shared stories/reviews branch: renders `review_title` (via `resolveTitle`), `review_text` / `quote` as a styled blockquote, and `challenge_summary` / `solution_summary` / `results_summary` (from customer stories) in a three-column grid. Only `review_text` is meaningful for this collection.
+- Metadata — `resolveTitle` at `:29,44` reads `review_title`.
+- Admin — `src/app/admin/cms/page.tsx:141-142` lists `customer_reviews` and `our_customers` as managed collections.
+- No dedicated `/reviews/[slug]` route reads from Firestore.
+
+**Sample size:** 0 documents (Firestore was empty at audit time).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | rendered | keep | — | path key. |
+| publish | `status` | select | yes | rendered | keep | — | gates visibility. |
+| publish | `review_title` | text | — | rendered | keep | — | read by `resolveTitle` (`:29,44`); rendered as `<h1>` on generic route. |
+| publish | `customer_name` | text | yes | unread | keep-but-rework | — | required; no public reader on any current route. Essential for review card display once a trust widget is built. |
+| publish | `customer_designation` | text | — | unread | keep-but-rework | — | no reader; will appear below the customer name in review cards. |
+| publish | `company` | reference (our_customers) | — | unread | keep-but-rework | — | no reader; duplicates relations `customerRef`. See REV-001. |
+| publish | `review_source` | reference (review_sources) | — | unread | keep-but-rework | — | no reader; duplicates relations `sourceRef`. See REV-001. |
+| publish | `rating` | number | — | unread | keep-but-rework | — | no renderer; will drive star display in review cards. |
+| publish | `review_text` | textarea | yes | rendered | keep | — | rendered as blockquote on generic route (`:159-162`). |
+| publish | `video_review_url` | url | — | unread | keep-but-rework | — | no renderer; video testimonials unimplemented. |
+| publish | `customer_photo` | image | — | unread | keep-but-rework | — | no renderer; needed for review cards with headshots. |
+| publish | `company_logo_override` | image | — | unread | keep-but-rework | — | no renderer; used when a customer's logo is not in `our_customers`. |
+| publish | `service_category` | tags | — | unread | keep-but-rework | — | no renderer; will drive filtering of reviews by service type. |
+| publish | `industry` | tags | — | unread | keep-but-rework | — | no renderer; will drive industry-level filtering. |
+| publish | `location` | text | — | unread | keep-but-rework | — | no renderer; geographic context for reviews. |
+| publish | `review_date` | datetime | — | unread | keep-but-rework | — | no renderer; needed for `Review` schema `datePublished` property. |
+| publish | `approved_for_publication` | boolean | yes | unread | keep-but-rework | — | required flag; no public gate reads this — only `status: published` gates on generic route. See REV-002. |
+| publish | `featured` | boolean | — | unread | keep-but-rework | — | no reader; will drive homepage trust widget selection. |
+| publish | `title` | text | yes | unread | merge-with-`review_title` | — | global core; shadowed by `review_title`. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`review_text` | — | global core; `review_text` is canonical. |
+| publish | `short_description` | textarea | — | unread | merge-with-`review_text` | — | global core; `review_text` is canonical. |
+| publish | `featured_image` | image | — | unread | flag-for-product | — | global core; clarify if review pages ever show a hero image. |
+| publish | `thumbnail_image` | image | — | unread | remove | — | global core; `customer_photo` is canonical. |
+| publish | `icon` | icon | — | unread | remove | — | global core; no icon concept for reviews. |
+| publish | `author` | reference | — | unread | remove | — | global core; reviews are by customers, not internal authors. |
+| publish | `published_at` | datetime | — | unread | remove | — | global core; `review_date` is canonical. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed. |
+| publish | `sort_order` | number | — | unread | remove | — | global core; no sorted review listing. |
+| publish | `tags` | tags | — | unread | remove | — | global core; `service_category` and `industry` cover this. |
+| publish | `categories` | tags | — | unread | remove | — | global core; same reason. |
+| publish | `related_content` | multi_reference | — | unread | remove | — | global core; no review-related-content reader. |
+| publish | `cta_label`, `cta_link` | text/url | — | unread | remove | — | global core; no CTA concept for reviews. |
+| card | (9 universal fields) | — | — | unread | remove | — | see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | see CR-051. |
+| blocks | `page_blocks`, `schema_type_override` | blocks/select | — | rendered (generic route only) | keep | — | generic route renders blocks. |
+| relations | `customerRef` | reference (our_customers) | — | unread | keep-but-rework | — | see CR-054; canonical customer pointer — see REV-001. |
+| relations | `sourceRef` | reference (review_sources) | — | unread | keep-but-rework | — | see CR-054; canonical source pointer — see REV-001. |
+| relations | `relatedStoryRefs` | multi_reference (customer_stories) | — | unread | keep-but-rework | — | see CR-054. |
+| seo | snake_case + camelCase pairs | various | — | partially read | see `tools` seo rows | — | MM-005. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+| publish | `title`, `quote`, `reviewerName`, `reviewerRole`, `companyName` (legacy, hidden) | — | — | unread | remove (after backfill) | — | `LEGACY_FIELDS_BY_COLLECTION['customer_reviews']`. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `review_text`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** Verbatim quote from the customer. 1–4 sentences, plain text. Do not add quotation marks — the UI renders them. Must be an authentic statement obtained with permission.
+- **Good example:** `Finanshels saved us 15 hours a month on payroll. We closed our audit with zero errors for the first time.`
+- **Bad example:** `Great company. Would recommend.` (too vague for trust impact).
+- **Surfaces on:** Blockquote on generic route (`content/[collection]/[slug]/page.tsx:159-162`).
+
+#### `customer_name`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Full name of the reviewer. Title case. If the reviewer wishes to be anonymous, use initials (e.g., `A.K.`) and note this in the `review_title`.
+- **Good example:** `Salma Al Mansoori`
+- **Bad example:** `user123`
+- **Surfaces on:** No current public reader. Will appear below the blockquote in review cards.
+
+#### `approved_for_publication`
+- **Section:** publish · **Type:** boolean · **Required:** yes
+- **Format:** Set to `true` only after written sign-off from the customer. This is the legal compliance gate — do not publish without it.
+- **Good example:** Checked `true` with the signed consent form on file.
+- **Bad example:** Left unchecked but `status` set to `published` — the current generic route ignores this field (see REV-002).
+- **Surfaces on:** No public gate reads this field currently (see REV-002).
+
+**Findings.**
+
+#### REV-001 [P2] Company reference duplicated in publish (`company`) and relations (`customerRef`) — same pattern as FAQQ-003
+- **File:** `src/lib/cms/collectionDefinitions.ts:1157` (publish `company`); `:888` (relations `customerRef`). Same for `review_source` (`:1158`) vs relations `sourceRef` (`:889`).
+- **Observation:** The publish section has `company` (reference → `our_customers`) and the relations section has `customerRef` (same target). Similarly, `review_source` (publish) and `sourceRef` (relations) reference `review_sources`. Four fields for two logical relationships.
+- **Why it matters:** Any review-aggregation component must decide which field to read. Data entered in one field will not appear in the other.
+- **Suggested fix:** Remove `company` and `review_source` from the publish section; canonicalize on `customerRef` and `sourceRef` in relations. Update the admin UI to surface the relations section prominently for these fields.
+- **Risk if changed:** low — all four are unread on public routes.
+
+#### REV-002 [P1] `approved_for_publication` boolean is unread by the visibility gate — the generic route only checks `status`
+- **File:** `src/app/content/[collection]/[slug]/page.tsx:229-235` (visibility gate reads `status` and `scheduledAt` only); `src/lib/cms/collectionDefinitions.ts:1168` (`approved_for_publication: required: true`).
+- **Observation:** The `approved_for_publication` field exists as a compliance control — it requires explicit approval before a review may be published. However, the generic route visibility gate (`isVisible`) only checks `status === 'published'`. A review can be published without `approved_for_publication: true` by simply setting `status` to `published`.
+- **Why it matters:** This is a legal / compliance risk: customer testimonials must have written consent. An editor or automated workflow that sets `status: published` bypasses the consent gate silently.
+- **Suggested fix:** Add `approved_for_publication` to the visibility check in `content/[collection]/[slug]/page.tsx` for `collection === 'customer_reviews'`: `const isVisible = status === 'published' && (collection !== 'customer_reviews' || doc.approved_for_publication === true)`. Alternatively, enforce this at the save action level in the admin UI.
+- **Risk if changed:** medium — changes visibility logic; requires coordination with the editorial workflow.
+
+#### REV-003 [P2] `review_date` is not wired into the `Review` JSON-LD schema — rich-result eligibility is reduced
+- **File:** `src/app/content/[collection]/[slug]/page.tsx:258-264` (base schema emits only `name`, `description`, `url`); `src/lib/cms/collectionDefinitions.ts:1167` (`review_date` field).
+- **Observation:** Google's `Review` schema requires `datePublished` and `reviewRating` / `ratingValue` for review rich results. The generic route emits a bare `Review` schema with none of these. The `review_date` and `rating` fields are captured in Firestore but never passed to the JSON-LD output.
+- **Why it matters:** Customer reviews are high-value social proof. Without `datePublished` and `reviewRating`, the JSON-LD does not qualify for review snippets in Google Search.
+- **Suggested fix:** Extend the generic route base schema builder (or add a collection-specific override) to include `datePublished: doc.review_date` and `reviewRating: { '@type': 'Rating', ratingValue: doc.rating, bestRating: 5 }` when `collection === 'customer_reviews'`.
+- **Risk if changed:** low — additive schema change; no existing indexed reviews.
+
+---
+
+### Collection: `our_customers`
+
+**Purpose.** Company profiles and logo records for trust sections, customer story pages, and logo walls. Edited by the marketing team; the shared source of truth for customer identity data referenced by `customer_reviews` and `customer_stories`.
+
+**Public surfaces.**
+- Generic CMS detail route — `src/app/content/[collection]/[slug]/page.tsx:173-181` falls through to the default template: renders `company_name` (via `resolveTitle`) and `resolveDescription` (reads `summary` via global core) as a description, then dumps the full doc as JSON in a `<pre>` block. No dedicated template.
+- Metadata — `resolveTitle` at `:28,43` reads `company_name`.
+- `PageBlocksRenderer.tsx:173` — the testimonial block reads `block.companyName` (camelCase), not the `our_customers` Firestore collection.
+- Admin — `src/app/admin/cms/page.tsx:142` lists `our_customers`.
+- No dedicated `/customers/[slug]` route reads from Firestore.
+
+**Sample size:** 0 documents (Firestore was empty at audit time).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | rendered | keep | — | path key. |
+| publish | `status` | select | yes | rendered | keep | — | gates visibility. |
+| publish | `company_name` | text | yes | rendered | keep | — | `resolveTitle` reads at `:28,43`; rendered as `<h1>` on default generic route. |
+| publish | `logo` | image | yes | unread | keep-but-rework | — | required; no public reader on any current route. Primary asset for trust/logo-wall sections. |
+| publish | `cover_image` | image | — | unread | keep-but-rework | — | no reader; background image for a future customer profile card. |
+| publish | `website_url` | url | — | unread | keep-but-rework | — | no renderer; needed on customer profile page. |
+| publish | `industry` | text | — | unread | keep-but-rework | — | no renderer; will drive logo-wall filtering by industry. |
+| publish | `company_size` | text | — | unread | keep-but-rework | — | no renderer; context for case studies. |
+| publish | `hq_location` | text | — | unread | keep-but-rework | — | no renderer; geographic context. |
+| publish | `region` | tags | — | unread | keep-but-rework | — | no renderer; will drive regional filtering. |
+| publish | `service_used` | tags | — | unread | keep-but-rework | — | no renderer; will drive filtering on a future "customers by service" page. |
+| publish | `relationship_type` | select | yes | unread | keep-but-rework | — | `customer` / `partner` / `featured_customer`; required but unread. Controls which trust section a company appears in. |
+| publish | `summary` | textarea | — | rendered | keep | — | read by `resolveDescription` global core chain (`:58`); appears in default generic route description. |
+| publish | `testimonial_reference` | reference (customer_reviews) | — | unread | keep-but-rework | — | no reader; intended as a shortcut to the primary review for this company. Duplicates the `our_customers.reviewRefs` relation. See OURC-002. |
+| publish | `story_reference` | reference (customer_stories) | — | unread | keep-but-rework | — | no reader; intended as a shortcut to the primary story. Duplicates `our_customers.storyRefs` relation. See OURC-002. |
+| publish | `is_featured` | boolean | — | unread | keep-but-rework | — | no reader; will drive featured-customer sections. |
+| publish | `title` | text | yes | unread | merge-with-`company_name` | — | global core; shadowed by `company_name`. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`summary` | — | global core; `summary` is canonical. |
+| publish | `short_description` | textarea | — | unread | merge-with-`summary` | — | global core; `summary` is canonical. |
+| publish | `featured_image` | image | — | unread | flag-for-product | — | global core; clarify whether this or `cover_image` is the canonical OG/hero image. |
+| publish | `thumbnail_image` | image | — | unread | remove | — | global core; `logo` is canonical. |
+| publish | `icon` | icon | — | unread | remove | — | global core; no icon concept for company profiles. |
+| publish | `author` | reference | — | unread | remove | — | global core; company profiles are not authored content. |
+| publish | `published_at` | datetime | — | unread | remove | — | global core; not meaningful for company profiles. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed. |
+| publish | `sort_order` | number | — | unread | remove | — | global core; no sorted customer listing. |
+| publish | `tags` | tags | — | unread | remove | — | global core; `region`, `industry`, `service_used` fill this role. |
+| publish | `categories` | tags | — | unread | remove | — | global core; same reason. |
+| publish | `related_content` | multi_reference | — | unread | remove | — | global core; `storyRefs` and `reviewRefs` in relations are canonical. |
+| publish | `cta_label`, `cta_link` | text/url | — | unread | remove | — | global core; no customer-profile CTA reader. |
+| card | (9 universal fields) | — | — | unread | remove | — | see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | see CR-051. |
+| blocks | `page_blocks`, `schema_type_override` | blocks/select | — | rendered (generic default only) | keep | — | generic route renders blocks. |
+| relations | `storyRefs` | multi_reference (customer_stories) | — | unread | keep-but-rework | — | see CR-054. |
+| relations | `reviewRefs` | multi_reference (customer_reviews) | — | unread | keep-but-rework | — | see CR-054. |
+| seo | snake_case + camelCase pairs | various | — | partially read | see `tools` seo rows | — | MM-005. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+| publish | `companyName`, `logoUrl` (legacy, hidden) | — | — | unread | remove (after backfill) | — | `LEGACY_FIELDS_BY_COLLECTION['our_customers']`. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `company_name`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Official company trading name, title case. Match the name as displayed on the company's own website.
+- **Good example:** `Jalebi Technologies LLC`
+- **Bad example:** `jalebi tech (uae)` (abbreviation + lowercase).
+- **Surfaces on:** `<h1>` on default generic route; `<title>` via `resolveTitle`.
+
+#### `logo`
+- **Section:** publish · **Type:** image · **Required:** yes
+- **Format:** SVG or PNG with transparent background. Minimum width 200 px. Optimised for use on a white or off-white trust section background.
+- **Good example:** `https://cdn.finanshels.com/customers/jalebi-logo.svg`
+- **Bad example:** A JPEG logo with white background — will clash with the page background in trust sections.
+- **Surfaces on:** No current public reader. Will appear in logo-wall / trust sections once a components reads `our_customers` from Firestore.
+
+#### `relationship_type`
+- **Section:** publish · **Type:** select · **Required:** yes
+- **Format:** `customer` for standard paying customers; `partner` for referral or white-label partners; `featured_customer` for homepage spotlight customers.
+- **Good example:** `featured_customer` for a high-logo-recognition brand on the homepage.
+- **Bad example:** Leaving as default when the company is a partner — the trust section filter will group them incorrectly.
+- **Surfaces on:** No current public reader. Will gate which section of the trust grid a company appears in.
+
+**Findings.**
+
+#### OURC-001 [P1] `our_customers` has no dedicated `/customers/[slug]` route — customer profile pages are unreachable
+- **File:** `src/lib/cms/collectionDefinitions.ts:1051` (`routePattern: '/customers/[slug]'`); no `src/app/customers/[slug]/page.tsx` found.
+- **Observation:** The declared route does not exist. Customer profile pages fall through to the default generic template which dumps the raw JSON — a poor experience and a potential data-exposure risk (see OURC-003).
+- **Why it matters:** The `logo`, `cover_image`, `industry`, `relationship_type`, and all relational links (`storyRefs`, `reviewRefs`) are permanently unread. Trust sections on marketing pages that need dynamic logo data have no route to fetch from.
+- **Suggested fix:** Create `src/app/customers/[slug]/page.tsx` (or a server-component in an existing page) that reads `company_name`, `logo`, `summary`, `industry`, `service_used`, `website_url`, and resolves `storyRefs` and `reviewRefs` for rendering a customer profile.
+- **Risk if changed:** low — no indexed `/customers/` route exists.
+
+#### OURC-002 [P2] Shortcut references (`testimonial_reference`, `story_reference`) in publish duplicate canonical relations (`reviewRefs`, `storyRefs`)
+- **File:** `src/lib/cms/collectionDefinitions.ts:1071-1072` (publish shortcut refs); `:907-910` (relations `storyRefs`, `reviewRefs`).
+- **Observation:** Publish section has `testimonial_reference` (single ref → `customer_reviews`) and `story_reference` (single ref → `customer_stories`). Relations section has `reviewRefs` (multi) and `storyRefs` (multi). Four fields for two logical relationships. A customer company with multiple reviews can only hold one in the publish shortcut.
+- **Why it matters:** Identical pattern to REV-001 and FAQQ-003. Any component reading reviews for a company will need to choose which field is authoritative.
+- **Suggested fix:** Remove `testimonial_reference` and `story_reference` from the publish section; canonicalize on `reviewRefs` and `storyRefs` in relations.
+- **Risk if changed:** low — all four are unread.
+
+#### OURC-003 [P2] Default generic route falls through to raw JSON dump for `our_customers` — potential data exposure
+- **File:** `src/app/content/[collection]/[slug]/page.tsx:173-181` (default template renders `JSON.stringify(doc, null, 2)` in a `<pre>`).
+- **Observation:** Since `our_customers` has no dedicated template branch in `renderTemplate`, it falls through to the default which renders the entire Firestore document as formatted JSON in a `<pre>` block. This includes all publish fields (`website_url`, `hq_location`, `company_size`, `relationship_type`) and any legacy fields.
+- **Why it matters:** If a `our_customers` document is published, its full raw data is visible to anyone who visits `/content/our_customers/<slug>`. While individual fields are not highly sensitive, this is unintended data exposure and a poor user experience.
+- **Suggested fix:** Add an `our_customers` branch to `renderTemplate` that shows only `company_name`, `logo`, and `summary`. Alternatively, add `our_customers` to a blocklist that returns `notFound()` on the generic route until a dedicated route is built.
+- **Risk if changed:** low — additive or gating change only.
+
+---
+
+### Collection: `review_sources`
+
+**Purpose.** Platform records (Google, Clutch, Trustpilot, G2, etc.) that identify where `customer_reviews` were collected. Edited by the marketing or operations team; the reference table for review attribution and aggregate rating display.
+
+**Public surfaces.**
+- No public component or route reads from `review_sources`. The collection name does not appear in any file under `src/app` or `src/components` outside of `src/app/admin/cms/page.tsx` (collection picker only) and `src/lib/cms/collectionDefinitions.ts`.
+- No dedicated `/reviews/sources/[slug]` route reads from Firestore.
+- The `review_sources` data is consumed indirectly: `customer_reviews.review_source` (publish) and `customer_reviews.sourceRef` (relations) reference `review_sources` documents, but neither reference is resolved by any public renderer.
+
+**Sample size:** 0 documents (Firestore was empty at audit time).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | unread | keep | — | path key; needed once a sources list or badge renders. |
+| publish | `status` | select | yes | unread | keep | — | gates visibility. |
+| publish | `source_name` | text | yes | unread | keep | — | display name (e.g., "Google Reviews"); no current public reader. |
+| publish | `source_logo` | image | — | unread | keep-but-rework | — | platform logo; will appear in review attribution badges. |
+| publish | `source_url` | url | yes | unread | keep | — | canonical platform profile URL; no public reader. |
+| publish | `source_type` | select | yes | unread | keep | — | `google` / `clutch` / `trustpilot` / `g2` / `facebook` / `manual`; required; no reader. |
+| publish | `average_rating` | number | — | unread | keep-but-rework | — | aggregate rating; no renderer; needed for `AggregateRating` schema. See REVSRC-001. |
+| publish | `review_count` | number | — | unread | keep-but-rework | — | total review count; no renderer; needed for `AggregateRating` schema. See REVSRC-001. |
+| publish | `rating_scale` | number | — | unread | keep-but-rework | — | maximum rating value (typically 5.0); needed for `AggregateRating`. |
+| publish | `display_label` | text | — | unread | keep-but-rework | — | custom display label (e.g., "4.9 / 5 on Google"); no renderer. |
+| publish | `is_featured` | boolean | — | unread | keep-but-rework | — | flag for surfacing on a reviews summary widget; no reader. |
+| publish | `last_synced_at` | datetime | — | unread | keep-but-rework | — | timestamp of last automated sync; admin-only metadata; no public reader. |
+| publish | `title` | text | yes | unread | merge-with-`source_name` | — | global core; `resolveTitle` would read this if the generic route were used; `source_name` is canonical. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n. |
+| publish | `excerpt`, `short_description` | textarea | — | unread | remove | — | global core; no description concept for platform records. |
+| publish | `featured_image` | image | — | unread | flag-for-product | — | global core; `source_logo` is canonical for platform branding. |
+| publish | `thumbnail_image` | image | — | unread | remove | — | global core; `source_logo` is canonical. |
+| publish | `icon` | icon | — | unread | remove | — | global core; no icon concept for platform records. |
+| publish | `author`, `published_at`, `updated_at` | various | — | unread | remove | — | global core; server-managed or irrelevant for platform records. |
+| publish | `sort_order` | number | — | unread | keep-but-rework | — | global core; will drive ordering of review source badges. |
+| publish | `tags`, `categories` | tags | — | unread | remove | — | global core; no tagging concept for platform records. |
+| publish | `related_content`, `cta_label`, `cta_link` | various | — | unread | remove | — | global core; not applicable to platform records. |
+| card | (9 universal fields) | — | — | unread | remove | — | see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | see CR-051. |
+| blocks | `page_blocks`, `schema_type_override` | blocks/select | — | unread | keep | — | no route renders this collection currently. |
+| relations | `reviewRefs` | multi_reference (customer_reviews) | — | unread | keep-but-rework | — | see CR-054. |
+| seo | snake_case + camelCase pairs | various | — | unread | remove | — | no public route — all SEO fields are irrelevant until a sources page is built. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+| publish | `sourceName`, `sourceUrl`, `rating` (legacy, hidden) | — | — | unread | remove (after backfill) | — | `LEGACY_FIELDS_BY_COLLECTION['review_sources']`. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `source_name`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Official platform name, title case. Match the platform's own branding.
+- **Good example:** `Google Business Profile`
+- **Bad example:** `google` (lowercase slug form).
+- **Surfaces on:** No current public reader. Will appear in review attribution badges and `AggregateRating` schema.
+
+#### `average_rating`
+- **Section:** publish · **Type:** number · **Required:** no
+- **Format:** Decimal to one place (e.g., `4.9`). Must be within the `rating_scale` range. Update manually after each sync until an automated sync is in place.
+- **Good example:** `4.9`
+- **Bad example:** `49` (missing decimal; will render incorrectly in schema markup).
+- **Surfaces on:** No current public reader. Will feed `AggregateRating.ratingValue` in JSON-LD once REVSRC-001 is resolved.
+
+**Findings.**
+
+#### REVSRC-001 [P1] `review_sources` has no public route and its aggregate rating data is never emitted in schema — a missed rich-result opportunity
+- **File:** `src/lib/cms/collectionDefinitions.ts:1117` (`routePattern: '/reviews/sources/[slug]'`); no `src/app/reviews/sources/[slug]/page.tsx` found. No component reads `average_rating`, `review_count`, or `rating_scale` from Firestore.
+- **Observation:** The `review_sources` collection captures per-platform aggregate ratings (`average_rating`, `review_count`, `rating_scale`) specifically to enable `AggregateRating` schema on the public reviews hub page. However, no component reads these fields, and there is no route where this data would be rendered or emitted as JSON-LD.
+- **Why it matters:** Google's review-related rich results require `AggregateRating` with `ratingValue` and `reviewCount` at the business or product level. Without any consumer of `review_sources`, the aggregate rating data sits inert in Firestore.
+- **Suggested fix:** Build a reviews hub page (e.g., `src/app/reviews/page.tsx`) that reads all `review_sources` documents and emits a combined `AggregateRating` JSON-LD block alongside the top `customer_reviews` testimonials. The `source_type` field can be used to group badges by platform.
+- **Risk if changed:** low — additive new route.
+
+#### REVSRC-002 [P2] `review_sources` collection has no collection-specific template branch in `renderTemplate` — falls through to raw JSON dump (same risk as OURC-003)
+- **File:** `src/app/content/[collection]/[slug]/page.tsx:173-181`.
+- **Observation:** `review_sources` has no dedicated template in `renderTemplate`, so any published source record accessed via `/content/review_sources/<slug>` renders as `JSON.stringify(doc, null, 2)` in a `<pre>` block.
+- **Suggested fix:** Either add a `review_sources` branch that displays `source_name`, `source_logo`, and `average_rating`/`review_count`, or add `review_sources` to a blocklist that returns `notFound()` on the generic route.
+- **Risk if changed:** low.
+
+---
+
+### Collection: `media_assets`
+
+**Purpose.** Reusable image, video, and document assets for all content collections. This is the CMS file/image library, not a public content type. Edited and managed exclusively through the admin media library UI (`CmsMediaLibrary.tsx`); data is consumed by other collections via reference, not by public routes directly.
+
+**Public surfaces.**
+- Admin media library — `src/components/cms/admin/CmsMediaLibrary.tsx` is the primary consumer: reads `title`, `slug`, `assetUrl` for search/display (`:51-54`); uses `assetUrl` to build the copy-URL action.
+- Admin CMS page — `src/app/admin/cms/page.tsx:1043` reads `doc?.assetUrl` to extract the URL from a media_assets document when referenced by another collection's `image` field.
+- `blog_posts.heroImageAssetRef` (relations) — references `media_assets`; unread on public routes (see CR-054).
+- No public route (`src/app/**`) reads `media_assets` documents directly.
+- `routePattern` and `listingRoute` are not declared for `media_assets` (no public URL pattern).
+
+**Sample size:** 0 documents (Firestore was empty at audit time).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | admin-only | keep | — | unique asset identifier; used by `CmsMediaLibrary` search (`:52`). |
+| publish | `status` | select | yes | admin-only | keep | — | gates visibility in the media library. |
+| publish | `title` | text | yes | admin-only | keep | — | display name in the media library; searched at `CmsMediaLibrary.tsx:51`. |
+| publish | `assetType` | select | yes | admin-only | keep | — | `image` / `video` / `document` / `other`; drives UI icon and filter in media library. |
+| publish | `category` | text | — | admin-only | keep-but-rework | — | free-text category label (e.g., `Brand`, `Blog`); no structured options; risk of inconsistency. See MEDIA-001. |
+| publish | `folder` | text | — | admin-only | keep-but-rework | — | virtual path (e.g., `blog/covers`); not enforced by any folder browser UI. See MEDIA-001. |
+| publish | `assetUrl` | url | yes | admin-only | keep | — | canonical CDN or storage URL; read by `CmsMediaLibrary.tsx:53` and by admin CMS page (`:1043`). |
+| publish | `altText` | text | — | admin-only | keep | — | accessibility label; currently used only in admin preview. Should propagate to any `<img>` using this asset. |
+| publish | `mimeType` | text | — | admin-only | keep-but-rework | — | MIME type (e.g., `image/webp`); no validation against `assetUrl`; set manually. |
+| publish | `byteSize` | number | — | admin-only | keep | — | file size in bytes; formatted and displayed in `CmsMediaLibrary.tsx` via `formatBytes()` (`:19-26`). |
+| publish | `width` | number | — | admin-only | keep-but-rework | — | pixel width; no renderer uses it for responsive image `srcset`; useful metadata once implemented. |
+| publish | `height` | number | — | admin-only | keep-but-rework | — | pixel height; same as `width`. |
+| publish | `title` (global core) | text | yes | admin-only | merge-with-collection `title` | — | collection override wins in `mergeFieldSets`; same field, harmless. |
+| publish | `language` | select | yes | admin-only | remove | — | global core; not relevant for binary assets — media files are language-neutral. |
+| publish | `excerpt`, `short_description` | textarea | — | admin-only | remove | — | global core; no description concept for binary assets. |
+| publish | `featured_image` | image | — | admin-only | remove | — | global core; an asset cannot reference another asset as its own featured image. |
+| publish | `thumbnail_image` | image | — | admin-only | remove | — | global core; same reason. |
+| publish | `icon` | icon | — | admin-only | remove | — | global core; no icon concept for assets. |
+| publish | `author` | reference | — | admin-only | remove | — | global core; assets are not authored content. |
+| publish | `published_at` | datetime | — | admin-only | remove | — | global core; not meaningful for assets. |
+| publish | `updated_at` | datetime | yes | admin-only | remove | — | server-managed; irrelevant editor field. |
+| publish | `sort_order` | number | — | admin-only | remove | — | global core; no sorted asset listing. |
+| publish | `tags` | tags | — | admin-only | keep-but-rework | — | global core; useful for filtering assets in the media library by tag; low noise in an admin-only context. |
+| publish | `categories` | tags | — | admin-only | merge-with-`category` | — | global core; `category` (text) is the collection-specific equivalent. Keep one. |
+| publish | `related_content`, `cta_label`, `cta_link` | various | — | admin-only | remove | — | global core; not applicable to binary assets. |
+| card | (9 universal fields) | — | — | admin-only | remove | — | see CR-049; media assets do not surface on public listing pages. |
+| listing | (16 universal fields) | — | — | admin-only | remove | — | see CR-050. |
+| detail | (12 universal fields) | — | — | admin-only | remove | — | see CR-051. |
+| blocks | `page_blocks`, `schema_type_override` | blocks/select | — | admin-only | remove | — | no public route; block builder is irrelevant for a binary asset library. |
+| relations | (none defined) | — | — | — | — | — | `RELATIONSHIPS['media_assets']` is empty (`{}`). |
+| seo | all fields | — | — | admin-only | remove | — | no public route for `media_assets`; SEO section is noise in the admin UI. |
+| aeo | 12 fields | — | — | admin-only | remove | — | same reason. |
+| geo | 8 fields | — | — | admin-only | remove | — | same reason. |
+
+**Per-field documentation (admin-only fields — keep and keep-but-rework).**
+
+#### `title`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Human-readable asset name. Use sentence case. Describe the visual content, not the filename. Include dimensions or version if relevant.
+- **Good example:** `UAE Corporate Tax Guide — Cover image (1200×630)`
+- **Bad example:** `IMG_20240312_final_v3.jpg`
+- **Surfaces on:** Media library search index (`CmsMediaLibrary.tsx:51`); display label in the library grid.
+
+#### `assetUrl`
+- **Section:** publish · **Type:** url · **Required:** yes
+- **Format:** Full HTTPS CDN URL to the asset. For GCS/R2-backed uploads this is set automatically by the upload API. Do not edit unless migrating storage.
+- **Good example:** `https://storage.googleapis.com/finanshels-cms/blog/covers/uae-corporate-tax-guide-cover.webp`
+- **Bad example:** A local dev path or a signed URL that expires.
+- **Surfaces on:** Copy-URL action in `CmsMediaLibrary.tsx:53`; referenced by admin CMS page image fields (`:1043`).
+
+#### `altText`
+- **Section:** publish · **Type:** text · **Required:** no (but should be required)
+- **Format:** Descriptive sentence for screen readers and SEO. Should describe what is shown, not what the image is called. Max 125 characters.
+- **Good example:** `Bar chart showing UAE SME corporate tax rates by entity type, 2024`
+- **Bad example:** `image1` or a repeat of `title`.
+- **Surfaces on:** Admin UI only currently. Will propagate to `<img alt="">` once consuming components read `media_assets` via reference.
+
+#### `category`
+- **Section:** publish · **Type:** text · **Required:** no
+- **Format:** One of the agreed category labels (see MEDIA-001 for the recommended controlled list). Case-sensitive — use exact values to enable filtering.
+- **Good example:** `Blog covers`
+- **Bad example:** `blog_covers` (underscore form) or `blog` (too generic).
+- **Surfaces on:** Admin media library filter UI (once built — see MEDIA-001).
+
+**Findings.**
+
+#### MEDIA-001 [P2] `category` and `folder` fields are free-text with no controlled vocabulary — media library is unfilterable at scale
+- **File:** `src/lib/cms/collectionDefinitions.ts:946-947` (`category: type: 'text'`; `folder: type: 'text'`).
+- **Observation:** Both `category` (e.g., `Brand`) and `folder` (e.g., `blog/covers`) are plain `text` fields with no options list or validation. As the library grows, different editors will use inconsistent values (`Blog covers` vs `blog-covers` vs `blog_covers`), making the media library unfilterable in practice.
+- **Why it matters:** A media library with hundreds of assets and inconsistent category/folder values becomes unusable. Editors will re-upload duplicates because they cannot find existing assets.
+- **Suggested fix:** Convert `category` from `type: 'text'` to `type: 'select'` with a controlled list (`['Blog covers', 'Ebook covers', 'Team photos', 'Customer logos', 'Social media', 'Infographics', 'Other']`). Define `folder` as a select or enforce a path convention in the upload API.
+- **Risk if changed:** low — no public reader; only affects admin UI and data quality.
+
+#### MEDIA-002 [P2] Global core fields (`language`, `excerpt`, `short_description`, `featured_image`, `thumbnail_image`, `icon`, `author`, `published_at`, `updated_at`, `related_content`, `cta_label`, `cta_link`) are merged into `media_assets` but are completely inapplicable — severe editor noise
+- **File:** `src/lib/cms/collectionDefinitions.ts:1433` (`mergeFieldSets(globalCoreFields(), ...)`); `STRIP_PUBLISH_FIELDS_BY_COLLECTION` has no entry for `media_assets`.
+- **Observation:** `media_assets` receives the full `globalCoreFields()` merge (17 fields) but is the one collection where nearly all of them (`language`, `excerpt`, `featured_image`, `thumbnail_image`, `icon`, `author`, `published_at`, `updated_at`, `related_content`, `cta_label`, `cta_link`) have no meaning. The admin UI shows a media asset form with 28+ fields when only 9 are relevant.
+- **Why it matters:** The media library is a utility tool — editors uploading images should see `title`, `assetType`, `assetUrl`, `altText`, `category`, `folder`, `mimeType`, `byteSize`, `width`, `height` only. Presenting unrelated editorial fields creates confusion and accidental data entry.
+- **Suggested fix:** Add `media_assets` to `STRIP_PUBLISH_FIELDS_BY_COLLECTION` with the full list of inapplicable globals: `['language', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'updated_at', 'sort_order', 'categories', 'related_content', 'cta_label', 'cta_link']`. Also suppress all `seo`, `aeo`, `geo`, `card`, `listing`, `detail`, and `blocks` sections for this collection in the admin form renderer.
+- **Risk if changed:** low — fields are admin-only and unread by any public surface.
+
+#### MEDIA-003 [P2] `altText` is not required — accessibility gap for all assets referenced by public components
+- **File:** `src/lib/cms/collectionDefinitions.ts:949` (`altText` has no `required: true`).
+- **Observation:** The `altText` field is optional. Editors uploading images may skip it. When a consuming component eventually reads `media_assets` and renders `<img src={asset.assetUrl} alt={asset.altText}>`, a missing `altText` will produce an empty `alt` attribute — an accessibility violation and a Google Lighthouse failure.
+- **Why it matters:** All images served from `media_assets` must have descriptive alt text. Making this optional guarantees a backfill problem as the library grows.
+- **Suggested fix:** Set `altText` to `required: true` in the collection definition. Add a server-side validation check in the media upload API that warns (or blocks) when `altText` is missing for `assetType: 'image'`.
+- **Risk if changed:** low — admin-only change; existing documents without `altText` will surface as validation warnings only.
 
 ---
 
