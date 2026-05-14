@@ -517,10 +517,14 @@ function relationshipFields(rel: CollectionRelationshipDescriptor): CmsFieldDefi
  */
 const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> = {
   blog_posts: {
-    /** Author lives on the publish section as `author`; keep media + content-cluster links only here. */
-    references: [{ name: 'heroImageAssetRef', label: 'Hero media asset', target: 'media_assets' }],
+    /**
+     * CMO-redesign: relations for blog_posts shows ONLY non-blog content-cluster
+     * links. `relatedPostRefs` removed in favor of the publish-section
+     * `related_posts` (one canonical multi-ref for "blog-to-blog"). The hero
+     * image asset ref is stripped via HIDDEN_FIELDS_BY_COLLECTION (duplicates
+     * featured_image).
+     */
     multiReferences: [
-      { name: 'relatedPostRefs', label: 'Related blog posts', target: 'blog_posts' },
       { name: 'relatedGlossaryRefs', label: 'Related glossary terms', target: 'glossary_terms' },
       { name: 'relatedFaqRefs', label: 'Related FAQ questions', target: 'faq_questions' },
     ],
@@ -688,13 +692,77 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
         { name: 'body', label: 'Body', type: 'textarea', required: true },
         { name: 'author', label: 'Author', type: 'reference', referenceCollection: 'team_members', required: true },
         { name: 'publish_date', label: 'Publish date', type: 'datetime', required: true },
-        { name: 'reading_time', label: 'Reading time', type: 'number' },
-        { name: 'blog_category', label: 'Blog category', type: 'text', required: true },
+        // a11y companion to the universal featured_image. Required when featured_image is set
+        // (enforced in saveCmsDocumentAction).
+        { name: 'featured_image_alt', label: 'Featured image alt text', type: 'text', placeholder: 'Describe the image for screen readers' },
+        // CMO-redesign: blog_category is a curated dropdown (services + content types).
+        {
+          name: 'blog_category',
+          label: 'Blog category',
+          type: 'select',
+          required: true,
+          options: [
+            'corporate-tax',
+            'vat',
+            'transfer-pricing',
+            'audit',
+            'accounting',
+            'bookkeeping',
+            'payroll',
+            'compliance',
+            'advisory',
+            'cfo-services',
+            'esr-aml-ubo',
+            'regulatory-updates',
+            'founder-stories',
+            'how-to-guides',
+          ],
+        },
+        // CMO-redesign: industry vertical the post serves (optional).
+        {
+          name: 'blog_industry',
+          label: 'Blog industry',
+          type: 'select',
+          options: [
+            'technology',
+            'ecommerce',
+            'professional-services',
+            'manufacturing',
+            'healthcare',
+            'real-estate',
+            'hospitality',
+            'retail',
+            'fintech',
+            'logistics',
+            'general',
+          ],
+        },
         { name: 'blog_tags', label: 'Blog tags', type: 'tags' },
+        // CMO-redesign: persona the post is written for.
+        {
+          name: 'target_persona',
+          label: 'Target persona',
+          type: 'select',
+          options: ['founder', 'ceo', 'cfo', 'finance-manager', 'accountant', 'controller', 'business-owner', 'agency-owner', 'none'],
+        },
         { name: 'table_of_contents_enabled', label: 'TOC enabled', type: 'boolean' },
         { name: 'featured_post', label: 'Featured post', type: 'boolean' },
         { name: 'related_posts', label: 'Related posts', type: 'multi_reference', referenceCollection: 'blog_posts' },
-        { name: 'lead_magnet_cta', label: 'Lead magnet CTA', type: 'json', placeholder: '{"label":"...","href":"..."}' },
+        // CMO-redesign: series_ref links to the parent post in a multi-part series.
+        { name: 'series_ref', label: 'Series parent post', type: 'reference', referenceCollection: 'blog_posts' },
+        // CMO-redesign: replaces the lead_magnet_cta JSON blob with three plain inputs.
+        { name: 'lead_magnet_label', label: 'Lead magnet label', type: 'text', placeholder: 'Download the founder tax checklist' },
+        { name: 'lead_magnet_url', label: 'Lead magnet URL', type: 'url', placeholder: 'https://...' },
+        { name: 'lead_magnet_form_id', label: 'Lead magnet form ID', type: 'text', placeholder: 'hubspot-form-uuid' },
+        // CMO-redesign: noindex/indexable promoted from SEO so every post has one obvious place to gate visibility.
+        { name: 'indexable', label: 'Indexable (allow search engines)', type: 'boolean' },
+        { name: 'noindex', label: 'Noindex (force exclude)', type: 'boolean' },
+        // CMO-redesign: the three detail-page knobs worth keeping per-post.
+        { name: 'detail_lead_capture_form_id', label: 'Lead-capture form ID (detail page)', type: 'text', placeholder: 'hubspot-form-uuid' },
+        { name: 'detail_sticky_side_cta_label', label: 'Sticky side CTA label', type: 'text' },
+        { name: 'detail_sticky_side_cta_link', label: 'Sticky side CTA link', type: 'url', placeholder: 'https://...' },
+        // reading_time is auto-computed at save time (~200 wpm) and stored back into the doc;
+        // editors do not see this field — it is added to legacyAliases below.
       ],
     },
   },
@@ -1120,9 +1188,49 @@ type CmsHiddenFields = { legacyAliases: string[]; strip: string[] }
 const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFields>> = {
   blog_posts: {
     legacyAliases: ['authorName', 'heroImageUrl', 'bodyHtml', 'category'],
-    // FIX-028: removes per-author server-managed and duplicate fields.
-    // FIX-036: `related_posts` moves to legacyAliases so `relatedPostRefs` (relations) becomes canonical.
-    strip: ['updated_at', 'published_at', 'categories', 'tags', 'short_description', 'related_content', 'related_posts'],
+    // CMO-redesign: strip list applies across ALL sections.
+    strip: [
+      // FIX-028 publish duplicates
+      'updated_at',
+      'published_at',
+      'categories',
+      'tags',
+      'short_description',
+      'related_content',
+      // FIX-036: canonical relation is `relatedPostRefs` (relations); `related_posts` in publish is stripped.
+      // NOTE: we keep the new blog_posts `related_posts` in publish (which is the canonical
+      // editor-facing field) — the strip removes the *global-core* `related_content` only.
+      // SEO trim: twitter handle is org-wide; noindex/indexable promoted to publish.
+      'twitter_creator_handle',
+      // AEO trim: keep only directAnswer + faqItems for blog_posts.
+      'answerSnippet',
+      'howToSteps',
+      'speakableContent',
+      // GEO trim: keep citations / keyStatistics / expertQuotes only; drop the rest.
+      'relatedEntities',
+      'regionsCovered',
+      'languagesCovered',
+      // Universal CTA duplicates (replaced by lead_magnet_* triple).
+      'cta_label',
+      'cta_link',
+      // Universal "featured" boolean is a duplicate of the publish-section `featured_post`.
+      'featured',
+      // sort_order is publish_date for blog_posts; manual override is misleading.
+      'sort_order',
+      // Universal globalContentLayoutFields fields that aren't useful for editorial posts.
+      'hero_heading',
+      'hero_subheading',
+      'sections',
+      'sidebar_cta_enabled',
+      'primary_cta_variant',
+      'template_variant',
+      // Universal relations: hero image asset ref duplicates featured_image.
+      'heroImageAssetRef',
+      // Card section disappears via SUPPRESSED_SECTIONS_BY_COLLECTION; card_* names
+      // listed here as a belt-and-braces guard if suppression is ever toggled off.
+      'card_description',
+      'card_image',
+    ],
   },
   glossary_terms: {
     legacyAliases: ['definition', 'bodyHtml', 'relatedSlugs'],
@@ -1193,6 +1301,9 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
  */
 const SUPPRESSED_SECTIONS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsSectionKey[]>> = {
   media_assets: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
+  // CMO-redesign: card/listing duplicate publish + index settings respectively;
+  // detail keeps only the three knobs promoted into publish above.
+  blog_posts: ['card', 'listing', 'detail'],
 }
 
 export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECTION_DEFINITIONS_BASE.map((definition) => {
@@ -1208,8 +1319,12 @@ export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECT
     definition.sections.publish ?? []
   )
   const hidden = HIDDEN_FIELDS_BY_COLLECTION[definition.key] ?? { legacyAliases: [], strip: [] }
-  const hiddenNames = new Set<string>([...hidden.legacyAliases, ...hidden.strip])
-  const normalizedPublish = mergedPublish.filter((field) => !hiddenNames.has(field.name))
+  // Strip list now applies to EVERY section, not just publish. This lets a
+  // collection say "twitter_creator_handle isn't relevant for me" once and
+  // have it removed from SEO; same pattern for AEO/GEO fields that only some
+  // collections care about.
+  const stripped = new Set<string>([...hidden.legacyAliases, ...hidden.strip])
+  const filter = (fields: CmsFieldDefinition[]) => fields.filter((f) => !stripped.has(f.name))
 
   const suppressed = new Set<CmsSectionKey>(SUPPRESSED_SECTIONS_BY_COLLECTION[definition.key] ?? [])
   const empty: CmsFieldDefinition[] = []
@@ -1217,16 +1332,16 @@ export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECT
   return {
     ...definition,
     sections: {
-      publish: normalizedPublish,
-      card: suppressed.has('card') ? empty : cardFields,
-      listing: suppressed.has('listing') ? empty : listingFields,
-      detail: suppressed.has('detail') ? empty : detailFields,
-      blocks: suppressed.has('blocks') ? empty : blocksFields,
-      relations: suppressed.has('relations') ? empty : relations,
-      seo: suppressed.has('seo') ? empty : globalSeoFields(),
+      publish: filter(mergedPublish),
+      card: suppressed.has('card') ? empty : filter(cardFields),
+      listing: suppressed.has('listing') ? empty : filter(listingFields),
+      detail: suppressed.has('detail') ? empty : filter(detailFields),
+      blocks: suppressed.has('blocks') ? empty : filter(blocksFields),
+      relations: suppressed.has('relations') ? empty : filter(relations),
+      seo: suppressed.has('seo') ? empty : filter(globalSeoFields()),
       // FIX-026: aeo now contains only the five genuine AEO signals.
-      aeo: suppressed.has('aeo') ? empty : commonAeoFields(),
-      geo: suppressed.has('geo') ? empty : commonGeoFields(),
+      aeo: suppressed.has('aeo') ? empty : filter(commonAeoFields()),
+      geo: suppressed.has('geo') ? empty : filter(commonGeoFields()),
     },
   } satisfies CmsCollectionDefinition
 })

@@ -327,6 +327,18 @@ async function saveCmsDocumentAction(formData: FormData) {
     }
   }
 
+  // CMO-redesign: blog_posts require featured_image_alt when featured_image
+  // is set (a11y + image SEO). Symmetric with the media_assets rule above.
+  if (definition.key === 'blog_posts') {
+    const featuredImage = parsed.featured_image
+    if (typeof featuredImage === 'string' && featuredImage.trim().length > 0) {
+      const altText = parsed.featured_image_alt
+      if (!(typeof altText === 'string' && altText.trim().length > 0)) {
+        redirect(`${isCreate ? editorBaseCreate : editorBaseEdit(slug)}&error=missing-featured_image_alt`)
+      }
+    }
+  }
+
   // Pass 3: build the payload, omitting undefined values so partial submits
   // don't overwrite stored data with undefined.
   const payload: Record<string, unknown> = {}
@@ -335,6 +347,20 @@ async function saveCmsDocumentAction(formData: FormData) {
   }
 
   payload[slugField] = slug
+
+  // CMO-redesign: auto-compute reading_time for blog_posts at save time.
+  // Uses ~200 wpm on plain-text-stripped body; stored alongside payload so
+  // the editor never has to think about it. If body is empty, omit the field.
+  if (definition.key === 'blog_posts') {
+    const body = parsed.body
+    if (typeof body === 'string' && body.trim().length > 0) {
+      const plain = body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+      const words = plain.length > 0 ? plain.split(' ').length : 0
+      if (words > 0) {
+        payload.reading_time = Math.max(1, Math.round(words / 200))
+      }
+    }
+  }
 
   // Status precedence (FIX-016): button-clicked `requestedStatus` wins, then the
   // server-known current doc status, then 'draft'. The form's `status` select
