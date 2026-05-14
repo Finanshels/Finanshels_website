@@ -1,9 +1,11 @@
 import { reserveUnusedMediaSlug, type CmsMediaAssetType, upsertCmsDocument } from './collectionRepository'
 import { slugifyForCms } from './slugify'
 import { uploadCmsMediaBytes } from './storageUpload'
-
-/** Kept aligned with Firebase / infrastructure expectations; enforced before buffering. */
-export const CMS_MEDIA_UPLOAD_MAX_BYTES = 50 * 1024 * 1024
+// Re-export so any server-side caller of the existing API path keeps working.
+// New code should import from './mediaUploadLimits' directly to stay
+// client-safe; this module imports firebase-admin transitively.
+export { CMS_MEDIA_UPLOAD_MAX_BYTES } from './mediaUploadLimits'
+import { CMS_MEDIA_UPLOAD_MAX_BYTES } from './mediaUploadLimits'
 
 /** Works with `File` from the browser FormData payload (server or client). */
 export type ReadableUploadFile = Pick<File, 'name' | 'size' | 'type'> & {

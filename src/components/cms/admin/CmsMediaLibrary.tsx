@@ -5,7 +5,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileText, ImageIcon, Link2, Loader2, Search, Trash2, Upload } from 'lucide-react'
 import type { CmsMediaLibraryItem } from '@/lib/cms/collectionRepository'
-import { CMS_MEDIA_UPLOAD_MAX_BYTES } from '@/lib/cms/persistMediaAssetUpload'
+import { CMS_MEDIA_UPLOAD_MAX_BYTES } from '@/lib/cms/mediaUploadLimits'
 
 const MEDIA_UPLOAD_API = '/api/admin/cms/media/upload'
 const MEDIA_UPLOAD_MAX_MB = Math.round(CMS_MEDIA_UPLOAD_MAX_BYTES / (1024 * 1024))
