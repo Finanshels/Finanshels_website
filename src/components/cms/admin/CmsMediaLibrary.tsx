@@ -5,8 +5,10 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileText, ImageIcon, Link2, Loader2, Search, Trash2, Upload } from 'lucide-react'
 import type { CmsMediaLibraryItem } from '@/lib/cms/collectionRepository'
+import { CMS_MEDIA_UPLOAD_MAX_BYTES } from '@/lib/cms/persistMediaAssetUpload'
 
 const MEDIA_UPLOAD_API = '/api/admin/cms/media/upload'
+const MEDIA_UPLOAD_MAX_MB = Math.round(CMS_MEDIA_UPLOAD_MAX_BYTES / (1024 * 1024))
 
 type Props = {
   items: CmsMediaLibraryItem[]
@@ -174,7 +176,7 @@ export function CmsMediaLibrary({
                 : 'Drop files here or click to browse'}
             </p>
             <p className="mt-2 max-w-lg text-xs text-slate-500">
-              PNG, JPG, GIF, WebP, SVG, PDF supported · max 25 MB per file · published immediately for picker fields
+              PNG, JPG, GIF, WebP, SVG, PDF, MP4, WebM, Office docs supported · max {MEDIA_UPLOAD_MAX_MB} MB per file · published immediately for picker fields
             </p>
           </div>
         </div>

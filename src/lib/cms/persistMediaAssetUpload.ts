@@ -111,7 +111,8 @@ export async function persistMediaAssetUpload(
       return { ok: false, error: 'Empty file.' }
     }
     if (file.size > CMS_MEDIA_UPLOAD_MAX_BYTES) {
-      return { ok: false, error: 'Maximum file size is 50 MB.' }
+      const mb = Math.round(CMS_MEDIA_UPLOAD_MAX_BYTES / (1024 * 1024))
+      return { ok: false, error: `Maximum file size is ${mb} MB.` }
     }
 
     const contentType = inferUploadedMediaMime(file.name, file.type) || file.type || 'application/octet-stream'

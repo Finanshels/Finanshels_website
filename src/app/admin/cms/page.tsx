@@ -352,6 +352,16 @@ async function saveCmsDocumentAction(formData: FormData) {
     }
   }
 
+  // FIX-020: image media assets require non-empty altText for accessibility.
+  // Conditional on assetType=image because video/document assets don't render
+  // as <img> on the public site.
+  if (definition.key === 'media_assets' && parsed.assetType === 'image') {
+    const alt = parsed.altText
+    if (!(typeof alt === 'string' && alt.trim().length > 0)) {
+      redirect(`${isCreate ? editorBaseCreate : editorBaseEdit(slug)}&error=missing-altText`)
+    }
+  }
+
   // Pass 3: build the payload, omitting undefined values so partial submits
   // don't overwrite stored data with undefined.
   const payload: Record<string, unknown> = {}

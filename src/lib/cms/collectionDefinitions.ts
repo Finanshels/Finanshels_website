@@ -954,7 +954,14 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
         { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'title', label: 'Title', type: 'text', required: true },
         { name: 'assetType', label: 'Asset type', type: 'select', options: ['image', 'video', 'document', 'other'], required: true },
-        { name: 'category', label: 'Category', type: 'text', placeholder: 'Brand' },
+        {
+          // FIX-021: replace free-text category with a controlled dropdown so all
+          // assets fall into a known bucket and folder filtering stays meaningful.
+          name: 'category',
+          label: 'Category',
+          type: 'select',
+          options: ['Blog covers', 'Ebook covers', 'Team photos', 'Customer logos', 'Social media', 'Infographics', 'Other'],
+        },
         { name: 'folder', label: 'Folder', type: 'text', placeholder: 'blog/covers' },
         { name: 'assetUrl', label: 'Asset URL', type: 'url', required: true, placeholder: 'https://...' },
         { name: 'altText', label: 'Alt text', type: 'text', placeholder: 'Describe the visual for accessibility' },
@@ -1443,6 +1450,43 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
   ebooks: { legacyAliases: ['title', 'summary', 'downloadUrl', 'coverImageUrl'], strip: [] },
   webinars: { legacyAliases: ['title', 'registrationUrl', 'hostName', 'speakers'], strip: [] },
   team_members: { legacyAliases: ['name', 'role', 'bio', 'photoUrl', 'linkedinUrl', 'twitterUrl'], strip: [] },
+  // FIX-022: media_assets is a utility (library), not editorial content. Strip
+  // global publish fields that are meaningless here: locale/excerpt/featured-image
+  // and the SEO/AEO/GEO/card/listing/detail/blocks/relations sections (handled
+  // separately below).
+  media_assets: {
+    legacyAliases: [],
+    strip: [
+      'language',
+      'excerpt',
+      'short_description',
+      'featured_image',
+      'featured_image_url',
+      'thumbnail_image',
+      'icon',
+      'author',
+      'published_at',
+      'updated_at',
+      'sort_order',
+      'categories',
+      'tags',
+      'related_content',
+      'cta_label',
+      'cta_link',
+      'publish_date',
+      'publish_at',
+    ],
+  },
+}
+
+/**
+ * FIX-022: per-collection section suppression. Sections listed here are NOT
+ * merged into the final `CmsCollectionDefinition.sections` for the given
+ * collection. `media_assets` is a utility/library — SEO/AEO/GEO/card/listing/
+ * detail/blocks/relations are all meaningless there.
+ */
+const SUPPRESSED_SECTIONS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsSectionKey[]>> = {
+  media_assets: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
 }
 
 export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECTION_DEFINITIONS_BASE.map((definition) => {
@@ -1457,19 +1501,22 @@ export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECT
   const hiddenNames = new Set<string>([...hidden.legacyAliases, ...hidden.strip])
   const normalizedPublish = mergedPublish.filter((field) => !hiddenNames.has(field.name))
 
+  const suppressed = new Set<CmsSectionKey>(SUPPRESSED_SECTIONS_BY_COLLECTION[definition.key] ?? [])
+  const empty: CmsFieldDefinition[] = []
+
   return {
     ...definition,
     titleField: NORMALIZED_TITLE_FIELD_BY_COLLECTION[definition.key] ?? definition.titleField,
     sections: {
       publish: normalizedPublish,
-      card: cardFields,
-      listing: listingFields,
-      detail: detailFields,
-      blocks: blocksFields,
-      relations,
-      seo: mergeFieldSets(globalSeoFields(), commonSeoFields()),
-      aeo: mergeFieldSets(globalContentLayoutFields(), commonAeoFields()),
-      geo: commonGeoFields(),
+      card: suppressed.has('card') ? empty : cardFields,
+      listing: suppressed.has('listing') ? empty : listingFields,
+      detail: suppressed.has('detail') ? empty : detailFields,
+      blocks: suppressed.has('blocks') ? empty : blocksFields,
+      relations: suppressed.has('relations') ? empty : relations,
+      seo: suppressed.has('seo') ? empty : mergeFieldSets(globalSeoFields(), commonSeoFields()),
+      aeo: suppressed.has('aeo') ? empty : mergeFieldSets(globalContentLayoutFields(), commonAeoFields()),
+      geo: suppressed.has('geo') ? empty : commonGeoFields(),
     },
   } satisfies CmsCollectionDefinition
 })
