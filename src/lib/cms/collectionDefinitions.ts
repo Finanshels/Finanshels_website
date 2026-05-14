@@ -411,27 +411,16 @@ export const CMS_INCOMING_REFERENCES: Record<CmsCollectionKey, IncomingReference
   ],
 }
 
-function commonSeoFields(): CmsFieldDefinition[] {
-  return [
-    { name: 'focusKeyword', label: 'Focus keyword', type: 'text', placeholder: 'founder decision making framework' },
-    { name: 'seoTitle', label: 'SEO title', type: 'text', placeholder: 'Optimized page title' },
-    { name: 'seoDescription', label: 'SEO description', type: 'textarea', placeholder: '155-160 character description' },
-    { name: 'seoKeywords', label: 'SEO keywords', type: 'tags', placeholder: 'keyword one, keyword two' },
-    { name: 'secondaryKeywords', label: 'Secondary keywords (LSI)', type: 'tags', placeholder: 'long-tail keyword one, keyword two' },
-    { name: 'ogTitle', label: 'Open Graph title', type: 'text', placeholder: 'Social sharing title' },
-    { name: 'ogDescription', label: 'Open Graph description', type: 'textarea', placeholder: 'Social sharing description' },
-    { name: 'ogImageUrl', label: 'Open Graph image URL', type: 'url', placeholder: 'https://...' },
-    {
-      name: 'twitterCardType',
-      label: 'Twitter card type',
-      type: 'select',
-      options: ['summary_large_image', 'summary', 'app', 'player'],
-    },
-    { name: 'twitterCreatorHandle', label: 'Twitter creator handle', type: 'text', placeholder: '@finanshels' },
-    { name: 'robotsMeta', label: 'Robots meta', type: 'select', options: ['index,follow', 'noindex,follow', 'index,nofollow', 'noindex,nofollow'] },
-    { name: 'canonicalUrl', label: 'Canonical URL', type: 'url', placeholder: 'https://www.finanshels.com/...' },
-  ]
-}
+/**
+ * FIX-025: `commonSeoFields()` deleted. The six camelCase duplicates
+ * (`seoTitle`, `seoDescription`, `ogTitle`, `ogDescription`, `ogImageUrl`,
+ * `canonicalUrl`) collapsed into the snake_case canonicals in
+ * `globalSeoFields()` below. The unique non-duplicated entries
+ * (`focus_keyword`, `seo_keywords`, `secondary_keywords`, `twitter_card_type`,
+ * `twitter_creator_handle`, `robots_meta`) were folded into `globalSeoFields()`
+ * as snake_case names. Net: 24 SEO fields per collection → 18 (× 15 collections
+ * = 90 form inputs removed).
+ */
 
 function globalCoreFields(): CmsFieldDefinition[] {
   return [
@@ -464,13 +453,28 @@ function globalCoreFields(): CmsFieldDefinition[] {
 
 function globalSeoFields(): CmsFieldDefinition[] {
   return [
+    { name: 'focus_keyword', label: 'Focus keyword', type: 'text', placeholder: 'founder decision making framework' },
     { name: 'seo_title', label: 'SEO title', type: 'text', placeholder: 'Search title' },
     { name: 'meta_description', label: 'Meta description', type: 'textarea', placeholder: 'Search snippet' },
     { name: 'meta_keywords', label: 'Meta keywords', type: 'tags', placeholder: 'keyword-a, keyword-b' },
+    { name: 'secondary_keywords', label: 'Secondary keywords (LSI)', type: 'tags', placeholder: 'long-tail keyword one, keyword two' },
     { name: 'canonical_url', label: 'Canonical URL', type: 'url', placeholder: 'https://...' },
     { name: 'og_title', label: 'OG title', type: 'text', placeholder: 'Social title' },
     { name: 'og_description', label: 'OG description', type: 'textarea', placeholder: 'Social description' },
     { name: 'og_image', label: 'OG image', type: 'image', placeholder: 'https://...' },
+    {
+      name: 'twitter_card_type',
+      label: 'Twitter card type',
+      type: 'select',
+      options: ['summary_large_image', 'summary', 'app', 'player'],
+    },
+    { name: 'twitter_creator_handle', label: 'Twitter creator handle', type: 'text', placeholder: '@finanshels' },
+    {
+      name: 'robots_meta',
+      label: 'Robots meta',
+      type: 'select',
+      options: ['index,follow', 'noindex,follow', 'index,nofollow', 'noindex,nofollow'],
+    },
     {
       name: 'schema_type',
       label: 'Schema type',
@@ -1514,7 +1518,7 @@ export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECT
       detail: suppressed.has('detail') ? empty : detailFields,
       blocks: suppressed.has('blocks') ? empty : blocksFields,
       relations: suppressed.has('relations') ? empty : relations,
-      seo: suppressed.has('seo') ? empty : mergeFieldSets(globalSeoFields(), commonSeoFields()),
+      seo: suppressed.has('seo') ? empty : globalSeoFields(),
       aeo: suppressed.has('aeo') ? empty : mergeFieldSets(globalContentLayoutFields(), commonAeoFields()),
       geo: suppressed.has('geo') ? empty : commonGeoFields(),
     },

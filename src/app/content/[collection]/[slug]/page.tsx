@@ -50,6 +50,7 @@ function resolveTitle(doc: Record<string, unknown>, fallback: string): string {
 }
 
 function resolveDescription(doc: Record<string, unknown>): string {
+  // Snake_case canonicals first; legacy camelCase fallbacks for unmigrated docs.
   const source =
     (typeof doc.meta_description === 'string' && doc.meta_description) ||
     (typeof doc.seoDescription === 'string' && doc.seoDescription) ||
@@ -192,9 +193,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = resolveTitle(doc, `${definition.singularLabel} | Finanshels`)
   const description = resolveDescription(doc)
   const canonical = resolveCanonical(definition.key, doc, slug)
+  // FIX-025 + FIX-004: read snake_case canonicals; legacy camelCase fallbacks
+  // remain in place for any pre-migration documents in Firestore.
+  const robotsMetaRaw =
+    (typeof doc.robots_meta === 'string' && doc.robots_meta) ||
+    (typeof doc.robotsMeta === 'string' && doc.robotsMeta) ||
+    ''
   const noindex =
     doc.noindex === true ||
-    (typeof doc.robotsMeta === 'string' && doc.robotsMeta.toLowerCase().includes('noindex')) ||
+    (robotsMetaRaw && robotsMetaRaw.toLowerCase().includes('noindex')) ||
     doc.indexable === false
   const ogImage =
     (typeof doc.og_image === 'string' && doc.og_image) ||
@@ -204,17 +211,44 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     (typeof doc.heroImageUrl === 'string' && doc.heroImageUrl) ||
     null
 
+  // FIX-004: prefer the editor-supplied OG/Twitter overrides when set; fall back
+  // to page title/description.
+  const ogTitle =
+    (typeof doc.og_title === 'string' && doc.og_title.trim()) ||
+    (typeof doc.ogTitle === 'string' && doc.ogTitle.trim()) ||
+    title
+  const ogDescription =
+    (typeof doc.og_description === 'string' && doc.og_description.trim()) ||
+    (typeof doc.ogDescription === 'string' && doc.ogDescription.trim()) ||
+    description ||
+    undefined
+  const twitterCard =
+    (typeof doc.twitter_card_type === 'string' && doc.twitter_card_type) ||
+    (typeof doc.twitterCardType === 'string' && doc.twitterCardType) ||
+    'summary_large_image'
+  const twitterCreator =
+    (typeof doc.twitter_creator_handle === 'string' && doc.twitter_creator_handle) ||
+    (typeof doc.twitterCreatorHandle === 'string' && doc.twitterCreatorHandle) ||
+    undefined
+
   return {
     title,
     description: description || undefined,
     alternates: { canonical },
     robots: noindex ? { index: false, follow: false } : undefined,
     openGraph: {
-      title,
-      description: description || undefined,
+      title: ogTitle,
+      description: ogDescription,
       url: canonical,
       type: 'article',
       images: ogImage ? [ogImage] : undefined,
+    },
+    twitter: {
+      card: (twitterCard as 'summary_large_image' | 'summary' | 'app' | 'player') || 'summary_large_image',
+      title: ogTitle,
+      description: ogDescription,
+      images: ogImage ? [ogImage] : undefined,
+      creator: twitterCreator,
     },
   }
 }

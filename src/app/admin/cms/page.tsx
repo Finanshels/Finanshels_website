@@ -1262,10 +1262,13 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
       !(f.name === 'title' && definition.titleField !== 'title')
   )
   const currentStatus = String(formValues.status ?? 'draft')
+  // FIX-025: canonical SEO field names are snake_case. CamelCase reads remain
+  // as fallbacks for any unmigrated documents (whose admin form no longer
+  // exposes them, but whose stored values still flow through grading).
   const seoTitle = readText(formValues.seo_title ?? formValues.seoTitle)
   const seoDescription = readText(formValues.meta_description ?? formValues.seoDescription)
-  const focusKeyword = readText(formValues.focusKeyword)
-  const secondaryKeywordCount = readTagCount(formValues.meta_keywords ?? formValues.secondaryKeywords)
+  const focusKeyword = readText(formValues.focus_keyword ?? formValues.focusKeyword)
+  const secondaryKeywordCount = readTagCount(formValues.secondary_keywords ?? formValues.secondaryKeywords ?? formValues.meta_keywords)
   const directAnswer = readText(formValues.directAnswer || formValues.answerSnippet)
   const faqCount = readJsonArrayCount(formValues.faqItems)
   const howToCount = readJsonArrayCount(formValues.howToSteps)
