@@ -2680,4 +2680,273 @@ All 15 blocks defined in `CMS_BLOCK_TYPES` (`collectionDefinitions.ts:89-336`) h
 
 ## Part 4 — Prioritized fix backlog
 
-<!-- TASK-5 -->
+### Pass 1 — Low-risk now (one PR)
+
+- [ ] **FIX-001 — Fix silent JSON/block parse drop in `parseFieldValue`**
+  - Refs: CR-002
+  - Acceptance: When a save action receives malformed JSON or an invalid blocks array, it redirects with `?error=invalid-json:fieldName` instead of silently writing `[]`/`undefined`; the editor sees an error banner, not a success toast.
+  - Migration: none
+
+- [ ] **FIX-002 — Enforce slug uniqueness on create**
+  - Refs: CR-010
+  - Acceptance: A `create` save that supplies a slug already used by an existing document redirects with `?error=slug-taken` and no document is written; the existing document is not merged/overwritten.
+  - Migration: none
+
+- [ ] **FIX-003 — Add `approved_for_publication` to the visibility gate for `customer_reviews`**
+  - Refs: REV-002
+  - Acceptance: A `customer_reviews` document with `status: published` but `approved_for_publication: false` (or missing) receives a `notFound()` response on the generic route, identical to an unpublished document.
+  - Migration: none
+
+- [ ] **FIX-004 — Wire existing OG fields (`ogTitle`, `ogDescription`, `twitterCard`, `twitterCreator`) into `generateMetadata` or remove them**
+  - Refs: CR-046
+  - Acceptance: Either (a) all four fields produce correct `<meta>` tags in `generateMetadata` on the generic route, or (b) the fields are removed from `globalSeoFields`/`commonSeoFields` and no admin form shows them. One or the other — no mixed state.
+  - Migration: none
+
+- [ ] **FIX-005 — Delete dead exports `inferUploadedImageMime` and `getAdminRole`**
+  - Refs: CR-042
+  - Acceptance: `grep -rn 'inferUploadedImageMime\|getAdminRole' src/` returns zero results; `ts-prune` (or equivalent) CI check added to flag new dead exports.
+  - Migration: none
+
+- [ ] **FIX-006 — Fix `parseFieldValue('reference', '')` returning `''` instead of `undefined`**
+  - Refs: CR-015
+  - Acceptance: When the reference dropdown is cleared to the empty/placeholder option, the field is omitted from the save payload (not stored as `''`). Existing documents with `''` stored are unaffected by this change alone (no migration needed; the write path simply no longer produces new `''` values).
+  - Migration: none
+
+- [ ] **FIX-007 — Delete dead multi_reference CSV branch in `parseFieldValue`/`stringifyFieldValue`**
+  - Refs: CR-016
+  - Acceptance: `parseFieldValue('multi_reference', ...)` branch is removed; `stringifyFieldValue` no longer emits CSV for multi_reference values; existing tests (or new snapshot tests) confirm multi_reference round-trips correctly via the `getAll` path only.
+  - Migration: none
+
+- [ ] **FIX-008 — Centralize status-color maps into a single `statusStyle.ts` helper**
+  - Refs: CR-044
+  - Acceptance: Three call sites (`CmsCollectionItemTable.tsx`, `page.tsx`, `ReverseReferencesPanel.tsx`) all import from a single `cms/admin/statusStyle.ts`; adding a new status string requires exactly one edit.
+  - Migration: none
+
+- [ ] **FIX-009 — Merge `LEGACY_FIELDS_BY_COLLECTION` and `STRIP_PUBLISH_FIELDS_BY_COLLECTION` into a single typed map**
+  - Refs: CR-045
+  - Acceptance: A single `HIDDEN_FIELDS_BY_COLLECTION: Record<CollectionKey, { strip: string[]; legacyAliases: string[] }>` replaces both maps; all existing behavior is preserved; inline comment explains the role of each sub-key.
+  - Migration: none
+
+- [ ] **FIX-010 — Fix N+1 media-asset URL reads on editor open**
+  - Refs: CR-022
+  - Acceptance: The `Promise.all(mediaAssets.map(getCmsDocument(...)))` loop is replaced by a single `listCmsMediaLibraryItems(120)` call; editor-open network waterfall shows at most 1 Firestore read for media URLs (down from up to 120).
+  - Migration: none
+
+- [ ] **FIX-011 — Replace per-path `revalidatePath` calls with a coalesced `revalidateTag('cms-sitemap')`**
+  - Refs: CR-039
+  - Acceptance: Each CMS save fires exactly one cache invalidation for sitemap/llms targets (via `revalidateTag`), not 3+ separate `revalidatePath` calls; bulk publish of 50 items triggers one tag invalidation, not 150 path invalidations.
+  - Migration: none
+
+- [ ] **FIX-012 — Add middleware-level admin auth guard**
+  - Refs: CR-036
+  - Acceptance: A `middleware.ts` with matcher `'/admin/:path*'` calls `getCurrentSession()` and redirects to the login page when unauthenticated; any new admin route added without a per-page `requireAdminAuth` call is still protected.
+  - Migration: none
+
+- [ ] **FIX-013 — Throw at startup when `CMS_ADMIN_SESSION_SECRET` is unset in production**
+  - Refs: CR-038
+  - Acceptance: `getSessionSalt()` throws (or `process.exit(1)`) at module initialization when `NODE_ENV === 'production'` and `CMS_ADMIN_SESSION_SECRET` is not set; the hard-coded fallback string is removed from the default.
+  - Migration: none
+
+- [ ] **FIX-014 — Sanitize SVG uploads and align `persistMediaAssetUpload` / `storageUpload` MIME contracts**
+  - Refs: CR-034, CR-035, CR-019
+  - Acceptance: (a) SVG bytes are run through a script-stripping sanitizer before upload; (b) `persistMediaAssetUpload.DOCUMENT_MIME_TYPES` is either removed or `storageUpload.ALLOWED_MIME` is expanded to match — the two layers agree on what is accepted; (c) a file-magic-byte check rejects files whose extension does not match their binary signature.
+  - Migration: none
+
+- [ ] **FIX-015 — Fix UI upload size hint to match the backend constant**
+  - Refs: CR-020
+  - Acceptance: `CmsMediaLibrary.tsx` reads the limit from `persistMediaAssetUpload.CMS_MEDIA_UPLOAD_MAX_BYTES` (or a shared constant); the displayed hint matches the server-enforced ceiling; no hardcoded `25 MB` string remains.
+  - Migration: none
+
+- [ ] **FIX-016 — Drop `formStatus` from the save-action status precedence chain**
+  - Refs: CR-013
+  - Acceptance: The fallback chain is `requestedStatus → cmsCurrentStatus → 'draft'`; the `formStatus` branch is removed; server action unit tests confirm no phantom field can override status.
+  - Migration: none
+
+- [ ] **FIX-017 — Validate and reject invalid `scheduledAt` dates in the save action**
+  - Refs: CR-012
+  - Acceptance: An invalid date string (e.g., `2026-13-99`) in the `scheduledAt` field causes the action to redirect with `?error=invalid-schedule` instead of silently writing `null`; a `status: scheduled` save without a valid future `scheduledAt` is also rejected.
+  - Migration: none
+
+- [ ] **FIX-018 — Add `aria-live` result counts and keyboard announce to search inputs**
+  - Refs: CR-031
+  - Acceptance: `CmsMultiReferencePick.tsx` and `CmsCollectionItemTable.tsx` have a `<span aria-live="polite" className="sr-only">` announcing the current result count whenever it changes; a screen-reader user hears "N results" on each keystroke.
+  - Migration: none
+
+- [ ] **FIX-019 — Fix block-type picker: add `role="menu"`, focus trap, and ESC-to-close**
+  - Refs: CR-030
+  - Acceptance: The "+ Add block" dropdown in `PageBlocksEditor.tsx` traps focus when open; pressing ESC closes it; the container has `role="menu"` and each option has `role="menuitem"`; clicking outside closes the menu.
+  - Migration: none
+
+- [ ] **FIX-020 — Add `altText` required validation on `media_assets` image uploads**
+  - Refs: MEDIA-003
+  - Acceptance: Saving a `media_assets` document with `assetType: 'image'` and an empty `altText` returns a validation error; existing documents without `altText` are not affected until next save.
+  - Migration: none
+
+- [ ] **FIX-021 — Convert `media_assets.category` to a `select` with a controlled list**
+  - Refs: MEDIA-001
+  - Acceptance: The `category` field in `collectionDefinitions.ts` has `type: 'select'` with options `['Blog covers', 'Ebook covers', 'Team photos', 'Customer logos', 'Social media', 'Infographics', 'Other']`; the plain text box is replaced by a dropdown in the admin form.
+  - Migration: none
+
+- [ ] **FIX-022 — Strip global-core noise fields from `media_assets` and suppress non-publish sections**
+  - Refs: MEDIA-002, MM-010, MM-011
+  - Acceptance: `STRIP_PUBLISH_FIELDS_BY_COLLECTION['media_assets']` includes all inapplicable globals (`language`, `excerpt`, `short_description`, `featured_image`, `thumbnail_image`, `icon`, `author`, `published_at`, `updated_at`, `sort_order`, `categories`, `related_content`, `cta_label`, `cta_link`); `seo`, `aeo`, `geo`, `card`, `listing`, `detail`, and `blocks` sections are excluded from the `media_assets` editor form.
+  - Migration: none
+
+- [ ] **FIX-023 — Block stub `tool_embed` / `form` / `speaker` should render `null` instead of misleading `CtaBlock`**
+  - Refs: MM-008
+  - Acceptance: `PageBlocksRenderer.tsx` returns `null` (not `<CtaBlock>`) for `tool_embed`, `form`, and `speaker` block types; editor preview shows nothing for these blocks until proper implementations ship; the change is accompanied by a `// TODO: implement ToolEmbedBlock` comment with a link to the relevant FIX.
+  - Migration: none
+
+- [ ] **FIX-024 — Remove duplicate `relatedPostRefs` / `relatedTermRefs` from relations and canonicalize on publish-section fields**
+  - Refs: BLOG-001, GLOSS-004, STORY-002, WEBINAR-001, FAQQ-003, REV-001, OURC-002, VID-003, POD-002
+  - Acceptance: For each collection, exactly one field represents each logical relationship (e.g., `related_posts` in `blog_posts` publish; `relatedTermRefs` removed from relations in favour of `related_terms`; `speakerRefs` kept in relations, `speakers` removed from webinar publish; etc.). The `LEGACY_FIELDS_BY_COLLECTION` map is updated to strip the removed duplicates. A table in a code comment documents the canonical-vs-legacy decision for each collection.
+  - Migration: none (all duplicate fields are unread; no data is at risk)
+
+---
+
+### Pass 2 — Medium-risk next (2–3 PRs)
+
+- [ ] **FIX-025 — Collapse SEO section from 24 fields to 18 canonical snake_case fields (MM-005 / CR-043 dedup)**
+  - Refs: MM-005, CR-043, MM-001, CR-003, CR-046
+  - Acceptance: `commonSeoFields()` is removed; its unique fields (`focusKeyword`, `secondaryKeywords`, `seoKeywords`, `twitterCardType`, `twitterCreatorHandle`, `robotsMeta`) are folded into `globalSeoFields()` as snake_case entries; the six duplicate camelCase fields (`seoTitle`, `seoDescription`, `ogTitle`, `ogDescription`, `ogImageUrl`, `canonicalUrl`) are removed from the form definition; every admin page shows 18 SEO fields (not 24); public render still reads the snake_case fields it already reads.
+  - Migration: For each document in each of the 15 collections: if `seoTitle` is non-empty and `seo_title` is empty, copy `seoTitle → seo_title`; repeat for `seoDescription → meta_description`, `ogTitle → og_title`, `ogDescription → og_description`, `ogImageUrl → og_image`, `canonicalUrl → canonical_url`. Estimated 0 docs at current Firestore population — dry-run safe. Script: `scripts/migrate-seo-camel-to-snake.ts`, idempotent.
+
+- [ ] **FIX-026 — Move `globalContentLayoutFields` out of the `aeo` section into `publish` (or a new `content` section)**
+  - Refs: MM-006, CR-047
+  - Acceptance: The 7 content-layout fields (`hero_heading`, `hero_subheading`, `body`, `sections`, `sidebar_cta_enabled`, `primary_cta_variant`, `template_variant`) appear under the `publish` tab (or a new `content` section key), not under the `aeo` tab; the `aeo` tab shows only the 5 genuine AEO signals (`directAnswer`, `faqItems`, `answerSnippet`, `howToSteps`, `speakableContent`).
+  - Migration: No field renames — only the section grouping in `collectionDefinitions.ts` changes. No Firestore data is moved. No public render changes (fields are already unread). Requires update to `getAllFields()` and the admin section renderer to recognise the new grouping.
+
+- [ ] **FIX-027 — Remove the 5 unread `card_*` fields from the universal card section**
+  - Refs: CR-049
+  - Acceptance: `card_title`, `card_label`, `card_cta_label`, `card_cta_link`, and `card_icon` are removed from `universalCardFields()`; `card_description` and `card_image` are retained; the admin card section shows 4 fields (not 9); existing documents with data in the removed fields retain it in Firestore but the admin no longer renders inputs for them.
+  - Migration: No active reads of the removed fields exist — no migration script required. If these fields are re-introduced later, existing Firestore data is still present. Add removed field names to a `DEPRECATED_FIELDS` comment in `collectionDefinitions.ts` as a breadcrumb.
+
+- [ ] **FIX-028 — Strip inapplicable global-core fields from each collection via `STRIP_PUBLISH_FIELDS_BY_COLLECTION`**
+  - Refs: STORY-003, TOOL-005, TEAM-003, BLOG-004, GLOSS (universal noise), WEBINAR-002, WEBINAR-004, EBOOK-003, VID-002, VID-003, POD-002, POD-003, FAQQ-002, TOOL-002, TOOL-003, TOOL-004, EBOOK-004
+  - Acceptance: Each affected collection has an entry in `STRIP_PUBLISH_FIELDS_BY_COLLECTION` that removes the fields enumerated in its respective per-collection finding (e.g., `customer_stories` strips `title, excerpt, short_description, featured_image, body, published_at, tags, categories, related_content, cta_label, cta_link, author, sort_order, updated_at`); the admin editor for each collection shows only the fields that are meaningful; no removed field is required in the save action.
+  - Migration: No data is deleted from Firestore. If a stripped field was required, the `required` flag is removed first. Estimated cognitive load: medium (need to audit each collection's strip list carefully); no scripting needed.
+
+- [ ] **FIX-029 — Extract a single `resolveDocumentTitle` helper and remove `NORMALIZED_TITLE_FIELD_BY_COLLECTION`**
+  - Refs: CR-006
+  - Acceptance: A single `resolveDocumentTitle(definition, doc, fallback?)` function in `collectionDefinitions.ts` (or `collectionRepository.ts`) is called at all four existing title-resolution sites; `NORMALIZED_TITLE_FIELD_BY_COLLECTION` is deleted; adding a new collection's title field requires exactly one change (to the collection's `titleField` property).
+  - Migration: none (refactor only; behavior is preserved)
+
+- [ ] **FIX-030 — Extract listing-query fallback ladder into a shared `safeOrderedQuery` helper**
+  - Refs: CR-007, CR-023, CR-024, CR-008
+  - Acceptance: `listCmsDocuments`, `listCmsMediaLibraryItems`, and `listReferenceOptions` all call a single `safeOrderedQuery(db, collection, slugField, limit)` helper; the admin list-view shows a "showing first N" footer when the collection is at the cap; the reference picker displays a count indicator when results are truncated.
+  - Migration: none (refactor only)
+
+- [ ] **FIX-031 — Build a `FIELD_CODECS` registry and eliminate the `stringifyFieldValue` / `parseFieldValue` divergence**
+  - Refs: CR-009, CR-001, CR-021
+  - Acceptance: A `FIELD_CODECS: Record<CmsFieldType, { encode(v: unknown): string; decode(raw: string): unknown }>` object is the single source of serialization truth; `stringifyFieldValue` and `parseFieldValue` are two-line wrappers; the boolean case-sensitivity bug (uppercase `'TRUE'` not decoded) is fixed; `defaultValue` type on `CmsFieldDefinition` is widened to `unknown`.
+  - Migration: none (behavioral fix + refactor; existing stored data is unaffected)
+
+- [ ] **FIX-032 — Decompose `page.tsx` (1,708 lines) into focused modules**
+  - Refs: CR-040, CR-025
+  - Acceptance: `src/app/admin/cms/page.tsx` is ≤ 400 lines after extraction; the following modules exist: `_actions.ts` (all server actions), `_components/FieldRenderer.tsx`, `_components/EditorChecklist.tsx`, `_components/CmsSidebar.tsx`, `_types.ts`; the layout shell (sidebar) is separated from the editor page to enable independent caching; all existing behaviors are preserved.
+  - Migration: none (refactor only)
+
+- [ ] **FIX-033 — Decompose `collectionDefinitions.ts` (1,508 lines) into per-domain files**
+  - Refs: CR-041
+  - Acceptance: `src/lib/cms/collectionDefinitions.ts` is replaced by `cms/definitions/blocks.ts`, `cms/definitions/sections.ts`, `cms/definitions/relationships.ts`, and one file per collection's publish fields; a barrel `cms/definitions/index.ts` re-exports the existing public API; a JSON snapshot test pins the field list per collection.
+  - Migration: none (refactor only)
+
+- [ ] **FIX-034 — Wire `blog/[slug]` to render `page_blocks`, emit JSON-LD, and honour `noindex`/`og_image`**
+  - Refs: BLOG-002, CR-052 (partial)
+  - Acceptance: `/blog/[slug]` calls `PageBlocksRenderer` after the article body when `page_blocks` is non-empty; it emits `<script type="application/ld+json">BlogPosting</script>` with the same schema logic as the generic route; `noindex`/`indexable` are honoured in the `generateMetadata` response; `og_image` (and fallback `card_image`) is used for the OG image tag.
+  - Migration: No Firestore changes. The route renders more content than before — additive only.
+
+- [ ] **FIX-035 — Wire `glossary/[slug]` to emit JSON-LD (`DefinedTerm` / `FAQPage`) and honour `noindex`**
+  - Refs: GLOSS-003
+  - Acceptance: `/glossary/[slug]` emits a `DefinedTerm` JSON-LD block; when `faqItems` (AEO) or linked `faq_items` (publish) are populated, a `FAQPage` JSON-LD block is also emitted; `noindex`/`indexable` controls the `robots` meta tag.
+  - Migration: Additive route changes only — no Firestore writes.
+
+- [ ] **FIX-036 — Backfill and remove publish/relations duplicate reference fields for `blog_posts` and `glossary_terms`**
+  - Refs: BLOG-001, GLOSS-002, GLOSS-004
+  - Acceptance: `blog_posts.relatedPostRefs` in the relations section is dropped (canonical is `related_posts` in publish, per BLOG-001 decision); `glossary_terms.related_terms` in publish is dropped (canonical is `relatedTermRefs` in relations, per GLOSS-004); `glossary_terms.body` is removed from the AEO/content-layout section (canonical is `definition_full`). Legacy field names are moved to `LEGACY_FIELDS_BY_COLLECTION`. Firestore documents are unaffected.
+  - Migration: For `glossary_terms.body` backfill: `for each glossary_terms doc where definition_full is empty and body is non-empty, copy body → definition_full`. Estimated 0 docs. Dry-run safe: `scripts/migrate-gloss-body-to-definition-full.ts`.
+
+- [ ] **FIX-037 — Fix ebook file-upload data exposure on the generic fallback route**
+  - Refs: EBOOK-001, OURC-003, REVSRC-002, TEAM-004
+  - Acceptance: The `<pre>JSON.stringify(doc)</pre>` fallback in `content/[collection]/[slug]/page.tsx` is replaced with `notFound()` for `ebooks`, `our_customers`, `review_sources`, and `team_members`; these collections either have a dedicated render branch or are gated from the public generic route entirely; no Firestore document field is exposed via the raw dump path.
+  - Migration: none (gating change only — no existing public URL is affected for these collections because Firestore is empty)
+
+- [ ] **FIX-038 — Add `Review` JSON-LD (`datePublished`, `reviewRating`) to the generic route for `customer_reviews`**
+  - Refs: REV-003
+  - Acceptance: When `collection === 'customer_reviews'`, the base schema builder adds `datePublished: doc.review_date` and `reviewRating: { '@type': 'Rating', ratingValue: doc.rating, bestRating: 5 }` to the emitted JSON-LD; a Lighthouse run on a published review shows the structured data is valid.
+  - Migration: none (additive schema change)
+
+---
+
+### Pass 3 — Needs discussion (each becomes its own brainstorming cycle)
+
+- [ ] **FIX-039 — Decide whether to wire AEO fields into public rendering or remove the AEO section**
+  - Refs: CR-047, MM-006
+  - Open question(s):
+    - Does the product roadmap commit to Answer Engine Optimisation signals (`directAnswer`, `answerSnippet`, `howToSteps`, `speakableContent`) in the next 2 quarters, or is this speculative?
+    - If we keep AEO, which fields should render where? (e.g., `directAnswer` → `<meta name="description">` fallback; `howToSteps` → `HowTo` JSON-LD; `speakableContent` → `Speakable` schema)
+    - Should the AEO score/checklist in the admin sidebar remain visible, or be hidden until consumers exist (to avoid editors filling fields that have no effect)?
+
+- [ ] **FIX-040 — Decide whether to wire GEO fields into public rendering, hide them behind a flag, or remove the GEO section**
+  - Refs: CR-048, MM-007
+  - Open question(s):
+    - Is GEO (generative-engine optimisation) a confirmed product investment for the next roadmap cycle, or exploratory?
+    - If kept: which of the 8 fields (`citations`, `keyStatistics`, `expertQuotes`, `geoSummary`, `sourceUrls`, `geoContentType`, `lastUpdatedDate`, `relatedEntities`) should render in JSON-LD vs visible body vs not at all?
+    - Should the GEO checklist score in the sidebar be hidden by default until at least one field has a consumer? (Short-term: add `NEXT_PUBLIC_CMS_GEO_ENABLED` feature flag and default to `false`.)
+
+- [ ] **FIX-041 — Decide whether to wire the universal Listing / Detail sections into a generic renderer, or remove them**
+  - Refs: CR-050, CR-051, MM-010
+  - Open question(s):
+    - Is a generic listing renderer (that reads `listing_hero_heading`, `listing_search_enabled`, `listing_filter_facets`, etc. from a per-collection *settings* document) on the product roadmap?
+    - If yes: should listing/detail config live per-document (current model) or per-collection (i.e., one settings doc per collection key)? The current model is architecturally wrong — 15 copies of listing config on every document is not how global collection settings should work.
+    - If no: should the 16 + 14 = 30 universal fields be removed now to eliminate 450 dead form inputs?
+
+- [ ] **FIX-042 — Decide whether to wire universal Relationship fields into public rendering or remove them**
+  - Refs: CR-054, MM-009
+  - Open question(s):
+    - Which cross-collection relationships (e.g., `relatedPostRefs`, `relatedGlossaryRefs`, `relatedFaqRefs`) should render as "Related content" sections on detail pages, and which collections need this first (blog? glossary? stories?)?
+    - Should the `related_content` block (currently returns `null` — see MM-009) be implemented as a server component that auto-queries collections, or kept as manual `manualRefs`-only?
+    - What is the design for a related-content component? (card layout, max items, ordering) — this needs a design spec before implementation.
+
+- [ ] **FIX-043 — Decide the canonical author model for blog posts**
+  - Refs: BLOG-003, TEAM-002
+  - Open question(s):
+    - Should the blog detail page dereference the `author` reference (fetching `full_name`, `photo`, `short_bio` from `team_members`) and render an author card, or is a plain byline string sufficient?
+    - If we dereference: accept N+1 read per page render (cached), or denormalize `authorName`/`authorPhoto` onto the blog post document at save time?
+    - Does the team want to build `/team/[slug]` profile pages and `/team` listing (TEAM-001) concurrently, or decouple them?
+
+- [ ] **FIX-044 — Decide whether and when to implement dedicated routes for `tools`, `team_members`, `customer_stories`, `videos`, `podcasts`, `faq_topics`, `faq_questions`, `customer_reviews`, `our_customers`, `webinars`, `ebooks`, `review_sources`**
+  - Refs: TOOL-001, TEAM-001, STORY-001, VID-001, POD-001, FAQT-001, FAQT-002, FAQQ-001, OURC-001, REVSRC-001
+  - Open question(s):
+    - Which of the 10 missing canonical routes is the highest marketing priority to ship next? (Suggested order by traffic potential: FAQ → Tools → Webinars → Ebooks → Videos → Podcasts → Team → Stories → Customers → Review Sources — but product should validate.)
+    - For the `/faq` route specifically: FAQT-002 identifies an incompatible nested-vs-flat URL conflict between `faq_topics` and `faq_questions`. Which URL architecture should be adopted before building either route? (Recommended: `/faq/[topic]/` listing + `/faq/[topic]/[question-slug]` detail.)
+    - For `tools`: should the CMS docs eventually replace the hard-coded `SPECIFIC_COPY_BY_PATH` stubs, or run alongside them? The migration plan and redirect strategy needs product sign-off before any route is built.
+    - For `customer_stories`: `STORY-001` notes that six required fields (`full_story_body`, `customer`, `industry`, `publish_date`, `hero_image`, `testimonial_reference`) have no renderer at all. Should `required: true` be removed from these fields until the dedicated `/stories/[slug]` route is shipped?
+
+- [ ] **FIX-045 — Decide the long-term architecture for `json`-typed arrays — introduce `repeatable` type or keep `json`?**
+  - Refs: MM-002, CR-005
+  - Open question(s):
+    - Is the engineering team willing to invest in a new `repeatable` field type in the admin (a form-based repeater UI replacing the raw JSON textarea)? What is the estimated effort?
+    - Which of the 12 known-shape json fields should be migrated first if `repeatable` is approved? (Proposed priority: `faqItems` first, then `metrics_highlights`, then `agenda_items`.)
+    - If `repeatable` is not approved in the near term, what mitigations should be applied to the existing `json` fields to reduce data-loss risk? (Minimum: fix CR-002 first, which is FIX-001.)
+
+- [ ] **FIX-046 — Decide the datetime timezone strategy for admin inputs**
+  - Refs: CR-014
+  - Open question(s):
+    - Should the CMS admin display and accept dates in UTC (with explicit "UTC" label), or in the editor's local timezone?
+    - Note: fixing this correctly requires deciding whether existing stored UTC dates (which may have drifted on previous edits) should be corrected in a one-time migration. If no migration is run, the first edit after the fix will re-drift in the opposite direction for documents with prior drift.
+    - Which collections have `datetime` fields that editors have already populated (if any)? Given Firestore is currently empty this may be moot — but the decision should be made before the first batch of content is entered.
+
+- [ ] **FIX-047 — Decide the slug-rename strategy (currently silent fork)**
+  - Refs: CR-017
+  - Open question(s):
+    - When an editor changes a document's slug in the admin, what should happen to the old slug doc? Options: (a) hard-delete the old doc and create a redirect record; (b) refuse the rename in the admin and require explicit delete + recreate; (c) tombstone the old doc with a `redirect_to` field and serve a 301 from the old URL.
+    - Does the product want a first-class "rename slug" workflow with automatic redirect management, or is option (b) acceptable for now?
+    - Are there any existing documents with differing old/new slugs that need retroactive correction?
+
+- [ ] **FIX-048 — Decide the in-flight save UX to prevent loss of unsaved edits on required-field redirect**
+  - Refs: CR-011
+  - Open question(s):
+    - Should the save flow switch from server-redirect on validation failure to a client-side fetch that returns errors without a page reload? This requires converting the server action to return a response object instead of calling `redirect()` — a medium architectural change to the entire save flow.
+    - Alternatively: should in-flight field values be persisted to a per-editor draft document in Firestore before server-side validation runs, so a redirect can restore the editor state?
+    - What is the acceptable complexity budget for this UX fix vs. the severity of the existing data-loss edge case?
