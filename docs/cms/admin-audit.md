@@ -1321,7 +1321,564 @@ All 15 blocks defined in `CMS_BLOCK_TYPES` (`collectionDefinitions.ts:89-336`) h
 - **Risk if changed:** low — fields are unread.
 
 ---
-<!-- TASK-4B -->
+### Collection: `tools`
+
+**Purpose.** Interactive calculators, deadline checkers, and estimators that let visitors self-serve quick financial answers (UAE gratuity, corporate-tax deadlines, salary benchmarks). Edited by the marketing/product team; the primary growth-lever for SEO + lead capture.
+
+**Public surfaces.**
+- Static tool landing pages — `src/app/[...slug]/page.tsx` handles `/tools/*` via `SPECIFIC_COPY_BY_PATH` and `blueprintForPath`; renders hard-coded `PageCopy`/`PageBlueprint` templates; **does not read Firestore**.
+- Generic CMS detail route — `src/app/content/[collection]/[slug]/page.tsx` falls back for `/content/tools/<slug>` (reads `tool_name`, `short_description`, `summary` for title/description/preview block). No dedicated `/tools/[slug]` CMS route exists.
+- Tool embed block — `PageBlocksRenderer.tsx:298-299` handles `tool_embed` block type; renders as a `CtaBlock` stub (see MM-008).
+- Metadata — `resolveTitle` reads `tool_name` (`content/[collection]/[slug]/page.tsx:27,42`); `resolveDescription` reads `short_description` and `summary` (`:58-59`).
+
+**Sample size:** 0 documents (Firestore empty at audit time — see mid-execution note in the plan).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | rendered | keep | — | path key on generic route. |
+| publish | `status` | select | yes | rendered | keep | — | gates visibility on generic route. |
+| publish | `tool_name` | text | yes | rendered | keep | — | `resolveTitle` reads at `content/[collection]/[slug]/page.tsx:27,42`. |
+| publish | `tool_type` | select | yes | unread | keep-but-rework | — | no reader today; will drive filtering once a proper `/tools/[slug]` route is built. |
+| publish | `short_description` | textarea | yes | rendered | keep | — | read by `resolveDescription` (`:58`) and as webinar/content preview at `:125`. |
+| publish | `full_description` | textarea | — | unread | keep-but-rework | — | no reader; intended for future dedicated tool detail template. Flag until route exists. |
+| publish | `icon` | icon | — | unread | remove | — | no public reader; duplicates global `icon` field inherited from `globalCoreFields`; doubly redundant. |
+| publish | `hero_image` | image | — | unread | flag-for-product | — | only `featured_image` (global core) is read as OG fallback; clarify which should be canonical for tools. |
+| publish | `tool_embed_type` | select | yes | unread | keep-but-rework | — | required but the `tool_embed` block type stub (MM-008) ignores it; needs real tool renderer. |
+| publish | `tool_embed_code` | textarea | — | unread | keep-but-rework | — | payload for iframe/script embed; unread until renderer exists. |
+| publish | `tool_route_key` | text | yes | unread | keep-but-rework | — | required but unread; must be the `SPECIFIC_COPY_BY_PATH` key (e.g., `finance-hiring-salary-benchmark`) to link CMS doc to static template. See TOOL-001. |
+| publish | `primary_inputs` | json | — | unread | keep-but-rework | — | schema `[{...}]`; will feed tool renderer once built. |
+| publish | `output_description` | textarea | — | unread | keep-but-rework | — | no reader; intended for tool results explanation. |
+| publish | `benefits` | json | — | unread | keep-but-rework | — | `["..."]` list; no renderer yet. |
+| publish | `faq_items` | multi_reference (faq_questions) | — | unread | keep-but-rework | — | conflicts with global core `faq_items` from AEO; naming collision. See TOOL-002. |
+| publish | `related_services` | tags | — | unread | flag-for-product | — | no renderer; unclear if this drives a CTA or merely metadata. |
+| publish | `gated` | boolean | — | unread | keep-but-rework | — | paired with `lead_capture_enabled`; both unread until lead-gate component exists. |
+| publish | `lead_capture_enabled` | boolean | — | unread | keep-but-rework | — | as above. |
+| publish | `title` | text | yes | unread | merge-with-`tool_name` | — | global core; shadowed by `tool_name` in `resolveTitle`. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n; suppress editor noise. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`short_description` | — | global core; `short_description` is the canonical description for tools. |
+| publish | `featured_image` | image | — | rendered | keep | — | read as OG image fallback (`content/[collection]/[slug]/page.tsx:203`). |
+| publish | `thumbnail_image` | image | — | unread | remove | — | global core duplicate; no reader. |
+| publish | `author` | reference | — | unread | remove | — | tools are not authored content; irrelevant. |
+| publish | `published_at` | datetime | — | unread | remove | — | global core; not meaningful for evergreen tools. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed; should not be an editor field. |
+| publish | `sort_order` | number | — | unread | remove | — | no sorted listing. |
+| publish | `tags` | tags | — | unread | remove | — | global core; no tool-tag reader. |
+| publish | `categories` | tags | — | unread | remove | — | global core; no tool-category reader. |
+| publish | `related_content` | multi_reference | — | unread | remove | — | global core; tool has collection-specific relations section. |
+| publish | `cta_label` | text | — | unread | remove | — | global core; static pages use hard-coded CTAs. |
+| publish | `cta_link` | url | — | unread | remove | — | global core; same reason. |
+| card | (9 universal fields) | — | — | unread | remove | — | section-level — see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | section-level — see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | section-level — see CR-051. |
+| blocks | `page_blocks` | blocks | — | rendered (generic route only) | keep-but-rework | — | `tool_embed` block type renders as CtaBlock stub — see MM-008. |
+| blocks | `schema_type_override` | select | — | rendered (generic route only) | keep | — | passes `SoftwareApplication` to JSON-LD. |
+| relations | `relatedBlogRefs` | multi_reference | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| relations | `relatedGlossaryRefs` | multi_reference | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| relations | `relatedToolRefs` | multi_reference | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| seo | `seo_title`, `meta_description`, `canonical_url`, `og_title`, `og_description`, `og_image` (snake_case) | various | — | partially read | merge-with-camelCase pair | — | snake/camel duplicates — see MM-005. |
+| seo | `focusKeyword`, `seoTitle`, `seoDescription`, `seoKeywords`, `secondaryKeywords` (camelCase) | various | — | partially read | keep-but-rework | — | `seo_title` read via `resolveTitle`; secondaries unread. See MM-005. |
+| seo | `ogTitle`, `ogDescription`, `ogImageUrl`, `twitterCardType`, `twitterCreatorHandle`, `robotsMeta` | various | — | unread | remove | — | see CR-046. |
+| seo | `schema_type` | select | — | rendered | keep | — | `SoftwareApplication` default; used in JSON-LD. |
+| seo | `indexable`, `noindex` | boolean | yes | rendered | keep | — | controls robots on generic route. |
+| seo | `canonicalUrl` | url | — | unread | remove | — | canonical computed from `routePattern`. |
+| seo | `faq_schema_enabled`, `breadcrumbs_title` | boolean/text | — | unread | remove | — | no component reads them. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+| publish | `name`, `description`, `toolUrl`, `iconUrl` (4 legacy, hidden in UI) | — | — | unread | remove (after backfill) | — | listed in `LEGACY_FIELDS_BY_COLLECTION`; none read by any public route. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `tool_name`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Short noun phrase, title case, ≤ 60 characters. Prefer action-leading names.
+- **Good example:** `UAE Gratuity Calculator`
+- **Bad example:** `tool_v2 FINAL (meets check)`
+- **Surfaces on:** `<title>` and `<h1>` on the generic CMS detail route.
+
+#### `short_description`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** 1–2 sentences, plain text, ≤ 160 characters. State what the tool calculates and who it is for.
+- **Good example:** `Estimate end-of-service gratuity for UAE employees in under 60 seconds.`
+- **Bad example:** `This is a tool that helps you with gratuity things in the UAE region.`
+- **Surfaces on:** `<meta description>`, card preview on generic route.
+
+#### `tool_route_key`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** The path segment after `/tools/` that matches an entry in `SPECIFIC_COPY_BY_PATH` in `src/app/[...slug]/page.tsx`. Must match exactly.
+- **Good example:** `gratuity-checker-calculator-tool-in-uae`
+- **Bad example:** `Gratuity Calculator` (spaces/uppercase will never match `SPECIFIC_COPY_BY_PATH`).
+- **Surfaces on:** Used by marketing team to link CMS doc to the live static tool page (TOOL-001). No frontend read yet.
+
+#### `tool_embed_type`
+- **Section:** publish · **Type:** select · **Required:** yes
+- **Format:** Choose the rendering strategy: `custom_component` for React widgets, `iframe` for third-party embeds, `script` for injected JS.
+- **Good example:** `calculator` → select `custom_component`
+- **Bad example:** leaving as default when the tool actually uses an iframe — the renderer will use the wrong strategy once built.
+- **Surfaces on:** Will control how `tool_embed_code` is rendered once a dedicated tool route exists.
+
+#### `featured_image`
+- **Section:** publish · **Type:** image · **Required:** no
+- **Format:** OG-optimised image, 1200 × 630 px, branded. Used as social share preview.
+- **Good example:** `https://cdn.finanshels.com/tools/gratuity-calculator-og.jpg`
+- **Bad example:** A raw screenshot with no branding.
+- **Surfaces on:** Open Graph image tag on generic route (`content/[collection]/[slug]/page.tsx:203`).
+
+**Findings.**
+
+#### TOOL-001 [P1] `tools` collection has no dedicated public route — CMS docs are unreachable via the canonical `/tools/[slug]` URL
+- **File:** `src/app/[...slug]/page.tsx:130-177`; `src/lib/cms/collectionDefinitions.ts:1083` (`routePattern: '/tools/[slug]'`).
+- **Observation:** The `routePattern` declares `/tools/[slug]`, but no `src/app/tools/[slug]/page.tsx` exists. Live tool pages under `/tools/*` are hard-coded static stubs in `[...slug]/page.tsx` that never read Firestore. CMS tool documents are only accessible via `/content/tools/<slug>`, which falls through to the generic template.
+- **Why it matters:** Editors who create and publish a tool in the CMS will see the doc saved but the canonical URL (`/tools/gratuity-checker-calculator-tool-in-uae`) will serve the static stub with no CMS content. Every `tool_name`, `short_description`, `tool_embed_*`, `benefits`, etc. field is permanently unread on the intended route.
+- **Suggested fix:** Create `src/app/tools/[slug]/page.tsx` that reads from Firestore via `getCmsDocument('tools', slug)` and renders `tool_name`, `short_description`, `tool_embed_type`/`tool_embed_code`, `benefits`, and `page_blocks`. Retire the hard-coded `SPECIFIC_COPY_BY_PATH` entries once CMS docs are live.
+- **Risk if changed:** medium — static tool pages are currently indexed; a route migration requires redirects and a coordinated deployment.
+
+#### TOOL-002 [P2] `faq_items` multi_reference field on the `tools` publish section collides with the AEO-section `faqItems` camelCase field
+- **File:** `src/lib/cms/collectionDefinitions.ts:1104` (publish `faq_items`); `:548-552` (AEO `faqItems`).
+- **Observation:** The publish section exposes `faq_items` (multi_reference to `faq_questions`), while the AEO section exposes `faqItems` (JSON blob). Both are presented to the editor under the label "FAQ items". The AEO `faqItems` JSON is used for `FAQPage` schema; the publish reference is not read anywhere.
+- **Why it matters:** Editors will populate both without knowing they serve different purposes. The JSON schema output will use the AEO blob, silently ignoring the publish reference.
+- **Suggested fix:** Rename publish field to `linked_faq_questions` and update its label to "Linked FAQ questions" to differentiate from the AEO JSON blob.
+- **Risk if changed:** low — field is unread on public site.
+
+#### TOOL-003 [P2] `icon` field appears in both `globalCoreFields` (publish section) and the collection-specific publish section, creating a duplicate in the editor
+- **File:** `src/lib/cms/collectionDefinitions.ts:452` (global `icon`); `:1096` (collection `icon`).
+- **Observation:** `mergeFieldSets` will merge these by name (same key `icon`), so the collection override wins, but the duplicate definition adds maintenance confusion. More importantly, neither the global nor collection `icon` field is read by any public route for tools.
+- **Why it matters:** Minor editor confusion plus dead storage. If tools ever display icons, there is no renderer wired up.
+- **Suggested fix:** Remove the collection-level `icon` field definition from the `tools` publish section (`:1096`); retain only the global core one. Then add `icon` to `STRIP_PUBLISH_FIELDS_BY_COLLECTION['tools']` to hide it until a renderer exists.
+- **Risk if changed:** low.
+
+#### TOOL-004 [P2] `hero_image` (collection-specific) vs `featured_image` (global core) — both present, only `featured_image` is read
+- **File:** `src/lib/cms/collectionDefinitions.ts:1097` (collection `hero_image`); `content/[collection]/[slug]/page.tsx:203` (`featured_image` read for OG).
+- **Observation:** The collection defines a `hero_image` field, but the generic route and OG image resolver read `featured_image` (global core). An editor populating `hero_image` will see no change on the public site.
+- **Why it matters:** Editors on tool docs will upload to the wrong field. Social share cards for tool pages will always be blank unless `featured_image` is also filled in.
+- **Suggested fix:** Strip `hero_image` from the tools publish section and document that `featured_image` is the canonical OG/hero image.
+- **Risk if changed:** low — `hero_image` is unread.
+
+#### TOOL-005 [P3] Six global-core fields (`title`, `excerpt`, `thumbnail_image`, `author`, `published_at`, `sort_order`) are presented to tool editors but have no meaning for this collection type
+- **File:** `src/lib/cms/collectionDefinitions.ts:438-462` (`globalCoreFields`); no entry in `STRIP_PUBLISH_FIELDS_BY_COLLECTION['tools']`.
+- **Observation:** Tools are not authored editorial content — they have no "author", no "publish date" in an editorial sense, and no use for `thumbnail_image` or `sort_order`. These fields appear in the publish section because there is no strip list for `tools`.
+- **Why it matters:** Editor cognitive load and data-quality risk (editors may leave required-adjacent fields blank).
+- **Suggested fix:** Add `tools: ['title','excerpt','thumbnail_image','author','published_at','sort_order','tags','categories','related_content','cta_label','cta_link']` to `STRIP_PUBLISH_FIELDS_BY_COLLECTION`. Keep `featured_image`, `language`, `updated_at` (after demoting to non-required).
+- **Risk if changed:** low — all listed fields are unread.
+
+---
+
+### Collection: `team_members`
+
+**Purpose.** People profiles for leadership, team pages, and author attribution on blog posts and other content types. Edited by HR/marketing; the primary source for author bylines on the `/blog` route.
+
+**Public surfaces.**
+- Blog detail author byline — `src/app/blog/[slug]/page.tsx:52-58` reads `post.author ?? post.authorName` and renders as a plain string in the article header. The field value stored is a string (not a resolved document), so only `full_name` (stored as the `author` string) is surfaced.
+- Blog card author — `src/components/cms/BlogCard.tsx:21` renders `post.authorName` as "By {name}".
+- Speaker block stub — `src/components/cms/PageBlocksRenderer.tsx:304-309` handles the `speaker` block type but renders only a `CtaBlock` with a heading — no `photo`, `short_bio`, or `linkedin_url` is displayed (see MM-008).
+- Generic CMS detail route — `src/app/content/[collection]/[slug]/page.tsx:30,45` reads `full_name` for `resolveTitle`; `resolveDescription` reads `short_description`/`summary` fallback.
+- No dedicated `/team/[slug]` route exists that reads team_members from Firestore.
+
+**Sample size:** 0 documents (Firestore empty at audit time — see mid-execution note in the plan).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | rendered | keep | — | doc id; used on generic route. |
+| publish | `status` | select | yes | rendered | keep | — | gates visibility. |
+| publish | `full_name` | text | yes | rendered | keep | — | `resolveTitle` at `content/[collection]/[slug]/page.tsx:30,45`; stored as `author` string on blog posts. |
+| publish | `photo` | image | yes | unread | keep-but-rework | — | required but no renderer reads it on any public surface. Speaker block stub ignores it (MM-008). |
+| publish | `job_title` | text | yes | unread | keep-but-rework | — | required but unread; will be essential once a team page or author card exists. |
+| publish | `department` | text | — | unread | flag-for-product | — | no reader; clarify whether this drives a team-page filter. |
+| publish | `short_bio` | textarea | yes | unread | keep-but-rework | — | required but unread on all public surfaces; crucial for future author card and team page. |
+| publish | `full_bio` | textarea | — | unread | keep-but-rework | — | no reader today; will be the body on a dedicated `/team/[slug]` page. |
+| publish | `email` | email | — | unread | flag-for-product | — | sensitive; clarify whether this ever renders publicly or is admin-only. |
+| publish | `phone` | text | — | unread | flag-for-product | — | sensitive; same concern. |
+| publish | `linkedin_url` | url | — | unread | keep-but-rework | — | no renderer; needed on author card and team page. |
+| publish | `twitter_url` | url | — | unread | keep-but-rework | — | no renderer; needed on author card. |
+| publish | `website_url` | url | — | unread | flag-for-product | — | no renderer; clarify use-case (guest speaker personal site?). |
+| publish | `location` | text | — | unread | flag-for-product | — | no reader; does this surface on team page? |
+| publish | `expertise_tags` | tags | — | unread | keep-but-rework | — | no renderer; will drive team-page filters. |
+| publish | `display_on_team_page` | boolean | yes | unread | keep-but-rework | — | control flag; critical once a team page is built. |
+| publish | `display_as_author` | boolean | yes | unread | keep-but-rework | — | control flag; needed to filter which members appear in author dropdowns. |
+| publish | `sort_order` | number | — | unread | keep-but-rework | — | will drive team-page ordering. Conflicts with global core `sort_order` — same name, merged by `mergeFieldSets` (collection override wins here because this IS from the global core, so this is fine). |
+| publish | `title` | text | yes | unread | merge-with-`full_name` | — | global core; `resolveTitle` reads `full_name` first; `title` is shadowed. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`short_bio` | — | global core; `short_bio` is the canonical bio excerpt for team members. |
+| publish | `short_description` | textarea | — | unread | merge-with-`short_bio` | — | global core; another duplicate of the bio concept. |
+| publish | `featured_image` | image | — | unread | merge-with-`photo` | — | global core; `photo` is canonical for team members. |
+| publish | `thumbnail_image` | image | — | unread | remove | — | global core; third duplicate of the photo concept. |
+| publish | `icon` | icon | — | unread | remove | — | global core; meaningless for people profiles. |
+| publish | `author` | reference | — | unread | remove | — | global core; a team member cannot author themselves. |
+| publish | `published_at` | datetime | — | unread | remove | — | global core; not meaningful for people profiles. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed. |
+| publish | `tags` | tags | — | unread | merge-with-`expertise_tags` | — | global core; duplicates `expertise_tags`. |
+| publish | `categories` | tags | — | unread | remove | — | global core; no category concept for people. |
+| publish | `related_content` | multi_reference | — | unread | remove | — | global core; team member has dedicated `authoredBlogRefs` in relations. |
+| publish | `cta_label` | text | — | unread | remove | — | global core; no CTA concept for people profiles. |
+| publish | `cta_link` | url | — | unread | remove | — | global core; same reason. |
+| card | (9 universal fields) | — | — | unread | remove | — | section-level — see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | section-level — see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | section-level — see CR-051. |
+| blocks | `page_blocks` | blocks | — | rendered (generic route only) | keep-but-rework | — | speaker block type renders as CtaBlock stub — see MM-008. |
+| blocks | `schema_type_override` | select | — | rendered (generic route only) | keep | — | passes `Person` to JSON-LD. |
+| relations | `authoredBlogRefs` | multi_reference | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| relations | `speakingVideoRefs` | multi_reference | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| seo | `seo_title`, `meta_description`, `canonical_url`, `og_title`, `og_description`, `og_image` (snake_case) | various | — | partially read | merge-with-camelCase pair | — | snake/camel duplicates — see MM-005. |
+| seo | `focusKeyword`, `seoTitle`, `seoDescription`, `seoKeywords`, `secondaryKeywords` (camelCase) | various | — | partially read | keep-but-rework | — | see MM-005. |
+| seo | `ogTitle`, `ogDescription`, `ogImageUrl`, `twitterCardType`, `twitterCreatorHandle`, `robotsMeta` | various | — | unread | remove | — | see CR-046. |
+| seo | `schema_type`, `indexable`, `noindex`, `canonicalUrl`, `faq_schema_enabled`, `breadcrumbs_title` | various | — | partially read | keep / remove | — | `schema_type`, `indexable`, `noindex` read on generic route; `canonicalUrl` computed; `faq_schema_enabled`/`breadcrumbs_title` unread. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+| publish | `name`, `role`, `bio`, `photoUrl`, `linkedinUrl`, `twitterUrl` (6 legacy, hidden in UI) | — | — | unread | remove (after backfill) | — | listed in `LEGACY_FIELDS_BY_COLLECTION`. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `full_name`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Legal or professional full name; title case. Used verbatim as the author byline on blog posts.
+- **Good example:** `Priya Nair`
+- **Bad example:** `priya n. (content)` (lowercase + abbreviation breaks byline display).
+- **Surfaces on:** Blog article header (`blog/[slug]/page.tsx:57`), blog card ("By {name}" in `BlogCard.tsx:21`), generic team-member page `<title>`.
+
+#### `short_bio`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** 2–3 sentences, third person, present tense. Describes role, background, and area of expertise. ≤ 300 characters.
+- **Good example:** `Priya leads content strategy at Finanshels, covering UAE tax regulation and founder finance. Former Big 4 auditor, CPA.`
+- **Bad example:** `I'm Priya and I work here. I do content.`
+- **Surfaces on:** Will render on author card, team page, and speaker block once those components are built.
+
+#### `photo`
+- **Section:** publish · **Type:** image · **Required:** yes
+- **Format:** Square headshot, ≥ 400 × 400 px, professional background. Used in author cards and team page grid.
+- **Good example:** `https://cdn.finanshels.com/team/priya-nair-400.jpg`
+- **Bad example:** A cropped screenshot from a Zoom call.
+- **Surfaces on:** Will render on author card and team page once those components are built.
+
+#### `job_title`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Official role title, title case. Avoid internal abbreviations.
+- **Good example:** `Head of Content Strategy`
+- **Bad example:** `HoCS / Content (SEO + Blog)`
+- **Surfaces on:** Author card, team page grid (once built).
+
+#### `linkedin_url`
+- **Section:** publish · **Type:** url · **Required:** no
+- **Format:** Full LinkedIn profile URL, `https://www.linkedin.com/in/...`. No trailing slash.
+- **Good example:** `https://www.linkedin.com/in/priyanair`
+- **Bad example:** `linkedin.com/priyanair` (missing scheme breaks link rendering).
+- **Surfaces on:** Author card social links (once built).
+
+#### `display_on_team_page` / `display_as_author`
+- **Section:** publish · **Type:** boolean · **Required:** yes
+- **Format:** `true` to show on the respective surface. `display_as_author` should be `true` only for editors who produce public-facing content.
+- **Good example:** A ghostwriter gets `display_as_author: false`; a C-suite member gets `display_on_team_page: true, display_as_author: false`.
+- **Bad example:** Leaving both `true` for every contractor.
+- **Surfaces on:** Will gate which team members appear in the blog author dropdown and the public team page.
+
+**Findings.**
+
+#### TEAM-001 [P1] No `/team/[slug]` or `/team` route exists — `team_members` CMS documents are unreachable via their declared `routePattern`
+- **File:** `src/lib/cms/collectionDefinitions.ts:1362-1363` (`routePattern: '/team/[slug]'`, `listingRoute: '/team'`); no corresponding Next.js route found.
+- **Observation:** Like `tools`, the declared route pattern has no implementation. Team member documents fall through to the generic `/content/team_members/<slug>` route. No team page or author profile page is live.
+- **Why it matters:** Every field beyond `full_name` (which reaches the `<title>`) is permanently unread on any public surface. The `photo`, `short_bio`, `job_title`, `linkedin_url`, and `display_on_team_page` fields are required in the CMS but produce zero visible output.
+- **Suggested fix:** Build `src/app/team/page.tsx` (listing) and `src/app/team/[slug]/page.tsx` (detail) that read from Firestore and render the key profile fields. Until then, suppress `required` on fields like `photo`, `short_bio`, and `job_title` to avoid editor frustration.
+- **Risk if changed:** low for suppressing required; medium for the route build (new public surface, needs SEO consideration).
+
+#### TEAM-002 [P1] Author byline on blog posts stores a plain string for `author`, not a resolved `team_members` reference — profile data cannot be enriched
+- **File:** `src/app/blog/[slug]/page.tsx:52-58`; `src/components/cms/BlogCard.tsx:21`; `src/lib/cms/blogRepository.ts` (not read directly here but inferred).
+- **Observation:** `post.author ?? post.authorName` is rendered as a raw string. The CMS stores the author as a `reference` to `team_members`, but the blog repository resolves it as a flat string (or falls back to the legacy `authorName` text field). No `photo`, `job_title`, or `short_bio` from the team_members document is fetched or displayed.
+- **Why it matters:** Author cards on articles (photo, bio, social links) are a standard trust signal and SEO signal for editorial content. The current architecture makes them impossible without a data-layer change.
+- **Suggested fix:** Update `getBlogPostBySlug` (or its schema) to resolve the `author` reference and return `{ name, photo, job_title, short_bio }` alongside the blog post data. Update `blog/[slug]/page.tsx` to render an author card below the article body.
+- **Risk if changed:** medium — requires Firestore query change (sub-fetch or denormalization) and template update.
+
+#### TEAM-003 [P2] Nine global-core fields (`title`, `excerpt`, `short_description`, `featured_image`, `thumbnail_image`, `icon`, `author`, `published_at`, `categories`) are presented to people-profile editors but are meaningless for this collection
+- **File:** `src/lib/cms/collectionDefinitions.ts:438-462`; no entry in `STRIP_PUBLISH_FIELDS_BY_COLLECTION['team_members']`.
+- **Observation:** The publish section inherits all global core fields. For a people profile, `title` shadows `full_name`, `excerpt`/`short_description` shadow `short_bio`, `featured_image` shadows `photo`. Editors may fill the wrong field and see no result.
+- **Why it matters:** Data quality and editor confusion — especially since `team_members` is the collection most likely to be edited by non-technical HR staff.
+- **Suggested fix:** Add `team_members: ['title','excerpt','short_description','featured_image','thumbnail_image','icon','author','published_at','categories','related_content','cta_label','cta_link','updated_at']` to `STRIP_PUBLISH_FIELDS_BY_COLLECTION`. Merge `tags` into `expertise_tags`.
+- **Risk if changed:** low — all listed fields are unread.
+
+#### TEAM-004 [P2] `email` and `phone` fields in publish section may expose PII on the public site if a team page or generic route is built without access controls
+- **File:** `src/lib/cms/collectionDefinitions.ts:1377-1378`.
+- **Observation:** `email` (type `email`) and `phone` (type `text`) are in the publish section. The generic `/content/team_members/<slug>` route dumps the full document as a JSON `<pre>` block in the fallback template (`content/[collection]/[slug]/page.tsx:177-180`), making these fields publicly visible today if an editor navigates to that URL.
+- **Why it matters:** GDPR / UAE PDPL risk — personal contact details of employees may be indexed.
+- **Suggested fix:** Move `email` and `phone` to an `admin-only` section (or strip them from the serialized document before rendering on public routes). At minimum, ensure the fallback `<pre>` dump at `page.tsx:177` is gated to non-`published` status or admin auth.
+- **Risk if changed:** medium — requires template change to avoid rendering sensitive fields publicly.
+
+---
+
+### Collection: `webinars`
+
+**Purpose.** Live and on-demand webinar sessions including registration details, schedules, speaker references, and post-event recording links. Edited by the events/marketing team.
+
+**Public surfaces.**
+- Generic CMS detail route — `src/app/content/[collection]/[slug]/page.tsx:119-133` has a shared `videos || podcasts || webinars` branch that renders `webinar_title` (via `resolveTitle`), `summary`/`short_description` as a subtitle, and `registration_url`/`registrationUrl` as a plain text link. No other fields are rendered.
+- Static catch-all page — `src/app/[...slug]/page.tsx:273,465` matches paths containing `webinar` and serves a hard-coded `PageBlueprint` template; does not read Firestore.
+- Onboarding component — `src/components/onboarding/steps/LearnFastStep.jsx:56` references the word "webinars" as a plain string in a UI list, not a Firestore read.
+- No dedicated `/webinars/[slug]` or `/webinars` listing route exists.
+
+**Sample size:** 0 documents (Firestore empty at audit time — see mid-execution note in the plan).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | rendered | keep | — | doc id on generic route. |
+| publish | `status` | select | yes | rendered | keep | — | gates visibility on generic route. |
+| publish | `webinar_status` | select | yes | unread | keep-but-rework | — | required but unread; critical for upcoming/live/completed UI treatment. |
+| publish | `webinar_title` | text | yes | rendered | keep | — | `resolveTitle` reads at `content/[collection]/[slug]/page.tsx:23,38`. |
+| publish | `banner_image` | image | — | unread | keep-but-rework | — | no renderer; will be hero on dedicated webinar page. |
+| publish | `summary` | textarea | — | rendered | keep | — | rendered as subtitle at `content/[collection]/[slug]/page.tsx:124-125`. |
+| publish | `description` | textarea | — | unread | merge-with-`summary` | — | semantic duplicate of `summary`; only `summary` is read. |
+| publish | `start_datetime` | datetime | yes | unread | keep-but-rework | — | required but unread; essential for event schema and countdowns. |
+| publish | `end_datetime` | datetime | — | unread | keep-but-rework | — | no renderer yet. |
+| publish | `timezone` | text | yes | unread | keep-but-rework | — | required but unread; must pair with `start_datetime` on display. |
+| publish | `registration_url` | url | — | rendered | keep | — | rendered as plain text link at `content/[collection]/[slug]/page.tsx:130`. |
+| publish | `recording_url` | url | — | unread | keep-but-rework | — | no renderer; essential post-event. |
+| publish | `platform` | select | — | unread | flag-for-product | — | no renderer; clarify if this drives a badge or is metadata-only. |
+| publish | `speakers` | multi_reference (team_members) | — | unread | keep-but-rework | — | conflicts with `speakerRefs` in the relations section — see WEBINAR-001. |
+| publish | `agenda_items` | json | — | unread | keep-but-rework | — | no renderer; will be essential for event detail page. |
+| publish | `key_topics` | tags | — | unread | keep-but-rework | — | no renderer; will drive category filtering. |
+| publish | `related_resources` | multi_reference (blog_posts) | — | unread | merge-with-`relatedBlogRefs` | — | duplicate of relations `relatedBlogRefs`. See WEBINAR-001. |
+| publish | `featured` | boolean | — | unread | keep-but-rework | — | conflicts with universal card `featured` from `universalCardFields`. See WEBINAR-002. |
+| publish | `title` | text | yes | unread | merge-with-`webinar_title` | — | global core; shadowed by `webinar_title` in `resolveTitle`. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`summary` | — | global core; `summary` is canonical for webinars. |
+| publish | `short_description` | textarea | — | rendered | keep-but-rework | — | read as fallback in `resolveDescription` (`:58`); semantically overlaps `summary`. |
+| publish | `featured_image` | image | — | rendered | keep | — | read as OG image fallback (`content/[collection]/[slug]/page.tsx:203`). |
+| publish | `thumbnail_image` | image | — | unread | remove | — | global core duplicate; no reader. |
+| publish | `icon` | icon | — | unread | remove | — | meaningless for events. |
+| publish | `author` | reference | — | unread | remove | — | use `speakers` multi_reference instead. |
+| publish | `published_at` | datetime | — | unread | remove | — | use `start_datetime` for events. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed. |
+| publish | `sort_order` | number | — | unread | remove | — | global core; events sort by `start_datetime`. |
+| publish | `tags` | tags | — | unread | merge-with-`key_topics` | — | global core duplicate. |
+| publish | `categories` | tags | — | unread | remove | — | global core; no category concept for webinars. |
+| publish | `related_content` | multi_reference | — | unread | merge-with-`relatedBlogRefs` | — | global core duplicate; three related-blog fields now exist. |
+| publish | `cta_label` | text | — | unread | remove | — | global core; registration CTA should use `registration_url` + a proper component. |
+| publish | `cta_link` | url | — | unread | remove | — | global core; same reason. |
+| card | (9 universal fields) | — | — | unread | remove | — | section-level — see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | section-level — see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | section-level — see CR-051. |
+| blocks | `page_blocks` | blocks | — | rendered (generic route only) | keep-but-rework | — | speaker block type renders as CtaBlock stub — see MM-008. |
+| blocks | `schema_type_override` | select | — | rendered (generic route only) | keep | — | passes `Event` to JSON-LD. |
+| relations | `recordingRef` | reference (videos) | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| relations | `speakerRefs` | multi_reference (team_members) | — | unread | keep-but-rework | — | duplicates publish `speakers` — see WEBINAR-001, CR-054. |
+| relations | `relatedBlogRefs` | multi_reference | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| relations | `relatedWebinarRefs` | multi_reference | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| seo | snake/camelCase pairs (12 fields) | various | — | partially read | merge / keep-but-rework | — | see MM-005. |
+| seo | `ogTitle`, `ogDescription`, `ogImageUrl`, `twitterCardType`, `twitterCreatorHandle`, `robotsMeta` | various | — | unread | remove | — | see CR-046. |
+| seo | `schema_type`, `indexable`, `noindex` | various | — | rendered | keep | — | `Event` JSON-LD; indexing controls. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+| publish | `title`, `registrationUrl`, `hostName` (3 legacy, hidden in UI) | — | — | unread | remove (after backfill) | — | listed in `LEGACY_FIELDS_BY_COLLECTION`. `registrationUrl` (camelCase) is still read as a fallback at `content/[collection]/[slug]/page.tsx:130` alongside `registration_url`. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `webinar_title`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Action-oriented headline, title case, ≤ 70 characters. Should name the topic and audience.
+- **Good example:** `UAE Corporate Tax Filing: What Founders Need to Know in 2026`
+- **Bad example:** `Webinar 4 - tax stuff (April)` (not descriptive; will appear verbatim in `<title>`).
+- **Surfaces on:** `<title>` and `<h1>` on the generic CMS detail route.
+
+#### `summary`
+- **Section:** publish · **Type:** textarea · **Required:** no
+- **Format:** 2–4 sentences, plain text, ≤ 300 characters. What will attendees learn and why should they care.
+- **Good example:** `Join our tax specialists as they walk through the updated UAE CT filing requirements for FY2025. Includes a live Q&A on common filing pitfalls.`
+- **Bad example:** `This webinar is about corporate tax and will be useful.`
+- **Surfaces on:** Subtitle paragraph on generic CMS route (`content/[collection]/[slug]/page.tsx:124-125`); `<meta description>` fallback.
+
+#### `start_datetime`
+- **Section:** publish · **Type:** datetime · **Required:** yes
+- **Format:** ISO 8601 UTC. Always set `timezone` alongside this field — display will concatenate both.
+- **Good example:** `2026-06-15T14:00:00Z` with `timezone: Asia/Dubai`
+- **Bad example:** `2026-06-15T14:00:00Z` with `timezone` left blank (attendees cannot determine local time).
+- **Surfaces on:** Will render on event detail page and in `Event` JSON-LD `startDate` once a dedicated route exists.
+
+#### `registration_url`
+- **Section:** publish · **Type:** url · **Required:** no
+- **Format:** Full URL to the registration form (Zoom, Eventbrite, HubSpot, etc.), `https://`.
+- **Good example:** `https://us02web.zoom.us/webinar/register/WN_abc123`
+- **Bad example:** `zoom link TBA` (breaks the link render at `content/[collection]/[slug]/page.tsx:130`).
+- **Surfaces on:** Registration link on generic CMS route.
+
+#### `recording_url`
+- **Section:** publish · **Type:** url · **Required:** no
+- **Format:** Full URL to the on-demand recording. Set after the event is completed; pair with `webinar_status: completed`.
+- **Good example:** `https://www.youtube.com/watch?v=...`
+- **Bad example:** `"available soon"` (string breaks the link and may be indexed by Google).
+- **Surfaces on:** Will render as a "Watch recording" CTA on the dedicated webinar page once built.
+
+**Findings.**
+
+#### WEBINAR-001 [P1] Speaker references are declared in both the publish section (`speakers` multi_reference) and the relations section (`speakerRefs` multi_reference), creating two unconnected fields for the same concept
+- **File:** `src/lib/cms/collectionDefinitions.ts:1348` (publish `speakers`); `:858` (relations `speakerRefs`).
+- **Observation:** `speakers` in the publish section and `speakerRefs` in the relations section are both `multi_reference` to `team_members` and both labeled "Speakers". Neither is read by any public route. An editor who fills one will not see the other populated.
+- **Why it matters:** When a speaker renderer is eventually built, it will need to know the canonical field name. If both exist, half the documents will have data in the wrong field.
+- **Suggested fix:** Remove `speakers` from the webinars publish section. Keep only the relations `speakerRefs` (following the pattern used by `blog_posts` which keeps `author` in publish and relations-based cross-collection refs in relations). Alternatively, keep publish `speakers` and remove `speakerRefs` if a simpler data model is preferred.
+- **Risk if changed:** low — both fields are unread.
+
+#### WEBINAR-002 [P2] `featured` boolean in publish section collides with the universal `card.featured` boolean inherited from `universalCardFields`
+- **File:** `src/lib/cms/collectionDefinitions.ts:1352` (publish `featured`); `:638` (card `featured`).
+- **Observation:** `mergeFieldSets` means the publish-section `featured` and the card-section `featured` share the same Firestore field name. The publish section will override the card section value for the same key. The card `featured` is unread anyway (CR-049), but if a future listing page reads `featured` for a "Featured webinars" row, it will get the value last written (probably from the publish section, which is fine — but the duplication is confusing).
+- **Why it matters:** Duplicate field in two sections produces editor confusion and silent merge behavior.
+- **Suggested fix:** Remove `featured` from the webinars publish section and rely solely on the universal card `featured` field (or add a collection-specific `is_featured` boolean and strip the universal `featured` in `STRIP_PUBLISH_FIELDS_BY_COLLECTION`).
+- **Risk if changed:** low.
+
+#### WEBINAR-003 [P2] `related_resources` (publish) and `relatedBlogRefs` (relations) and `related_content` (global core) are three separate unread fields for the same intent — linking to related blog posts
+- **File:** `src/lib/cms/collectionDefinitions.ts:1351` (publish `related_resources`); `:859` (relations `relatedBlogRefs`); `:459` (global core `related_content`).
+- **Observation:** Three distinct fields reference `blog_posts` from a webinar document. All are unread. When a related-content widget is eventually built, it will need a single authoritative source.
+- **Why it matters:** Editors cannot know which field to fill; three-way data fragmentation means a future renderer will need to merge them.
+- **Suggested fix:** Strip `related_resources` and `related_content` from the webinars publish section. Keep only `relatedBlogRefs` in the relations section as the canonical pointer.
+- **Risk if changed:** low — all three are unread.
+
+#### WEBINAR-004 [P2] `description` and `summary` are semantic duplicates — both are textarea fields for the event overview, but only `summary` is read
+- **File:** `src/lib/cms/collectionDefinitions.ts:1340-1341`; `content/[collection]/[slug]/page.tsx:124`.
+- **Observation:** The publish section exposes both `summary` (rendered) and `description` (unread). Editors filling `description` will see no output on the public site.
+- **Why it matters:** Data quality — half the webinar documents may have a populated `description` and an empty `summary`, producing blank subtitle paragraphs on the rendered page.
+- **Suggested fix:** Remove `description` from the webinars publish section (it is also inherited from global core via `faq_questions` but not webinars specifically — confirm), or alias it to `summary` in `resolveDescription`.
+- **Risk if changed:** low.
+
+---
+
+### Collection: `ebooks`
+
+**Purpose.** Downloadable long-form guides and lead magnets (PDFs, reports) that gate content behind a registration form. Edited by the content team; key top-of-funnel conversion asset.
+
+**Public surfaces.**
+- Generic CMS detail route — `src/app/content/[collection]/[slug]/page.tsx:173-181` falls through to the generic "dump" template (not the dedicated webinar/video branch). It renders `ebook_title` via `resolveTitle` and `short_description`/`summary` via `resolveDescription` as a subtitle, then shows the full Firestore doc as a `<pre>` JSON block. No `cover_image`, `file_upload`, `gated`, or `form_embed` is rendered intentionally.
+- Download block — `PageBlocksRenderer.tsx:138-162` renders a `DownloadBlock` if a `download` block type is placed in `page_blocks`; reads `heading`, `description`, `fileUrl`, `coverImageUrl`, `gated` from the block data (not the document-level fields).
+- Metadata — `resolveTitle` reads `ebook_title` (`content/[collection]/[slug]/page.tsx:24,39`); `resolveDescription` reads `short_description`/`summary` as fallback.
+- No dedicated `/ebooks/[slug]` or `/ebooks` listing route exists.
+
+**Sample size:** 0 documents (Firestore empty at audit time — see mid-execution note in the plan).
+
+**Field table.**
+
+| Section | Field | Type | Required | Frontend usage | Verdict | Move/Rename | Notes |
+|---------|-------|------|----------|----------------|---------|-------------|-------|
+| publish | `slug` | text | yes | rendered | keep | — | doc id on generic route. |
+| publish | `status` | select | yes | rendered | keep | — | gates visibility. |
+| publish | `ebook_title` | text | yes | rendered | keep | — | `resolveTitle` reads at `content/[collection]/[slug]/page.tsx:24,39`. |
+| publish | `cover_image` | image | yes | unread | keep-but-rework | — | required but unread; falls through to generic `<pre>` dump. Will be the hero on dedicated ebook page. |
+| publish | `short_description` | textarea | yes | rendered | keep | — | read by `resolveDescription` (`:58`) as `<meta description>` and subtitle. |
+| publish | `full_description` | textarea | — | unread | keep-but-rework | — | no dedicated renderer; will be body copy on `/ebooks/[slug]`. |
+| publish | `file_upload` | file | yes | unread | keep-but-rework | — | required but unread on public routes; exposed in `<pre>` dump. EBOOK-001 — access control risk. |
+| publish | `file_size` | text | — | unread | keep-but-rework | — | no renderer; useful metadata for download CTAs. |
+| publish | `page_count` | number | — | unread | keep-but-rework | — | no renderer; useful trust signal. |
+| publish | `format` | select | yes | unread | keep-but-rework | — | required but unread; needed for download CTA label ("Download PDF"). |
+| publish | `topics` | tags | — | unread | keep-but-rework | — | no renderer; will drive listing-page filters. |
+| publish | `author` | reference (team_members) | — | unread | keep-but-rework | — | collection-specific; NOT the same as the global core `author` (see EBOOK-002). |
+| publish | `gated` | boolean | — | unread | keep-but-rework | — | no gate logic implemented on public routes. See EBOOK-001. |
+| publish | `form_embed` | textarea | — | unread | keep-but-rework | — | form embed HTML; unread on generic route. See EBOOK-001. |
+| publish | `thank_you_page_url` | url | — | unread | keep-but-rework | — | no router or redirect logic reads it. |
+| publish | `related_content` | multi_reference (blog_posts) | — | unread | merge-with-`relatedBlogRefs` | — | global core; duplicates relations `relatedBlogRefs`. |
+| publish | `featured` | boolean | — | unread | keep-but-rework | — | conflicts with card `featured` — same concern as WEBINAR-002. See EBOOK-003. |
+| publish | `title` | text | yes | unread | merge-with-`ebook_title` | — | global core; shadowed by `ebook_title` in `resolveTitle`. |
+| publish | `language` | select | yes | unread | keep-but-rework | — | global core; future i18n. |
+| publish | `excerpt` | textarea | — | unread | merge-with-`short_description` | — | global core; `short_description` is canonical for ebooks. |
+| publish | `featured_image` | image | — | rendered | keep | — | read as OG image fallback (`content/[collection]/[slug]/page.tsx:203`); use `cover_image` URL here until a resolver is updated. |
+| publish | `thumbnail_image` | image | — | unread | remove | — | global core duplicate; no reader. |
+| publish | `icon` | icon | — | unread | remove | — | meaningless for downloadable documents. |
+| publish | `author` (global core) | reference | — | unread | merge-with-collection-`author` | — | global core also injects an `author` reference — same field name as the collection's own `author`. `mergeFieldSets` will use the collection override. See EBOOK-002. |
+| publish | `published_at` | datetime | — | unread | remove | — | global core; ebooks don't have editorial publish dates. |
+| publish | `updated_at` | datetime | yes | unread | remove | — | server-managed. |
+| publish | `sort_order` | number | — | unread | remove | — | global core; no sorted listing. |
+| publish | `tags` | tags | — | unread | merge-with-`topics` | — | global core duplicate. |
+| publish | `categories` | tags | — | unread | remove | — | global core; no category concept. |
+| publish | `cta_label` | text | — | unread | remove | — | global core; download CTA should use `format` + `file_upload`. |
+| publish | `cta_link` | url | — | unread | remove | — | global core; same reason. |
+| card | (9 universal fields) | — | — | unread | remove | — | section-level — see CR-049. |
+| listing | (16 universal fields) | — | — | unread | remove | — | section-level — see CR-050. |
+| detail | (12 universal fields) | — | — | unread | remove | — | section-level — see CR-051. |
+| blocks | `page_blocks` | blocks | — | rendered (generic route only) | keep-but-rework | — | `download` block type correctly renders cover + file URL (PageBlocksRenderer:138-162); `form` block renders as CtaBlock stub — see MM-008. |
+| blocks | `schema_type_override` | select | — | rendered (generic route only) | keep | — | passes `Book` to JSON-LD. |
+| relations | `authorRefs` | multi_reference (team_members) | — | unread | keep-but-rework | — | separate from publish `author`; see EBOOK-002, CR-054. |
+| relations | `relatedBlogRefs` | multi_reference | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| relations | `relatedEbookRefs` | multi_reference | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| relations | `relatedWebinarRefs` | multi_reference | — | unread | keep-but-rework | — | section-level — see CR-054. |
+| seo | snake/camelCase pairs (12 fields) | various | — | partially read | merge / keep-but-rework | — | see MM-005. |
+| seo | `ogTitle`, `ogDescription`, `ogImageUrl`, `twitterCardType`, `twitterCreatorHandle`, `robotsMeta` | various | — | unread | remove | — | see CR-046. |
+| seo | `schema_type`, `indexable`, `noindex` | various | — | rendered | keep | — | `Book` JSON-LD; indexing controls. |
+| aeo | 12 fields | — | — | unread | remove | — | see MM-006, CR-047. |
+| geo | 8 fields | — | — | unread | remove | — | see CR-048. |
+| publish | `title`, `summary`, `downloadUrl`, `coverImageUrl` (4 legacy, hidden in UI) | — | — | unread | remove (after backfill) | — | listed in `LEGACY_FIELDS_BY_COLLECTION`. |
+
+**Per-field documentation (kept and keep-but-rework fields only).**
+
+#### `ebook_title`
+- **Section:** publish · **Type:** text · **Required:** yes
+- **Format:** Descriptive title, title case, ≤ 70 characters. Should communicate the topic and format.
+- **Good example:** `The UAE Founder's Guide to Corporate Tax Compliance 2026`
+- **Bad example:** `Ebook v3 FINAL (approved)` (will appear verbatim as `<title>` and OG title).
+- **Surfaces on:** `<title>`, JSON-LD `name`, generic CMS route `<h1>`.
+
+#### `short_description`
+- **Section:** publish · **Type:** textarea · **Required:** yes
+- **Format:** 1–3 sentences, plain text, ≤ 200 characters. What does the ebook cover and who is it for.
+- **Good example:** `A practical guide for UAE startup founders covering CT registration, filing windows, and common compliance pitfalls. 42 pages, PDF.`
+- **Bad example:** `This ebook is very helpful for businesses.`
+- **Surfaces on:** `<meta description>`, subtitle on generic route.
+
+#### `cover_image`
+- **Section:** publish · **Type:** image · **Required:** yes
+- **Format:** 3D book-cover mockup or flat design, minimum 600 × 800 px (portrait). Will be used as the hero on the ebook detail page and as an OG image.
+- **Good example:** `https://cdn.finanshels.com/ebooks/ct-guide-2026-cover.jpg`
+- **Bad example:** A blank placeholder or a text-only file list screenshot.
+- **Surfaces on:** Will render as ebook hero on dedicated page; also populate `featured_image` for OG (today these must be filled separately).
+
+#### `file_upload`
+- **Section:** publish · **Type:** file · **Required:** yes
+- **Format:** PDF only. Filename should be kebab-case. File must be hosted on CDN, not a local path. For gated ebooks, the URL should point to a pre-signed or server-side-delivered URL, not a public CDN link.
+- **Good example:** `https://cdn.finanshels.com/ebooks/ct-guide-2026.pdf`
+- **Bad example:** `C:\Users\admin\Downloads\ebook FINAL2.pdf`
+- **Surfaces on:** Will be the `href` of the download CTA button on the ebook page. Currently exposed in `<pre>` dump on generic route — see EBOOK-001.
+
+#### `gated`
+- **Section:** publish · **Type:** boolean · **Required:** no
+- **Format:** Set `true` to require form submission before download. When `true`, `form_embed` must also be populated.
+- **Good example:** `gated: true` + `form_embed: <script>...HubSpot form...</script>`
+- **Bad example:** `gated: true` + `form_embed` left blank — produces a dead download button.
+- **Surfaces on:** Will gate the download CTA once a proper ebook renderer is built.
+
+#### `author` (collection field)
+- **Section:** publish · **Type:** reference (team_members) · **Required:** no
+- **Format:** Select the Finanshels team member who authored the guide. Used for credibility attribution on the ebook detail page.
+- **Good example:** Select `priya-nair` from the team_members dropdown.
+- **Bad example:** Leaving blank when there is a named author — reduces trust signal.
+- **Surfaces on:** Will render as author attribution on the ebook detail page once built.
+
+**Findings.**
+
+#### EBOOK-001 [P1] `file_upload` URL and `form_embed` HTML are exposed in a public `<pre>` JSON dump on the generic fallback route — download URLs and form IDs are publicly visible and un-gated
+- **File:** `src/app/content/[collection]/[slug]/page.tsx:173-181` (fallback `<pre>` template).
+- **Observation:** The generic route's fallback template renders the full Firestore document as a `JSON.stringify` `<pre>` block for any collection that does not have a dedicated render branch. Ebooks fall into this path. A visitor who navigates to `/content/ebooks/<slug>` sees the raw document including `file_upload` (the PDF URL), `form_embed` (HubSpot/Mailchimp script HTML), and `thank_you_page_url`. The PDF is effectively un-gated even if `gated: true` is set.
+- **Why it matters:** High conversion risk — gated assets are circumvented. Also a data exposure risk if `form_embed` contains API keys or form IDs.
+- **Suggested fix:** (a) Build a proper `/ebooks/[slug]` route that implements gate logic. (b) Until then, add `ebooks` to the `resolveTemplate` check in `content/[collection]/[slug]/page.tsx` and render a minimal non-JSON template that strips `file_upload`, `form_embed`, and `thank_you_page_url` from the output.
+- **Risk if changed:** low for (b) — adding a render branch does not affect any existing public URL.
+
+#### EBOOK-002 [P2] `author` field appears twice — once as global core (`reference → team_members`) and once as a collection-specific field (`reference → team_members`) — and a third time as `authorRefs` in the relations section
+- **File:** `src/lib/cms/collectionDefinitions.ts:453` (global core `author`); `:1313` (collection `author`); `:847` (relations `authorRefs`).
+- **Observation:** `mergeFieldSets` collapses the two same-named `author` fields (collection overrides global), but the relations section adds a third `authorRefs` multi-reference. An editor sees "Author" (single ref) in publish and "Authors" (multi-ref) in relations. The collection's `author` field is unread on all public routes.
+- **Why it matters:** Authorship data will be split across two fields. When an author card is built, the developer must decide which field to read — without documentation, they may pick the wrong one.
+- **Suggested fix:** Remove the collection-level `author` single-reference from the ebooks publish section. Canonicalize on `authorRefs` in the relations section (which supports co-authored ebooks). Strip global core `author` via `STRIP_PUBLISH_FIELDS_BY_COLLECTION['ebooks']`.
+- **Risk if changed:** low — both publish `author` variants are unread.
+
+#### EBOOK-003 [P2] `featured` boolean in publish section collides with the universal `card.featured` boolean — identical issue to WEBINAR-002
+- **File:** `src/lib/cms/collectionDefinitions.ts:1318` (publish `featured`); `:638` (card `featured`).
+- **Observation:** Same structural issue as WEBINAR-002: the collection-level `featured` in publish and the universal `featured` in card share the same Firestore field name and will silently merge.
+- **Why it matters:** Same risk as WEBINAR-002 — if a featured-ebooks row is ever built, the value source is ambiguous.
+- **Suggested fix:** Remove `featured` from the ebooks publish section (or rename to `is_featured_ebook`) and document that the universal `card.featured` is the canonical featured flag for ebooks.
+- **Risk if changed:** low.
+
+#### EBOOK-004 [P3] Three separate "related blog posts" fields for ebooks: `related_content` (global core, publish), `related_resources` is absent (webinars had it) but `relatedBlogRefs` (relations) duplicates intent — same de-duplication issue as WEBINAR-003
+- **File:** `src/lib/cms/collectionDefinitions.ts:459` (global core `related_content`); `:848` (relations `relatedBlogRefs`).
+- **Observation:** For ebooks the global core `related_content` (multi_ref → `blog_posts`) and the relations `relatedBlogRefs` both link an ebook to blog posts. Neither is read. An editor filling `related_content` will see no result; data ends up fragmented.
+- **Why it matters:** Same triplication risk as WEBINAR-003 (here it is only two fields for ebooks specifically, but `relatedEbookRefs` adds a third dimension for self-referential links).
+- **Suggested fix:** Strip `related_content` from the ebooks publish section via `STRIP_PUBLISH_FIELDS_BY_COLLECTION['ebooks']`. Keep `relatedBlogRefs` in relations as the canonical pointer.
+- **Risk if changed:** low.
+
+---
+
 <!-- TASK-4C -->
 
 ---
