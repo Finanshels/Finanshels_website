@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-hooks.json",
+  "_comment": "Project-scoped hooks for finanshels_web. Keep these silent unless they catch real bugs — chatty hooks get disabled. See https://docs.claude.com/claude-code/hooks",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '\\n# finanshels_web — branch: %s\\n%s\\n' \"$(git -C \"$CLAUDE_PROJECT_DIR\" branch --show-current 2>/dev/null)\" \"$(git -C \"$CLAUDE_PROJECT_DIR\" status --short 2>/dev/null | head -20)\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e 'const p=process.env.CLAUDE_TOOL_INPUT_PATH||\"\";const m={\"collectionDefinitions.ts\":\"Editing collectionDefinitions.ts — if adding a field type, also update src/lib/cms/fieldCodec.ts. If adding a block, also update src/components/cms/PageBlocksRenderer.tsx. If adding a collection, set routePattern + listingRoute and update src/app/sitemap.ts + src/app/llms.txt.\",\"firestore.rules\":\"Editing firestore.rules — the deny-all invariant is load-bearing. Invoke firestore-rules-reviewer when done.\",\"middleware.ts\":\"Editing middleware.ts — invoke admin-auth-reviewer when done. Middleware only checks cookie presence; pages must still call requireAdminAuth().\",\"adminAuth.ts\":\"Editing adminAuth.ts — invoke admin-auth-reviewer when done. Use timingSafeEqual for HMAC compare.\",\"fieldCodec.ts\":\"Editing fieldCodec.ts — decode functions MUST throw InvalidFieldValueError on bad input. Never return undefined for malformed data.\"};for(const k of Object.keys(m)){if(p.endsWith(k)){console.error(\"[finanshels_web hint] \"+m[k]);break;}}' 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}
