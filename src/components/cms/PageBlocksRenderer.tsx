@@ -295,19 +295,20 @@ export function PageBlocksRenderer({ blocks }: { blocks: unknown }) {
             return <LogoWallBlock key={key} block={block} />
           case 'video_embed':
             return <VideoEmbedBlock key={key} block={block} />
+          // FIX-023: tool_embed / form / speaker were rendering as generic CtaBlock
+          // stubs that silently discarded their unique semantic fields (toolRef,
+          // embedUrl, memberRefs) — see MM-008 in admin-audit.md. Returning null
+          // until proper components ship signals an implementation gap rather
+          // than rendering false content.
+          // TODO(FIX-MM-008): implement ToolEmbedBlock, FormBlock, SpeakerBlock.
           case 'tool_embed':
-            return <CtaBlock key={key} block={{ ...block, primaryLabel: 'Open tool', primaryUrl: readString(block.toolUrl) }} />
+            return null
           case 'form':
-            return <CtaBlock key={key} block={block} />
+            return null
           case 'download':
             return <DownloadBlock key={key} block={block} />
           case 'speaker':
-            return (
-              <CtaBlock
-                key={key}
-                block={{ type: 'cta', heading: readString(block.heading) || 'Featured speakers' }}
-              />
-            )
+            return null
           case 'related_content':
             return null
           case 'table':

@@ -1,18 +1,10 @@
 import Link from 'next/link'
 import { CMS_COLLECTION_DEFINITION_MAP } from '@/lib/cms/collectionDefinitions'
 import type { CmsReverseReferenceGroup } from '@/lib/cms/collectionRepository'
+import { getStatusStyle } from './statusStyle'
 
 type Props = {
   groups: CmsReverseReferenceGroup[]
-}
-
-function statusDot(status: string): string {
-  if (status === 'published') return 'bg-emerald-500'
-  if (status === 'scheduled') return 'bg-sky-500'
-  if (status === 'in_review') return 'bg-blue-500'
-  if (status === 'approved') return 'bg-violet-500'
-  if (status === 'archived') return 'bg-slate-400'
-  return 'bg-amber-500'
 }
 
 export function ReverseReferencesPanel({ groups }: Props) {
@@ -49,7 +41,7 @@ export function ReverseReferencesPanel({ groups }: Props) {
                 <ul className="mt-2 space-y-1">
                   {group.items.map((item) => (
                     <li key={`${group.source}-${item.id}`} className="flex items-center gap-2 text-xs">
-                      <span className={`h-1.5 w-1.5 rounded-full ${statusDot(item.status)}`} aria-hidden />
+                      <span className={`h-1.5 w-1.5 rounded-full ${getStatusStyle(item.status).dot}`} aria-hidden />
                       <Link
                         href={`/admin/cms?collection=${group.source}&slug=${encodeURIComponent(item.id)}`}
                         className="truncate font-medium text-slate-800 hover:text-brand-primary"

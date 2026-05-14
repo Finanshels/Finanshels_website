@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Copy, Pencil, Trash2, Eye, Search, Download, Plus, ChevronDown, X } from 'lucide-react'
+import { getStatusStyle } from './statusStyle'
 
 export type CmsListRow = {
   id: string
@@ -32,15 +33,6 @@ type Props = {
   bulkDeleteAction: (formData: FormData) => Promise<void>
   duplicateAction: (formData: FormData) => Promise<void>
   deleteAction: (formData: FormData) => Promise<void>
-}
-
-function statusStyle(status: CmsListRow['status']): { dot: string; box: string; label: string } {
-  if (status === 'published') return { dot: 'bg-emerald-500', box: 'border-emerald-300 bg-emerald-50 text-emerald-800', label: 'PUBLISHED' }
-  if (status === 'scheduled') return { dot: 'bg-sky-500', box: 'border-sky-300 bg-sky-50 text-sky-800', label: 'SCHEDULED' }
-  if (status === 'approved') return { dot: 'bg-violet-500', box: 'border-violet-300 bg-violet-50 text-violet-800', label: 'APPROVED' }
-  if (status === 'in_review') return { dot: 'bg-blue-500', box: 'border-blue-300 bg-blue-50 text-blue-800', label: 'IN REVIEW' }
-  if (status === 'archived') return { dot: 'bg-slate-400', box: 'border-slate-300 bg-slate-100 text-slate-700', label: 'ARCHIVED' }
-  return { dot: 'bg-amber-500', box: 'border-amber-300 bg-amber-50 text-amber-800', label: 'DRAFT' }
 }
 
 const CMS_TABLE_DATE_FORMATTER = new Intl.DateTimeFormat('en-GB', {
@@ -429,7 +421,7 @@ export function CmsCollectionItemTable({
             </thead>
             <tbody className="divide-y divide-[#f0e6db]">
               {visible.map((row) => {
-                const st = statusStyle(row.status)
+                const st = getStatusStyle(row.status)
                 const isChecked = selected.has(row.id)
                 const liveUrl = routePattern && row.slug ? routePattern.replace('[slug]', row.slug) : null
                 return (

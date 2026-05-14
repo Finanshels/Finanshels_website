@@ -7,6 +7,7 @@ import CardPreview from '@/components/cms/admin/CardPreview'
 import { CmsTitleSlugFields } from '@/components/cms/admin/CmsTitleSlugFields'
 import { CmsMultiReferencePick } from '@/components/cms/admin/CmsMultiReferencePick'
 import { ReverseReferencesPanel } from '@/components/cms/admin/ReverseReferencesPanel'
+import { getStatusStyle } from '@/components/cms/admin/statusStyle'
 import { CmsCollectionItemTable } from '@/components/cms/admin/CmsCollectionItemTable'
 import { CmsMediaLibrary } from '@/components/cms/admin/CmsMediaLibrary'
 import {
@@ -243,12 +244,10 @@ function readJsonArrayCount(value: unknown): number {
 }
 
 function editorStatusStyle(status: string): { dot: string; box: string } {
-  if (status === 'published') return { dot: 'text-emerald-600', box: 'border-emerald-300 bg-emerald-50 text-emerald-700' }
-  if (status === 'scheduled') return { dot: 'text-sky-600', box: 'border-sky-300 bg-sky-50 text-sky-700' }
-  if (status === 'approved') return { dot: 'text-violet-600', box: 'border-violet-300 bg-violet-50 text-violet-700' }
-  if (status === 'in_review') return { dot: 'text-blue-600', box: 'border-blue-300 bg-blue-50 text-blue-700' }
-  if (status === 'archived') return { dot: 'text-slate-400', box: 'border-slate-300 bg-slate-100 text-slate-600' }
-  return { dot: 'text-amber-500', box: 'border-amber-300 bg-amber-50 text-amber-700' }
+  // FIX-008: delegate to the shared statusStyle map. Uses dotText (text-color
+  // variant) here because the editor renders the dot as a Lucide icon.
+  const s = getStatusStyle(status)
+  return { dot: s.dotText, box: s.box }
 }
 
 function renderChecklistCard(

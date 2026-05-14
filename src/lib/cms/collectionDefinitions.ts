@@ -807,19 +807,30 @@ function relationshipFields(rel: CollectionRelationshipDescriptor): CmsFieldDefi
   return out
 }
 
+/**
+ * FIX-024: canonical-vs-legacy decisions per collection (all duplicate camelCase
+ * fields are unread; no data is at risk):
+ *
+ *   blog_posts:        canonical `related_posts`  (publish, snake) — `relatedPostRefs` REMOVED here
+ *   glossary_terms:    canonical `related_terms`  (publish, snake) — `relatedTermRefs` REMOVED here
+ *   customer_stories:  canonical `related_blog_posts`/`related_tools` (publish) —
+ *                      `relatedBlogRefs` REMOVED here
+ *   webinars:          canonical `speakerRefs`    (relations)       — `speakers` stripped via legacyAliases
+ *
+ * Anything still appearing in both publish and RELATIONSHIPS targeting the same
+ * collection is intentional (different semantic role, not a duplicate).
+ */
 const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> = {
   blog_posts: {
     /** Author lives on the publish section as `author`; keep media + content-cluster links only here. */
     references: [{ name: 'heroImageAssetRef', label: 'Hero media asset', target: 'media_assets' }],
     multiReferences: [
-      { name: 'relatedPostRefs', label: 'Related blog posts', target: 'blog_posts' },
       { name: 'relatedGlossaryRefs', label: 'Related glossary terms', target: 'glossary_terms' },
       { name: 'relatedFaqRefs', label: 'Related FAQ questions', target: 'faq_questions' },
     ],
   },
   glossary_terms: {
     multiReferences: [
-      { name: 'relatedTermRefs', label: 'Related glossary terms', target: 'glossary_terms' },
       { name: 'relatedFaqRefs', label: 'Related FAQ questions', target: 'faq_questions' },
       { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
       { name: 'relatedToolRefs', label: 'Related tools', target: 'tools' },
@@ -898,8 +909,8 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
       { name: 'leadAuthorRef', label: 'Lead author', target: 'team_members' },
     ],
     multiReferences: [
+      // `relatedBlogRefs` REMOVED — canonical is publish `related_blog_posts` (FIX-024).
       { name: 'reviewRefs', label: 'Related customer reviews', target: 'customer_reviews' },
-      { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
       { name: 'relatedStoryRefs', label: 'Related customer stories', target: 'customer_stories' },
     ],
   },
@@ -1402,25 +1413,36 @@ const NORMALIZED_TITLE_FIELD_BY_COLLECTION: Partial<Record<CmsCollectionKey, str
   our_customers: 'company_name',
 }
 
-const LEGACY_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, string[]>> = {
-  blog_posts: ['authorName', 'heroImageUrl', 'bodyHtml', 'category', 'relatedPostRefs'],
-  glossary_terms: ['definition', 'bodyHtml', 'relatedSlugs', 'relatedTermRefs'],
-  videos: ['videoUrl', 'thumbnailUrl', 'durationMinutes'],
-  our_customers: ['companyName', 'logoUrl'],
-  tools: ['name', 'description', 'toolUrl', 'iconUrl'],
-  review_sources: ['sourceName', 'sourceUrl', 'rating'],
-  customer_reviews: ['title', 'quote', 'reviewerName', 'reviewerRole', 'companyName'],
-  podcasts: ['title', 'summary', 'audioUrl', 'platformUrls'],
-  faq_topics: ['name', 'description'],
-  customer_stories: ['title', 'companyName', 'challenge', 'solution', 'results'],
-  ebooks: ['title', 'summary', 'downloadUrl', 'coverImageUrl'],
-  webinars: ['title', 'registrationUrl', 'hostName'],
-  team_members: ['name', 'role', 'bio', 'photoUrl', 'linkedinUrl', 'twitterUrl'],
-}
+/**
+ * FIX-009: single map governs per-collection field hiding. Two sub-keys:
+ *   - `legacyAliases`: deprecated field names that may still exist in older docs
+ *     but should never render in the admin form. Used by the publish merger to
+ *     strip them after `globalCoreFields()` is unioned with the per-collection
+ *     publish fields. Distinct from `strip` because legacy aliases are typically
+ *     CAMEL-cased duplicates of currently-canonical snake_case fields.
+ *   - `strip`: globally-defined publish fields that are inapplicable for this
+ *     collection (e.g. `updated_at` is server-managed; `categories` is replaced
+ *     by `blog_category` for blogs).
+ */
+type CmsHiddenFields = { legacyAliases: string[]; strip: string[] }
 
-/** Global publish fields to hide per collection (duplicate or server-managed noise). */
-const STRIP_PUBLISH_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, string[]>> = {
-  blog_posts: ['updated_at', 'published_at', 'categories', 'tags', 'short_description', 'related_content'],
+const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFields>> = {
+  blog_posts: {
+    legacyAliases: ['authorName', 'heroImageUrl', 'bodyHtml', 'category', 'relatedPostRefs'],
+    strip: ['updated_at', 'published_at', 'categories', 'tags', 'short_description', 'related_content'],
+  },
+  glossary_terms: { legacyAliases: ['definition', 'bodyHtml', 'relatedSlugs', 'relatedTermRefs'], strip: [] },
+  videos: { legacyAliases: ['videoUrl', 'thumbnailUrl', 'durationMinutes'], strip: [] },
+  our_customers: { legacyAliases: ['companyName', 'logoUrl'], strip: [] },
+  tools: { legacyAliases: ['name', 'description', 'toolUrl', 'iconUrl'], strip: [] },
+  review_sources: { legacyAliases: ['sourceName', 'sourceUrl', 'rating'], strip: [] },
+  customer_reviews: { legacyAliases: ['title', 'quote', 'reviewerName', 'reviewerRole', 'companyName'], strip: [] },
+  podcasts: { legacyAliases: ['title', 'summary', 'audioUrl', 'platformUrls'], strip: [] },
+  faq_topics: { legacyAliases: ['name', 'description'], strip: [] },
+  customer_stories: { legacyAliases: ['title', 'companyName', 'challenge', 'solution', 'results'], strip: [] },
+  ebooks: { legacyAliases: ['title', 'summary', 'downloadUrl', 'coverImageUrl'], strip: [] },
+  webinars: { legacyAliases: ['title', 'registrationUrl', 'hostName', 'speakers'], strip: [] },
+  team_members: { legacyAliases: ['name', 'role', 'bio', 'photoUrl', 'linkedinUrl', 'twitterUrl'], strip: [] },
 }
 
 export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECTION_DEFINITIONS_BASE.map((definition) => {
@@ -1431,9 +1453,9 @@ export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECT
   const relations = relationshipFields(RELATIONSHIPS[definition.key] ?? {})
 
   const mergedPublish = mergeFieldSets(globalCoreFields(), definition.sections.publish ?? [])
-  const legacyNames = new Set(LEGACY_FIELDS_BY_COLLECTION[definition.key] ?? [])
-  const stripNames = new Set(STRIP_PUBLISH_FIELDS_BY_COLLECTION[definition.key] ?? [])
-  const normalizedPublish = mergedPublish.filter((field) => !legacyNames.has(field.name) && !stripNames.has(field.name))
+  const hidden = HIDDEN_FIELDS_BY_COLLECTION[definition.key] ?? { legacyAliases: [], strip: [] }
+  const hiddenNames = new Set<string>([...hidden.legacyAliases, ...hidden.strip])
+  const normalizedPublish = mergedPublish.filter((field) => !hiddenNames.has(field.name))
 
   return {
     ...definition,
