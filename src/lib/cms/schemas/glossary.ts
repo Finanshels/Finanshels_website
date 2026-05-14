@@ -12,6 +12,19 @@ export const glossaryTermSchema = z.object({
   bodyHtml: z.string().optional(),
   relatedSlugs: z.array(z.string()).optional(),
   updatedAt: z.coerce.date().optional(),
+  // FIX-035: surface SEO/index controls + AEO FAQ items so the canonical
+  // glossary route can emit JSON-LD and honour noindex.
+  noindex: z.boolean().optional(),
+  indexable: z.boolean().optional(),
+  canonical_url: z.string().optional(),
+  faqItems: z
+    .array(
+      z.object({
+        question: z.string().optional(),
+        answer: z.string().optional(),
+      })
+    )
+    .optional(),
   status: z.enum(['draft', 'published']).default('published'),
 })
 

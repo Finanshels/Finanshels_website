@@ -313,12 +313,41 @@ export default async function CmsCollectionContentPage({ params }: Props) {
 
   const schemaType = resolveSchemaType(definition.key, doc)
   const canonical = resolveCanonical(definition.key, doc, slug)
-  const baseSchema = {
+  const baseSchema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': schemaType,
     name: resolveTitle(doc, definition.singularLabel),
     description: resolveDescription(doc) || undefined,
     url: canonical,
+  }
+
+  // FIX-038: customer_reviews emit `Review` JSON-LD with datePublished + reviewRating.
+  if (collection === 'customer_reviews') {
+    baseSchema['@type'] = 'Review'
+    const reviewDateRaw =
+      (doc.review_date instanceof Date && doc.review_date) ||
+      (typeof doc.review_date === 'string' && doc.review_date) ||
+      (doc.publishedAt instanceof Date && doc.publishedAt) ||
+      null
+    if (reviewDateRaw) {
+      baseSchema.datePublished =
+        reviewDateRaw instanceof Date ? reviewDateRaw.toISOString().slice(0, 10) : String(reviewDateRaw).slice(0, 10)
+    }
+    const rating = typeof doc.rating === 'number' ? doc.rating : Number(doc.rating)
+    if (Number.isFinite(rating) && rating > 0) {
+      baseSchema.reviewRating = {
+        '@type': 'Rating',
+        ratingValue: rating,
+        bestRating: 5,
+      }
+    }
+    const reviewerName =
+      (typeof doc.reviewer_name === 'string' && doc.reviewer_name) ||
+      (typeof doc.reviewerName === 'string' && doc.reviewerName) ||
+      ''
+    if (reviewerName) {
+      baseSchema.author = { '@type': 'Person', name: reviewerName }
+    }
   }
 
   const blocks = Array.isArray(doc.page_blocks) ? doc.page_blocks : []

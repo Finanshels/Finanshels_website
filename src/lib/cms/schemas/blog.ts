@@ -18,6 +18,18 @@ export const blogPostSchema = z.object({
   seoTitle: z.string().optional(),
   meta_description: z.string().optional(),
   seoDescription: z.string().optional(),
+  // FIX-034: SEO/index controls + page_blocks + OG fields surfaced through the
+  // typed BlogPost so the canonical /blog/[slug] route can honour them.
+  og_title: z.string().optional(),
+  og_description: z.string().optional(),
+  og_image: z.string().optional(),
+  card_image: z.string().optional(),
+  card_description: z.string().optional(),
+  canonical_url: z.string().optional(),
+  schema_type: z.string().optional(),
+  noindex: z.boolean().optional(),
+  indexable: z.boolean().optional(),
+  page_blocks: z.array(z.record(z.unknown())).optional(),
   status: z.enum(['draft', 'published']).default('published'),
 })
 
