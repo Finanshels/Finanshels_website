@@ -508,6 +508,12 @@ function globalSeoFields(): CmsFieldDefinition[] {
   ]
 }
 
+/**
+ * FIX-026: content-layout fields are NOT AEO signals. They were sitting under
+ * the `aeo` tab because of a historical mis-bucketing. They now live in the
+ * `publish` section. The `aeo` section is restricted to the five genuine
+ * answer-engine fields in `commonAeoFields()`.
+ */
 function globalContentLayoutFields(): CmsFieldDefinition[] {
   return [
     { name: 'hero_heading', label: 'Hero heading', type: 'text' },
@@ -630,15 +636,23 @@ function commonGeoFields(): CmsFieldDefinition[] {
  * Universal card fields. Every collection inherits these so listing pages
  * can render uniform cards without bespoke per-collection title/excerpt logic.
  */
+/**
+ * FIX-027: card_title, card_icon, card_label, card_cta_label, card_cta_link
+ * removed — no public reader consumes them anywhere in src/app or
+ * src/components (verified by grep). card_description and card_image are
+ * retained because the generic /content/[collection]/[slug] route reads them
+ * as <meta> description / OG image fallbacks. Existing Firestore documents
+ * with values in the removed fields are unaffected; the admin no longer
+ * surfaces inputs for them. If reinstated, the field names below are still
+ * available — they are stored as-is by Firestore's merge semantics.
+ *
+ * DEPRECATED_CARD_FIELDS = ['card_title', 'card_icon', 'card_label',
+ *   'card_cta_label', 'card_cta_link']
+ */
 function universalCardFields(): CmsFieldDefinition[] {
   return [
-    { name: 'card_title', label: 'Card title', type: 'text', placeholder: 'Falls back to the main title' },
-    { name: 'card_description', label: 'Card description', type: 'textarea', placeholder: 'Falls back to the excerpt' },
-    { name: 'card_image', label: 'Card image', type: 'image', placeholder: 'https://...' },
-    { name: 'card_icon', label: 'Card icon', type: 'icon', placeholder: 'lucide icon or image URL' },
-    { name: 'card_label', label: 'Card label / chip', type: 'text', placeholder: 'New, Popular, Updated' },
-    { name: 'card_cta_label', label: 'Card CTA label', type: 'text', placeholder: 'Read article' },
-    { name: 'card_cta_link', label: 'Card CTA link', type: 'url', placeholder: 'Falls back to the detail URL' },
+    { name: 'card_description', label: 'Card description', type: 'textarea', placeholder: 'Falls back to the excerpt. Used as <meta> description fallback on /content/[collection]/[slug].' },
+    { name: 'card_image', label: 'Card image', type: 'image', placeholder: 'https://... Used as OG image fallback on /content/[collection]/[slug].' },
     { name: 'featured', label: 'Featured', type: 'boolean' },
     { name: 'sort_order', label: 'Sort order', type: 'number' },
   ]
@@ -812,14 +826,16 @@ function relationshipFields(rel: CollectionRelationshipDescriptor): CmsFieldDefi
 }
 
 /**
- * FIX-024: canonical-vs-legacy decisions per collection (all duplicate camelCase
- * fields are unread; no data is at risk):
+ * FIX-024 / FIX-036: canonical-vs-legacy decisions per collection. Per the
+ * audit (BLOG-001 / GLOSS-004 / STORY-002 / WEBINAR-001), the relations-side
+ * camelCase Refs name is canonical because (a) it is consistent across
+ * sibling fields (`relatedGlossaryRefs`, `relatedFaqRefs`) and (b) it does not
+ * collide with global-core fields that share snake_case names.
  *
- *   blog_posts:        canonical `related_posts`  (publish, snake) — `relatedPostRefs` REMOVED here
- *   glossary_terms:    canonical `related_terms`  (publish, snake) — `relatedTermRefs` REMOVED here
- *   customer_stories:  canonical `related_blog_posts`/`related_tools` (publish) —
- *                      `relatedBlogRefs` REMOVED here
- *   webinars:          canonical `speakerRefs`    (relations)       — `speakers` stripped via legacyAliases
+ *   blog_posts:        canonical `relatedPostRefs` (relations) — `related_posts` stripped from publish
+ *   glossary_terms:    canonical `relatedTermRefs` (relations) — `related_terms` stripped from publish
+ *   customer_stories:  canonical `related_blog_posts` (publish) — `relatedBlogRefs` not present here
+ *   webinars:          canonical `speakerRefs`     (relations) — `speakers` stripped via legacyAliases
  *
  * Anything still appearing in both publish and RELATIONSHIPS targeting the same
  * collection is intentional (different semantic role, not a duplicate).
@@ -829,12 +845,14 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
     /** Author lives on the publish section as `author`; keep media + content-cluster links only here. */
     references: [{ name: 'heroImageAssetRef', label: 'Hero media asset', target: 'media_assets' }],
     multiReferences: [
+      { name: 'relatedPostRefs', label: 'Related blog posts', target: 'blog_posts' },
       { name: 'relatedGlossaryRefs', label: 'Related glossary terms', target: 'glossary_terms' },
       { name: 'relatedFaqRefs', label: 'Related FAQ questions', target: 'faq_questions' },
     ],
   },
   glossary_terms: {
     multiReferences: [
+      { name: 'relatedTermRefs', label: 'Related glossary terms', target: 'glossary_terms' },
       { name: 'relatedFaqRefs', label: 'Related FAQ questions', target: 'faq_questions' },
       { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
       { name: 'relatedToolRefs', label: 'Related tools', target: 'tools' },
@@ -1439,21 +1457,43 @@ type CmsHiddenFields = { legacyAliases: string[]; strip: string[] }
 
 const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFields>> = {
   blog_posts: {
-    legacyAliases: ['authorName', 'heroImageUrl', 'bodyHtml', 'category', 'relatedPostRefs'],
-    strip: ['updated_at', 'published_at', 'categories', 'tags', 'short_description', 'related_content'],
+    legacyAliases: ['authorName', 'heroImageUrl', 'bodyHtml', 'category'],
+    // FIX-028: removes per-author server-managed and duplicate fields.
+    // FIX-036: `related_posts` moves to legacyAliases so `relatedPostRefs` (relations) becomes canonical.
+    strip: ['updated_at', 'published_at', 'categories', 'tags', 'short_description', 'related_content', 'related_posts'],
   },
-  glossary_terms: { legacyAliases: ['definition', 'bodyHtml', 'relatedSlugs', 'relatedTermRefs'], strip: [] },
-  videos: { legacyAliases: ['videoUrl', 'thumbnailUrl', 'durationMinutes'], strip: [] },
-  our_customers: { legacyAliases: ['companyName', 'logoUrl'], strip: [] },
-  tools: { legacyAliases: ['name', 'description', 'toolUrl', 'iconUrl'], strip: [] },
-  review_sources: { legacyAliases: ['sourceName', 'sourceUrl', 'rating'], strip: [] },
-  customer_reviews: { legacyAliases: ['title', 'quote', 'reviewerName', 'reviewerRole', 'companyName'], strip: [] },
-  podcasts: { legacyAliases: ['title', 'summary', 'audioUrl', 'platformUrls'], strip: [] },
-  faq_topics: { legacyAliases: ['name', 'description'], strip: [] },
-  customer_stories: { legacyAliases: ['title', 'companyName', 'challenge', 'solution', 'results'], strip: [] },
-  ebooks: { legacyAliases: ['title', 'summary', 'downloadUrl', 'coverImageUrl'], strip: [] },
-  webinars: { legacyAliases: ['title', 'registrationUrl', 'hostName', 'speakers'], strip: [] },
-  team_members: { legacyAliases: ['name', 'role', 'bio', 'photoUrl', 'linkedinUrl', 'twitterUrl'], strip: [] },
+  glossary_terms: {
+    legacyAliases: ['definition', 'bodyHtml', 'relatedSlugs'],
+    // FIX-036: `related_terms` moves to strip so `relatedTermRefs` (relations) is canonical.
+    // FIX-036: `body` is stripped because the canonical long-form glossary field is `definition_full`.
+    strip: ['related_terms', 'body'],
+  },
+  // FIX-028 strip lists below come from the per-collection findings (STORY-003, TOOL-005, etc.).
+  videos: {
+    legacyAliases: ['videoUrl', 'thumbnailUrl', 'durationMinutes'],
+    strip: ['title', 'excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link'],
+  },
+  our_customers: { legacyAliases: ['companyName', 'logoUrl'], strip: ['title', 'excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content'] },
+  tools: {
+    legacyAliases: ['name', 'description', 'toolUrl', 'iconUrl'],
+    strip: ['title', 'excerpt', 'thumbnail_image', 'author', 'published_at', 'sort_order', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link'],
+  },
+  review_sources: { legacyAliases: ['sourceName', 'sourceUrl', 'rating'], strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link'] },
+  customer_reviews: { legacyAliases: ['title', 'quote', 'reviewerName', 'reviewerRole', 'companyName'], strip: ['excerpt', 'short_description', 'thumbnail_image', 'icon', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link'] },
+  podcasts: { legacyAliases: ['title', 'summary', 'audioUrl', 'platformUrls'], strip: ['excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'categories', 'related_content', 'cta_label', 'cta_link'] },
+  faq_topics: { legacyAliases: ['name', 'description'], strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'sort_order', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link'] },
+  customer_stories: {
+    legacyAliases: ['title', 'companyName', 'challenge', 'solution', 'results'],
+    // From STORY-003: keeps story_title / challenge_summary / full_story_body / publish_date / hero_image instead of the global duplicates.
+    strip: ['excerpt', 'short_description', 'featured_image', 'body', 'published_at', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link', 'author', 'sort_order', 'updated_at'],
+  },
+  ebooks: { legacyAliases: ['title', 'summary', 'downloadUrl', 'coverImageUrl'], strip: ['excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content'] },
+  webinars: { legacyAliases: ['title', 'registrationUrl', 'hostName', 'speakers'], strip: ['excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content'] },
+  team_members: {
+    legacyAliases: ['name', 'role', 'bio', 'photoUrl', 'linkedinUrl', 'twitterUrl'],
+    // From TEAM-003: keeps full_name / short_bio / photo / linkedin_url etc.
+    strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link', 'updated_at'],
+  },
   // FIX-022: media_assets is a utility (library), not editorial content. Strip
   // global publish fields that are meaningless here: locale/excerpt/featured-image
   // and the SEO/AEO/GEO/card/listing/detail/blocks/relations sections (handled
@@ -1500,7 +1540,11 @@ export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECT
   const blocksFields = universalBlocksFields(definition.defaultSchemaType)
   const relations = relationshipFields(RELATIONSHIPS[definition.key] ?? {})
 
-  const mergedPublish = mergeFieldSets(globalCoreFields(), definition.sections.publish ?? [])
+  // FIX-026: content-layout fields are merged into publish (not aeo).
+  const mergedPublish = mergeFieldSets(
+    mergeFieldSets(globalCoreFields(), globalContentLayoutFields()),
+    definition.sections.publish ?? []
+  )
   const hidden = HIDDEN_FIELDS_BY_COLLECTION[definition.key] ?? { legacyAliases: [], strip: [] }
   const hiddenNames = new Set<string>([...hidden.legacyAliases, ...hidden.strip])
   const normalizedPublish = mergedPublish.filter((field) => !hiddenNames.has(field.name))
@@ -1519,7 +1563,8 @@ export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECT
       blocks: suppressed.has('blocks') ? empty : blocksFields,
       relations: suppressed.has('relations') ? empty : relations,
       seo: suppressed.has('seo') ? empty : globalSeoFields(),
-      aeo: suppressed.has('aeo') ? empty : mergeFieldSets(globalContentLayoutFields(), commonAeoFields()),
+      // FIX-026: aeo now contains only the five genuine AEO signals.
+      aeo: suppressed.has('aeo') ? empty : commonAeoFields(),
       geo: suppressed.has('geo') ? empty : commonGeoFields(),
     },
   } satisfies CmsCollectionDefinition
