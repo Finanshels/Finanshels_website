@@ -62,6 +62,13 @@ type FieldValueMap = Record<string, unknown>
 
 export const dynamic = 'force-dynamic'
 
+class InvalidFieldValueError extends Error {
+  constructor(public readonly fieldName: string, public readonly reason: string) {
+    super(`Invalid value for field ${fieldName}: ${reason}`)
+    this.name = 'InvalidFieldValueError'
+  }
+}
+
 function parseFieldValue(field: CmsFieldDefinition, raw: string): unknown {
   if (field.type === 'boolean') {
     const normalized = raw.trim().toLowerCase()
@@ -70,17 +77,22 @@ function parseFieldValue(field: CmsFieldDefinition, raw: string): unknown {
   }
   if (field.type === 'blocks') {
     if (!raw.trim()) return []
+    let parsed: unknown
     try {
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed : []
+      parsed = JSON.parse(raw)
     } catch {
-      return []
+      throw new InvalidFieldValueError(field.name, 'invalid JSON for blocks')
     }
+    if (!Array.isArray(parsed)) {
+      throw new InvalidFieldValueError(field.name, 'blocks must be a JSON array')
+    }
+    return parsed
   }
   if (!raw.trim()) return undefined
   if (field.type === 'number') {
     const num = Number(raw)
-    return Number.isFinite(num) ? num : undefined
+    if (!Number.isFinite(num)) throw new InvalidFieldValueError(field.name, 'not a finite number')
+    return num
   }
   if (field.type === 'tags') {
     return raw
@@ -92,16 +104,14 @@ function parseFieldValue(field: CmsFieldDefinition, raw: string): unknown {
     try {
       return JSON.parse(raw)
     } catch {
-      return undefined
+      throw new InvalidFieldValueError(field.name, 'invalid JSON')
     }
   }
-  if (field.type === 'reference') return raw.trim()
-  if (field.type === 'multi_reference') {
-    return raw
-      .split(',')
-      .map((x) => x.trim())
-      .filter(Boolean)
+  if (field.type === 'reference') {
+    const t = raw.trim()
+    return t.length > 0 ? t : undefined
   }
+  // multi_reference is exclusively delivered via formData.getAll() in the save action.
   return raw
 }
 
@@ -296,33 +306,72 @@ async function saveCmsDocumentAction(formData: FormData) {
     redirect(`${back}&error=missing-slug`)
   }
 
-  const payload: Record<string, unknown> = {}
-  for (const field of getAllFields(definition)) {
-    if (field.type === 'multi_reference') {
-      const parts = formData.getAll(field.name).map((v) => String(v).trim()).filter(Boolean)
-      payload[field.name] = [...new Set(parts)]
-      continue
+  // FIX-002: On create, refuse if a document with this slug already exists.
+  // Without this guard, upsertCmsDocument's set({merge:true}) silently overwrites
+  // a sibling document at the same id.
+  if (isCreate) {
+    const existing = await getCmsDocument(definition.key, slug)
+    if (existing) {
+      redirect(`${editorBaseCreate}&error=slug-taken`)
     }
-    const raw = String(formData.get(field.name) ?? '')
-    const value = parseFieldValue(field, raw)
-    if (field.required && (value === undefined || value === '' || value === null)) {
+  }
+
+  // Pass 1: parse every field. parseFieldValue throws InvalidFieldValueError on
+  // bad JSON / NaN / wrong shape — surface that to the editor instead of silently
+  // dropping the value (FIX-001).
+  const parsed: Record<string, unknown> = {}
+  try {
+    for (const field of getAllFields(definition)) {
+      if (field.type === 'multi_reference') {
+        const parts = formData.getAll(field.name).map((v) => String(v).trim()).filter(Boolean)
+        parsed[field.name] = [...new Set(parts)]
+        continue
+      }
+      const raw = String(formData.get(field.name) ?? '')
+      parsed[field.name] = parseFieldValue(field, raw)
+    }
+  } catch (err) {
+    if (err instanceof InvalidFieldValueError) {
+      const back = isCreate ? editorBaseCreate : editorBaseEdit(slug)
+      redirect(`${back}&error=invalid-${err.fieldName}`)
+    }
+    throw err
+  }
+
+  // Pass 2: required-field check (separate from parsing so a parse error is
+  // distinguishable from a missing-required error).
+  for (const field of getAllFields(definition)) {
+    if (!field.required) continue
+    const value = parsed[field.name]
+    const missing =
+      value === undefined ||
+      value === null ||
+      value === '' ||
+      (Array.isArray(value) && value.length === 0)
+    if (missing) {
       redirect(`${isCreate ? editorBaseCreate : editorBaseEdit(slug)}&error=missing-${field.name}`)
     }
-    if (value !== undefined) payload[field.name] = value
+  }
+
+  // Pass 3: build the payload, omitting undefined values so partial submits
+  // don't overwrite stored data with undefined.
+  const payload: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(parsed)) {
+    if (v !== undefined) payload[k] = v
   }
 
   payload[slugField] = slug
 
-  // Status precedence: button-clicked `requestedStatus` (Publish/Draft/etc.) wins.
-  // Fallback to whatever `status` was submitted by the form (select field), then to current status.
+  // Status precedence (FIX-016): button-clicked `requestedStatus` wins, then the
+  // server-known current doc status, then 'draft'. The form's `status` select
+  // (formStatus) is no longer in the chain — it was a phantom input that let any
+  // API caller set any status. Editors must change status via the explicit
+  // status-action buttons.
   const ALLOWED_STATUSES = new Set(['published', 'draft', 'in_review', 'approved', 'scheduled'])
   const requestedStatus = String(formData.get('requestedStatus') ?? '').trim()
-  const formStatus = String(formData.get('status') ?? '').trim()
   const currentDocStatus = String(formData.get('cmsCurrentStatus') ?? '').trim()
   const resolvedStatus = ALLOWED_STATUSES.has(requestedStatus)
     ? requestedStatus
-    : ALLOWED_STATUSES.has(formStatus)
-    ? formStatus
     : ALLOWED_STATUSES.has(currentDocStatus)
     ? currentDocStatus
     : 'draft'
@@ -332,8 +381,25 @@ async function saveCmsDocumentAction(formData: FormData) {
   if (role === 'editor' && (payload.status === 'published' || payload.status === 'approved')) {
     payload.status = 'in_review'
   }
-  const scheduledAt = String(formData.get('scheduledAt') ?? '').trim()
-  if (scheduledAt) payload.scheduledAt = scheduledAt
+
+  // FIX-017: validate scheduledAt. Reject malformed dates, and reject
+  // status:scheduled without a valid future scheduledAt.
+  const scheduledAtRaw = String(formData.get('scheduledAt') ?? '').trim()
+  let scheduledAtParsed: Date | null = null
+  if (scheduledAtRaw) {
+    const d = new Date(scheduledAtRaw)
+    if (!Number.isFinite(d.getTime())) {
+      redirect(`${isCreate ? editorBaseCreate : editorBaseEdit(slug)}&error=invalid-scheduledAt`)
+    }
+    scheduledAtParsed = d
+    payload.scheduledAt = scheduledAtRaw
+  }
+  if (payload.status === 'scheduled') {
+    if (!scheduledAtParsed || scheduledAtParsed.getTime() <= Date.now()) {
+      redirect(`${isCreate ? editorBaseCreate : editorBaseEdit(slug)}&error=invalid-scheduledAt`)
+    }
+  }
+
   const locale = String(formData.get('locale') ?? '').trim()
   if (locale) payload.locale = locale
   const localeGroupId = String(formData.get('localeGroupId') ?? '').trim()

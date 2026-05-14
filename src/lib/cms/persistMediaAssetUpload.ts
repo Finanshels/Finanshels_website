@@ -63,10 +63,6 @@ export function inferUploadedMediaMime(name: string, reportedType: string): stri
   return MIME_BY_EXTENSION.get(extensionFor(name)) ?? ''
 }
 
-export function inferUploadedImageMime(name: string, reportedType: string): string {
-  return inferUploadedMediaMime(name, reportedType)
-}
-
 function inferUploadedMediaAssetType(contentType: string, name: string): CmsMediaAssetType {
   const mime = contentType.toLowerCase()
   const extMime = MIME_BY_EXTENSION.get(extensionFor(name))

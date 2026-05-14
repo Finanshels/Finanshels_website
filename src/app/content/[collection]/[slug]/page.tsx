@@ -234,6 +234,13 @@ export default async function CmsCollectionContentPage({ params }: Props) {
     (status === 'scheduled' && scheduledAt !== null && Number.isFinite(scheduledAt.getTime()) && scheduledAt <= now)
   if (!isVisible) notFound()
 
+  // FIX-003: customer_reviews require explicit signed consent before going
+  // public. Without this gate, status=published alone bypasses approval —
+  // compliance risk (PDPL/GDPR for testimonials with attributable PII).
+  if (collection === 'customer_reviews' && doc.approved_for_publication !== true) {
+    notFound()
+  }
+
   const faqItems = Array.isArray(doc.faqItems) ? doc.faqItems : []
   const faqSchema =
     faqItems.length > 0

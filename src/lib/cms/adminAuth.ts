@@ -34,7 +34,18 @@ function getEditorPassword(): string {
 }
 
 function getSessionSalt(): string {
-  return process.env.CMS_ADMIN_SESSION_SECRET ?? 'finanshels-cms-admin'
+  const secret = process.env.CMS_ADMIN_SESSION_SECRET
+  if (!secret) {
+    // FIX-013: refuse to use the hard-coded fallback in production. The fallback
+    // exists only as a developer ergonomic for local builds without env wiring.
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'CMS_ADMIN_SESSION_SECRET is required in production. Set a long random value in Vercel env.'
+      )
+    }
+    return 'finanshels-cms-admin-dev-only'
+  }
+  return secret
 }
 
 function expectedLegacyToken(role: 'admin' | 'editor'): string {
@@ -161,11 +172,6 @@ export function sessionDisplayName(session: CmsSession): string {
 
 export async function isAdminAuthenticated(): Promise<boolean> {
   return (await readSessionFromCookies()) !== null
-}
-
-export async function getAdminRole(): Promise<CmsUserRole | null> {
-  const session = await readSessionFromCookies()
-  return session ? sessionRole(session) : null
 }
 
 export async function requireAdminAuth(minRole: CmsUserRole = 'editor'): Promise<CmsSession> {
