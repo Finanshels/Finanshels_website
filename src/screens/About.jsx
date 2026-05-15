@@ -52,7 +52,7 @@ const STORY_POINTS = [
 
 const METRICS = [
   { value: '135+', label: 'finance specialists' },
-  { value: '5,000+', label: 'UAE clients' },
+  { value: '6,000+', label: 'UAE clients' },
   { value: '4.9★', label: 'avg. rating' },
   { value: '$1.2B', label: 'flows managed' },
 ]

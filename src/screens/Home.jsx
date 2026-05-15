@@ -27,7 +27,7 @@ const HERO_BULLETS = [
 ]
 
 const HERO_STATS = [
-  { value: '5,000+', label: 'UAE clients' },
+  { value: '6,000+', label: 'UAE clients' },
   { value: '135+', label: 'finance experts' },
   { value: '12', label: 'active markets' },
   { value: '$1.2B', label: 'flows managed' },
@@ -436,7 +436,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="mt-6 text-lg text-slate-600 max-w-xl">
-              Accounting, tax, payroll, and CFO partners on autopilot. Finanshels builds a finance command centre around your company so you can focus on shipping — trusted by 5,000+ UAE clients.
+              Accounting, tax, payroll, and CFO partners on autopilot. Finanshels builds a finance command centre around your company so you can focus on shipping — trusted by 6,000+ UAE clients.
             </p>
             <div className="mt-7 grid gap-2.5 max-w-lg">
               {HERO_BULLETS.map((bullet) => (
@@ -473,7 +473,7 @@ export default function Home() {
                     />
                   ))}
                 </div>
-                <span><strong className="text-slate-900">5,000+ founders</strong> trust us with their numbers</span>
+                <span><strong className="text-slate-900">6,000+ founders</strong> trust us with their numbers</span>
               </div>
               <div className="flex items-center gap-1 text-amber-500">
                 {'★★★★★'.split('').map((s, i) => <span key={i}>{s}</span>)}

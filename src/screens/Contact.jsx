@@ -63,7 +63,7 @@ const HELP_TOPICS = [
 ]
 
 const TRUST_BADGES = [
-  '5,000+ UAE clients',
+  '6,000+ UAE clients',
   '135+ finance experts',
   '99.4% on-time filings',
   '4.9★ on Google',

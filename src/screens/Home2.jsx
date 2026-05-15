@@ -150,7 +150,7 @@ export default function Home2() {
           <AnimatedSection animation="fade-up" delay={250}>
             <div className="mt-8 text-center">
               <p className="text-base text-slate-600">
-                Trusted by 5,000+ companies globally. Operated by 135+ finance specialists across 12 markets.
+                Trusted by 6,000+ companies globally. Operated by 135+ finance specialists across 12 markets.
               </p>
             </div>
           </AnimatedSection>
@@ -206,7 +206,7 @@ export default function Home2() {
                 The quiet revolution
               </div>
               <h2 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
-                Why 5,000+ founders moved<br />their finance ops here
+                Why 6,000+ founders moved<br />their finance ops here
               </h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
                 This shift isn't loud — but it's happening fast.
@@ -492,7 +492,7 @@ export default function Home2() {
           <AnimatedSection animation="fade-up">
             <div className="text-center space-y-4 mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
-                Trusted by 5,000+ companies worldwide
+                Trusted by 6,000+ companies worldwide
               </h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
                 From fast-growing startups to multi-entity groups, founders trust Finanshels to run finance properly.

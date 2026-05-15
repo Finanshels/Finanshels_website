@@ -325,7 +325,7 @@ export const SERVICE_PAGES = {
     description:
       'We become your finance department—bookkeeping, compliance, and CFO strategy under one subscription.',
     stats: [
-      { label: 'SMBs onboarded', value: '5000+' }],
+      { label: 'SMBs onboarded', value: '6000+' }],
     valueProps: [
       'Affordable teams customisable to your industry.',
       'Policy design, approvals, and internal controls from day one.',
