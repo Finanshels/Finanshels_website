@@ -53,8 +53,8 @@ const SOLUTION_SETS = [
     icon: Factory,
     tagline: 'Plants · Multi-country',
     description:
-      'Cost accounting, production variance, landed cost modelling, and multi-country payroll for teams spreading across the region.',
-    highlights: ['Project & job costing', 'Capex controls & approvals', 'Payroll for plants & offices'],
+      'Cost accounting, production variance, landed cost modelling, and multi-country consolidations for teams spreading across the region.',
+    highlights: ['Project & job costing', 'Capex controls & approvals', 'Audit prep across plants & offices'],
     accent: 'from-[#fef3c7] to-white',
     iconBg: 'bg-[#fef3c7] text-[#b45309]',
     glow: 'rgba(180,83,9,0.18)',
@@ -105,7 +105,7 @@ const CASE_STUDIES = [
   {
     company: 'Sarwa',
     type: 'Wealthtech',
-    result: 'Scaled from UAE to KSA with a dedicated finance team covering CFO support, payroll, and regulatory reporting.',
+    result: 'Scaled from UAE to KSA with a dedicated finance team covering CFO support, audit prep, and regulatory reporting.',
     quote: 'The fractional CFO team feels like senior leadership. Zero decks, only outcomes.',
     author: 'Sarwa Executive Team',
     metric: '2 mkts',
@@ -158,7 +158,7 @@ export default function Solutions() {
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <a
-                href="mailto:hello@finanshels.com"
+                href="mailto:contact@finanshels.com"
                 className="group inline-flex items-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#f16610]/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
               >
                 Request a tailored plan
@@ -240,7 +240,7 @@ export default function Solutions() {
                   for each playbook.
                 </h2>
                 <p className="mt-5 text-slate-300 text-lg max-w-md">
-                  Deep MENA expertise, local teams, and a control tower that connects your banks, ERPs, PSPs, and payroll so leadership can trust every metric.
+                  Deep MENA expertise, local teams, and a control tower that connects your banks, ERPs, and PSPs so leadership can trust every metric.
                 </p>
                 <div className="mt-7 space-y-3">
                   {COMMAND_FEATURES.map((item) => (
@@ -266,7 +266,7 @@ export default function Solutions() {
                     </span>
                   </div>
                   <p className="text-sm text-white/70 leading-relaxed">
-                    Bank feeds, PSP data, ERPs, payroll, and approvals flow into a single pane. Finance rituals documented, assigned, and tracked — no spreadsheets.
+                    Bank feeds, PSP data, ERPs, and approvals flow into a single pane. Finance rituals documented, assigned, and tracked — no spreadsheets.
                   </p>
                   <div className="mt-6 grid grid-cols-2 gap-3">
                     {PLATFORM_METRICS.map((m) => (
@@ -353,13 +353,13 @@ export default function Solutions() {
               </div>
               <div className="flex flex-col gap-3 w-full md:w-auto">
                 <a
-                  href="mailto:hello@finanshels.com"
+                  href="mailto:contact@finanshels.com"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-[#f16610] shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
                 >
                   Get the playbook <ArrowRight size={18} />
                 </a>
                 <a
-                  href="https://wa.me/971507178156"
+                  href="https://wa.me/971521549572"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
                 >
                   <MessageSquare size={18} /> WhatsApp our team

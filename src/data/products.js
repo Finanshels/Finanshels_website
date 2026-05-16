@@ -51,15 +51,15 @@ const PRODUCT_DATA = [
       title: 'Pair it with',
       bullets: [
         'Corporate tax filing managed service',
-        'Finanshels compliance desk for ESR & AML',
+        'Finanshels compliance desk for AML & audit prep',
         'Monthly bookkeeping close rituals'
       ]
     },
     cta: {
       primaryLabel: 'Book a product tour',
-      primaryHref: 'mailto:hello@finanshels.com?subject=Corporate%20Tax%20Deadline%20Checker',
+      primaryHref: 'mailto:contact@finanshels.com?subject=Corporate%20Tax%20Deadline%20Checker',
       secondaryLabel: 'Talk to a tax specialist',
-      secondaryHref: 'https://wa.me/971507178156?text=Hi%20Team%20Finanshels%2C%20show%20me%20the%20Tax%20Deadline%20Checker.'
+      secondaryHref: 'https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20show%20me%20the%20Tax%20Deadline%20Checker.'
     },
     icon: CalendarClock
   },
@@ -111,9 +111,9 @@ const PRODUCT_DATA = [
     },
     cta: {
       primaryLabel: 'Try Hala with my books',
-      primaryHref: 'mailto:hello@finanshels.com?subject=Hala%20Product',
+      primaryHref: 'mailto:contact@finanshels.com?subject=Hala%20Product',
       secondaryLabel: 'Get a live walkthrough',
-      secondaryHref: 'https://wa.me/971507178156?text=I%20want%20a%20demo%20of%20Hala.'
+      secondaryHref: 'https://wa.me/971521549572?text=I%20want%20a%20demo%20of%20Hala.'
     },
     icon: PlayCircle
   },
@@ -133,7 +133,7 @@ const PRODUCT_DATA = [
     ],
     features: [
       { title: 'Ledger deep-dive', description: 'GL sampling, reconciliations review, and policy benchmarking.' },
-      { title: 'Control maturity map', description: 'ESR, AML, tax, and finance operations scored from 1-5.' },
+      { title: 'Control maturity map', description: 'AML, tax, audit, and finance operations scored from 1-5.' },
       { title: 'Roadmap to action', description: 'Prioritized backlog with effort, owners, and sequence.' }
     ],
     workflow: [
@@ -165,9 +165,9 @@ const PRODUCT_DATA = [
     },
     cta: {
       primaryLabel: 'Book a diagnostic',
-      primaryHref: 'mailto:hello@finanshels.com?subject=Financial%20Health%20Checker',
+      primaryHref: 'mailto:contact@finanshels.com?subject=Financial%20Health%20Checker',
       secondaryLabel: 'Talk to an advisor',
-      secondaryHref: 'https://wa.me/971507178156?text=Tell%20me%20more%20about%20the%20Financial%20Health%20Checker.'
+      secondaryHref: 'https://wa.me/971521549572?text=Tell%20me%20more%20about%20the%20Financial%20Health%20Checker.'
     },
     icon: Activity
   },
@@ -219,9 +219,9 @@ const PRODUCT_DATA = [
     },
     cta: {
       primaryLabel: 'See my cash gaps',
-      primaryHref: 'mailto:hello@finanshels.com?subject=Cash%20Flow%20Scorecard',
+      primaryHref: 'mailto:contact@finanshels.com?subject=Cash%20Flow%20Scorecard',
       secondaryLabel: 'Schedule a working session',
-      secondaryHref: 'https://wa.me/971507178156?text=I%20want%20the%20Cash%20Flow%20Scorecard.'
+      secondaryHref: 'https://wa.me/971521549572?text=I%20want%20the%20Cash%20Flow%20Scorecard.'
     },
     icon: BarChart3
   },
@@ -273,9 +273,9 @@ const PRODUCT_DATA = [
     },
     cta: {
       primaryLabel: 'Unlock the portal',
-      primaryHref: 'mailto:hello@finanshels.com?subject=Client%20Portal',
+      primaryHref: 'mailto:contact@finanshels.com?subject=Client%20Portal',
       secondaryLabel: 'Chat with our team',
-      secondaryHref: 'https://wa.me/971507178156?text=I%20want%20access%20to%20the%20client%20portal.'
+      secondaryHref: 'https://wa.me/971521549572?text=I%20want%20access%20to%20the%20client%20portal.'
     },
     icon: Sparkles
   },
@@ -287,7 +287,7 @@ const PRODUCT_DATA = [
     summary: 'Model end-of-service obligations in minutes.',
     subtitle: 'HR, finance, and founders stay aligned on payouts.',
     description:
-      'The gratuity calculator benchmarks unlimited and limited contracts, visa histories, and payroll calendars for every employee. Export the ledger directly into payroll or share with HR for instant clarity.',
+      'The gratuity calculator benchmarks unlimited and limited contracts, employment histories, and tenure for every employee. Export the ledger to your payroll system or share with HR for instant clarity.',
     stats: [
       { label: 'Employees modelled', value: '5.6k+' },
       { label: 'Policy templates', value: '9' },
@@ -296,7 +296,7 @@ const PRODUCT_DATA = [
     features: [
       { title: 'Contract-aware math', description: 'Automatic recognition of labour law rules, overtime, and allowances.' },
       { title: 'Scenario planning', description: 'Model resignations, terminations, or policy changes instantly.' },
-      { title: 'Payroll sync', description: 'Push entries to Finanshels payroll or your in-house system.' }
+      { title: 'Easy export', description: 'Push ledger entries to your payroll system or download as CSV.' }
     ],
     workflow: [
       'Upload employee roster or connect to your HRIS.',
@@ -320,16 +320,16 @@ const PRODUCT_DATA = [
     support: {
       title: 'Add-ons that level it up',
       bullets: [
-        'Monthly payroll with Finanshels HR ops',
-        'Labour law advisory and policy refresh',
-        'Compensation benchmarking across the UAE'
+        'Audit-ready provision schedules for year-end close',
+        'AML & compliance review for HR policies',
+        'CFO advisory on workforce cost planning'
       ]
     },
     cta: {
       primaryLabel: 'Access the calculator',
-      primaryHref: 'mailto:hello@finanshels.com?subject=Gratuity%20Calculator',
+      primaryHref: 'mailto:contact@finanshels.com?subject=Gratuity%20Calculator',
       secondaryLabel: 'Speak with HR finance',
-      secondaryHref: 'https://wa.me/971507178156?text=Gratuity%20calculator%20demo%20please.'
+      secondaryHref: 'https://wa.me/971521549572?text=Gratuity%20calculator%20demo%20please.'
     },
     icon: Calculator
   }

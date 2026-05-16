@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { ChatWidget } from './chat/ChatWidget'
 import Footer from './Footer'
 import Navbar from './Navbar'
 
@@ -18,8 +19,12 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
   }
 
   if (isLandingPage) {
-    // Landing pages bring their own minimal header/footer to keep visitors focused on conversion.
-    return <div className="min-h-screen bg-white">{children}</div>
+    return (
+      <div className="min-h-screen bg-white">
+        {children}
+        <ChatWidget />
+      </div>
+    )
   }
 
   return (
@@ -27,6 +32,7 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
+      <ChatWidget />
     </div>
   )
 }

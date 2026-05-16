@@ -23,8 +23,8 @@ const PLANS = [
     tag: 'Lean',
     price: '4,999',
     currency: 'AED / mo',
-    description: 'Cash-basis bookkeeping, VAT, and payroll handled every year for lean UAE businesses.',
-    ctaHref: 'https://wa.me/971507178156?text=I%20need%20the%20Essential%20Plan',
+    description: 'Cash-basis bookkeeping, VAT, and corporate tax handled every year for lean UAE businesses.',
+    ctaHref: 'https://wa.me/971521549572?text=I%20need%20the%20Essential%20Plan',
     limit: 'Up to 100 transactions / year',
     highlights: [
       'Cash-basis annual accounting',
@@ -43,7 +43,7 @@ const PLANS = [
     price: '9,999',
     currency: 'AED / mo',
     description: 'Quarterly accounting, VAT, and tax advisory for teams scaling across the UAE.',
-    ctaHref: 'https://wa.me/971507178156?text=I%20need%20the%20Growth%20Plan',
+    ctaHref: 'https://wa.me/971521549572?text=I%20need%20the%20Growth%20Plan',
     limit: 'Up to 500 transactions / year',
     highlights: [
       'Quarterly cash-basis accounting',
@@ -63,11 +63,11 @@ const PLANS = [
     price: '14,999',
     currency: 'AED / mo',
     description: 'Monthly accrual accounting, CFO attention, and expanded compliance for complex operators.',
-    ctaHref: 'https://wa.me/971507178156?text=I%20need%20the%20Scale%20Plan',
+    ctaHref: 'https://wa.me/971521549572?text=I%20need%20the%20Scale%20Plan',
     limit: 'Up to 1,500 transactions / year',
     highlights: [
       'Monthly accrual accounting',
-      'Full VAT + CT + ESR coverage',
+      'Full VAT + CT + AML coverage',
       'Dedicated CFO touchpoints',
       'Live dashboards & investor packs',
       'Audit prep & policy design',
@@ -81,20 +81,20 @@ const PLANS = [
 
 const VALUE_DRIVERS = [
   { icon: Sparkles, title: 'Managed service', description: 'An embedded UAE finance team — not freelancers or disparate vendors.', accent: 'bg-[#fff1e1] text-[#f16610]' },
-  { icon: ShieldCheck, title: 'Regulatory-first', description: 'Corporate tax, VAT, ESR, payroll, visas, and governance under one roof.', accent: 'bg-[#e9ecff] text-[#4f46e5]' },
+  { icon: ShieldCheck, title: 'Regulatory-first', description: 'Corporate tax, VAT, AML, audit prep, and liquidation handled under one roof.', accent: 'bg-[#e9ecff] text-[#4f46e5]' },
   { icon: Zap, title: 'Automation built-in', description: 'Bank feeds, PSP data, approvals, and dashboards implemented for you.', accent: 'bg-[#dcfce7] text-[#059669]' },
   { icon: Award, title: 'Executive reporting', description: 'Weekly, monthly, and quarterly packs benchmarked against top performers.', accent: 'bg-[#fef3c7] text-[#b45309]' },
 ]
 
 const PROCESS = [
   { title: 'Diagnose', description: 'We audit your books, tool stack, compliance backlog, and leadership rituals. You get a scorecard and custom roadmap.', icon: Calculator },
-  { title: 'Implement', description: 'Connect banks, ERPs, spend tools, and payroll. Automations and controls go live while we clean historical data.', icon: Zap },
+  { title: 'Implement', description: 'Connect banks, ERPs, and spend tools. Automations and controls go live while we clean historical data.', icon: Zap },
   { title: 'Operate', description: 'Monthly reviews, weekly syncs, live dashboards, investor-ready reporting, and compliance alerts become your cadence.', icon: TrendingUp },
 ]
 
 const FAQS = [
-  { q: 'What happens during onboarding?', a: 'Day 0–7 digitisation (books, banking, payroll), day 8–21 insights (dashboards, compliance trackers), day 22+ finance cadence with investor-ready rituals.' },
-  { q: 'Can you support multi-entity or multi-country companies?', a: 'Yes. We handle entity formation, consolidations, inter-company billing, and cross-border tax/ESR requirements for the entire group.' },
+  { q: 'What happens during onboarding?', a: 'Day 0–7 digitisation (books, banking, reconciliations), day 8–21 insights (dashboards, compliance trackers), day 22+ finance cadence with investor-ready rituals.' },
+  { q: 'Can you support multi-entity or multi-country companies?', a: 'Yes. We handle consolidations, inter-company billing, and cross-border tax and AML requirements for the entire group.' },
   { q: 'Do I need to use certain tools?', a: 'No. We plug into your existing ERPs and banks. If migrations are needed, we scope them as projects and implement them for you.' },
   { q: 'How do we communicate?', a: 'WhatsApp / Slack for quick updates, weekly or bi-weekly finance reviews, monthly board-ready packs, plus quarterly strategic planning.' },
   { q: 'Is there a setup fee?', a: 'Setup is included for annual plans. For quarterly/monthly we charge a one-time onboarding fee based on historical clean-up volume.' },
@@ -116,8 +116,8 @@ const INDUSTRIES = [
 
 const MODULES = [
   { id: 'accounting', label: 'Accounting & Reporting', description: 'Monthly close, dashboards, investor packs', multiplier: 0.35 },
-  { id: 'tax', label: 'Tax & Compliance', description: 'VAT, corporate tax, ESR, governance', multiplier: 0.25 },
-  { id: 'payroll', label: 'Payroll & People Finance', description: 'WPS, visas, benefits, gratuity', multiplier: 0.15 },
+  { id: 'tax', label: 'Tax & Compliance', description: 'VAT, corporate tax, AML, governance', multiplier: 0.25 },
+  { id: 'audit', label: 'Audit & Financial Modelling', description: 'Audit prep, working papers, founder models', multiplier: 0.15 },
   { id: 'cfo', label: 'Fractional CFO', description: 'Scenario planning, fundraising, pricing', multiplier: 0.4 },
 ]
 
@@ -237,7 +237,7 @@ export default function Pricing() {
               not surprises.
             </h1>
             <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto">
-              Three plans, one bench of 135+ finance specialists. Pay monthly. Switch anytime. No hidden setup fees on annual.
+              Three plans, one bench of 180+ finance specialists. Pay monthly. Switch anytime. No hidden setup fees on annual.
             </p>
             <div className="mt-8 inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
               <button
@@ -515,7 +515,7 @@ export default function Pricing() {
                   </div>
 
                   <a
-                    href="mailto:hello@finanshels.com"
+                    href="mailto:contact@finanshels.com"
                     className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 font-semibold text-slate-900 hover:bg-[#ff8a3c] hover:text-white transition-all"
                   >
                     Get detailed proposal <ArrowRight size={16} />
@@ -628,7 +628,7 @@ export default function Pricing() {
                   Average client saves <span className="text-[#ff8a3c]">AED 142,000</span> a year vs in-house.
                 </h2>
                 <p className="mt-4 text-slate-300">
-                  No hiring lag, no benefits, no severance risk. One subscription replaces a controller, a tax lead, a payroll admin, and a fractional CFO.
+                  No hiring lag, no benefits, no severance risk. One subscription replaces a controller, a tax lead, an audit manager, and a fractional CFO.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-5">
@@ -805,13 +805,13 @@ export default function Pricing() {
               </div>
               <div className="flex flex-col gap-3 w-full md:w-auto">
                 <a
-                  href="mailto:hello@finanshels.com"
+                  href="mailto:contact@finanshels.com"
                   className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-[#f16610] shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
                 >
                   Share my stack <ArrowRight size={18} />
                 </a>
                 <a
-                  href="https://wa.me/971507178156"
+                  href="https://wa.me/971521549572"
                   className="inline-flex items-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
                 >
                   <MessageSquare size={18} /> WhatsApp our consultants

@@ -21,14 +21,14 @@ import TestimonialCarousel from '../components/TestimonialCarousel'
 import { TESTIMONIALS } from '../data/team'
 
 const HERO_BULLETS = [
-  'Dedicated controllers, tax leads, payroll, and CFO partners inside one subscription',
-  'Realtime dashboards, filings, board packs, and variance reviews every month',
-  'Deep MENA presence with on-ground finance operators across the GCC and beyond',
+  'Dedicated Finance controllers, tax, and CFO partners',
+  'Realtime dashboards, filings and variance reviews',
+  'MENA presence with on-ground finance experts',
 ]
 
 const HERO_STATS = [
   { value: '6,000+', label: 'UAE clients' },
-  { value: '135+', label: 'finance experts' },
+  { value: '180+', label: 'finance experts' },
   { value: '12', label: 'active markets' },
   { value: '$1.2B', label: 'flows managed' },
 ]
@@ -59,7 +59,7 @@ const COMMAND_TILES = [
     span: 'md:col-span-1 md:row-span-1',
     accent: 'from-[#fff7ed] to-white',
     badge: 'Tax calendar',
-    title: 'CT, VAT, ESR, WPS — all green',
+    title: 'CT, VAT, AML — every filing on track',
     copy: 'Every UAE filing tracked, owned, never late.',
     visual: 'tax',
   },
@@ -82,13 +82,13 @@ const COMMAND_TILES = [
     visual: 'board',
   },
   {
-    key: 'payroll',
+    key: 'compliance',
     span: 'md:col-span-2 md:row-span-1',
     accent: 'from-[#f5f3ff] to-white',
-    badge: 'Payroll & people',
-    title: 'WPS, gratuity, visas, EOSB — handled before payday',
-    copy: 'Salaries land on time across AED, USD, and EUR. Gratuity accruals updated monthly so EOSB never surprises you.',
-    visual: 'payroll',
+    badge: 'Audit, AML & liquidation',
+    title: 'Audit-ready files, AML controls, clean wind-downs',
+    copy: 'External-audit prep, AML policies and reviews, and end-to-end liquidation. The same team that closes your books defends them at audit.',
+    visual: 'compliance',
   },
 ]
 
@@ -103,7 +103,7 @@ const SOLUTION_PILLARS = [
   {
     icon: ShieldCheck,
     title: 'Tax, VAT & Compliance',
-    copy: 'Corporate tax, VAT, ESR, payroll, entity administration, and governance handled end-to-end.',
+    copy: 'Corporate tax, VAT, AML, audit prep, and liquidation support handled end-to-end.',
     accent: 'from-[#eef2ff] to-[#fff]',
     iconBg: 'bg-[#e9ecff] text-[#4f46e5]',
   },
@@ -117,7 +117,7 @@ const SOLUTION_PILLARS = [
 ]
 
 const TIMELINE = [
-  { caption: 'Day 0 – 7', title: 'Digitize', copy: 'We ingest ledgers, banks, payroll, PSPs, and policies while building automations and approvals.', icon: Zap },
+  { caption: 'Day 0 – 7', title: 'Digitize', copy: 'We ingest ledgers, banks, PSPs, and policies while building automations and approvals.', icon: Zap },
   { caption: 'Day 8 – 21', title: 'Insight', copy: 'Clean books, compliance trackers, and dashboards go live. Leadership sees the first operating review.', icon: BarChart3 },
   { caption: 'Day 22+', title: 'Command', copy: 'Monthly board-ready packs, scenario planning, and WhatsApp support keep every ritual on track.', icon: Sparkles },
 ]
@@ -128,12 +128,12 @@ const PRODUCT_STRIP = [
   { name: 'Financial Health Checker', tag: 'Diagnostics', desc: 'Score your books on liquidity, runway, and compliance in minutes.', icon: Activity, href: '/products/financial-health-checker' },
   { name: 'Cash Flow Scorecard', tag: 'Cash', desc: 'Live and on-demand money wisdom for founders.', icon: BarChart3, href: '/products/cash-flow-scorecard' },
   { name: 'Client Portal', tag: 'Workspace', desc: 'Real talk on startup money — no spreadsheets, all clarity.', icon: MessageSquare, href: '/products/client-portal' },
-  { name: 'Gratuity Calculator (UAE)', tag: 'Payroll', desc: 'Model end-of-service obligations in minutes.', icon: Calculator, href: '/products/gratuity-calculator-uae' },
+  { name: 'Gratuity Calculator (UAE)', tag: 'HR Tool', desc: 'Model end-of-service obligations in minutes.', icon: Calculator, href: '/products/gratuity-calculator-uae' },
 ]
 
 const WHY_SWITCH = [
   { icon: MessageSquare, tag: 'Support', title: 'WhatsApp-first access', copy: 'Dedicated pods respond within minutes and bring controllers, CFOs, and tax leads into every thread.' },
-  { icon: ShieldCheck, tag: 'Compliance', title: 'Zero-surprise filings', copy: 'Corporate tax, VAT, ESR, payroll, visas, and entity renewals tracked in one calendar so nothing slips.' },
+  { icon: ShieldCheck, tag: 'Compliance', title: 'Zero-surprise filings', copy: 'Corporate tax, VAT, AML, and entity renewals tracked in one calendar so nothing slips.' },
   { icon: BarChart3, tag: 'Insights', title: 'Board-ready narratives', copy: 'Monthly decks, rolling forecasts, and what-changed commentary ready for investors and leadership.' },
   { icon: Globe2, tag: 'Tooling', title: 'Built for MENA', copy: 'Deadline checkers, client portals, and cash scorecards tuned for UAE/KSA regulations.' },
 ]
@@ -141,7 +141,7 @@ const WHY_SWITCH = [
 const CTA_LINKS = [
   { label: 'Explore solutions', href: '/solutions' },
   { label: 'View pricing', href: '/pricing' },
-  { label: 'Talk to sales', href: 'mailto:hello@finanshels.com' },
+  { label: 'Talk to sales', href: 'mailto:contact@finanshels.com' },
 ]
 
 function Sparkline({ stroke = '#f16610' }) {
@@ -210,7 +210,7 @@ function TaxCalendar() {
   const items = [
     { label: 'CT return', date: 'Sep 30', state: 'done' },
     { label: 'VAT Q3', date: 'Oct 28', state: 'progress' },
-    { label: 'ESR notice', date: 'Nov 15', state: 'queued' },
+    { label: 'Audit pack', date: 'Nov 15', state: 'queued' },
   ]
   return (
     <div className="space-y-2">
@@ -263,30 +263,27 @@ function BoardPack() {
   )
 }
 
-function PayrollVisual() {
+function ComplianceVisual() {
   const rows = [
-    { name: 'Aisha M.', amount: 'AED 18,500', state: 'paid' },
-    { name: 'Karim R.', amount: 'AED 24,200', state: 'paid' },
-    { name: 'Sara W.', amount: 'AED 16,800', state: 'queued' },
+    { label: 'Audit pack — Q3 FY25', state: 'paid' },
+    { label: 'AML policy review', state: 'paid' },
+    { label: 'Liquidation — Newco LLC', state: 'queued' },
   ]
   return (
     <div className="space-y-1.5">
       {rows.map((row) => (
-        <div key={row.name} className="flex items-center justify-between rounded-lg bg-white/80 border border-slate-100 px-2.5 py-1.5 text-[11px]">
+        <div key={row.label} className="flex items-center justify-between rounded-lg bg-white/80 border border-slate-100 px-2.5 py-1.5 text-[11px]">
           <div className="flex items-center gap-2">
-            <div className="h-5 w-5 rounded-full bg-gradient-to-br from-[#f16610] to-[#ff8a3c] text-white text-[9px] font-semibold flex items-center justify-center">
-              {row.name.charAt(0)}
+            <div className="h-5 w-5 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7e8bff] text-white flex items-center justify-center">
+              <ShieldCheck size={11} />
             </div>
-            <span className="font-medium text-slate-700">{row.name}</span>
+            <span className="font-medium text-slate-700">{row.label}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500">{row.amount}</span>
-            {row.state === 'paid' ? (
-              <CheckCircle2 size={12} className="text-emerald-500" />
-            ) : (
-              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-            )}
-          </div>
+          {row.state === 'paid' ? (
+            <CheckCircle2 size={12} className="text-emerald-500" />
+          ) : (
+            <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+          )}
         </div>
       ))}
     </div>
@@ -333,7 +330,7 @@ function TileVisual({ kind }) {
   if (kind === 'tax') return <TaxCalendar />
   if (kind === 'chat') return <ChatBubble />
   if (kind === 'board') return <BoardPack />
-  if (kind === 'payroll') return <PayrollVisual />
+  if (kind === 'compliance') return <ComplianceVisual />
   return null
 }
 
@@ -436,7 +433,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="mt-6 text-lg text-slate-600 max-w-xl">
-              Accounting, tax, payroll, and CFO partners on autopilot. Finanshels builds a finance command centre around your company so you can focus on shipping — trusted by 6,000+ UAE clients.
+              Accounting, tax, compliance, and CFO partners on autopilot. Finanshels builds a finance command centre around your company so you can focus on growth — trusted by 6,000+ UAE clients.
             </p>
             <div className="mt-7 grid gap-2.5 max-w-lg">
               {HERO_BULLETS.map((bullet) => (
@@ -455,7 +452,7 @@ export default function Home() {
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <a
-                href="https://wa.me/971507178156?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
+                href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
                 className="inline-flex items-center gap-2 rounded-2xl border-2 border-slate-900 bg-white px-6 py-3.5 font-semibold text-slate-900 hover:bg-slate-900 hover:text-white transition"
               >
                 <MessageSquare size={18} />
@@ -601,7 +598,7 @@ export default function Home() {
               </span>
               <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">Pick the finance muscle you need</h2>
               <p className="text-slate-600 max-w-2xl text-lg">
-                Three operating models. One bench of 135+ finance specialists. Scale up or down without re-hiring.
+                Three operating models. One bench of 180+ finance specialists. Scale up or down without re-hiring.
               </p>
             </div>
           </AnimatedSection>

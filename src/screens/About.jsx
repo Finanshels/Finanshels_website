@@ -24,7 +24,7 @@ const STORY_POINTS = [
     year: '2019',
     title: 'A frustration turned into a company',
     description:
-      'Finanshels began as an internal finance team helping Dubai founders fix messy books, broken payroll, and compliance fire drills.',
+      'Finanshels began as an internal finance team helping Dubai founders fix messy books, missed filings, and compliance fire drills.',
     icon: Rocket,
   },
   {
@@ -45,13 +45,13 @@ const STORY_POINTS = [
     year: 'Today',
     title: 'The finance partner founders deserve',
     description:
-      'More than 135 finance specialists ship investor-ready clarity every month so founders can focus on building category-defining products.',
+      'More than 180 finance specialists ship investor-ready clarity every month so founders can focus on building category-defining products.',
     icon: TrendingUp,
   },
 ]
 
 const METRICS = [
-  { value: '135+', label: 'finance specialists' },
+  { value: '180+', label: 'finance specialists' },
   { value: '6,000+', label: 'UAE clients' },
   { value: '4.9★', label: 'avg. rating' },
   { value: '$1.2B', label: 'flows managed' },
@@ -159,7 +159,7 @@ export default function About() {
               .
             </h1>
             <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto">
-              Accountants, controllers, tax leads, payroll experts, and CFO partners who live inside your business. We obsess over numbers so founders can obsess over product, customers, and expansion.
+              Accountants, controllers, tax leads, audit specialists, and CFO partners who live inside your business. We obsess over numbers so founders can obsess over product, customers, and expansion.
             </p>
             <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto">
               {METRICS.map((m, i) => (
@@ -469,13 +469,13 @@ export default function About() {
               </div>
               <div className="flex flex-col gap-3 w-full md:w-auto">
                 <a
-                  href="mailto:hello@finanshels.com"
+                  href="mailto:contact@finanshels.com"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-[#f16610] shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
                 >
                   Talk to the team <ArrowRight size={18} />
                 </a>
                 <a
-                  href="https://wa.me/971507178156"
+                  href="https://wa.me/971521549572"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
                 >
                   <MessageSquare size={18} /> WhatsApp us

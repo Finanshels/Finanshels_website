@@ -1,7 +1,7 @@
- 'use client'
+'use client'
 
 import Link from 'next/link'
-import { Linkedin, Twitter, Mail, Instagram, Youtube, ArrowUpRight, MapPin, Phone } from 'lucide-react'
+import { Linkedin, Twitter, Instagram, Youtube, ArrowUpRight } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 
 const NAV_LINKS = [
@@ -11,7 +11,7 @@ const NAV_LINKS = [
       { label: 'Services', to: '/services' },
       { label: 'Solutions', to: '/solutions' },
       { label: 'Pricing', to: '/pricing' },
-      { label: 'Customers', to: '/customers' }
+      { label: 'Become a partner', href: 'https://partner.finanshels.com' }
     ]
   },
   {
@@ -26,9 +26,18 @@ const NAV_LINKS = [
   {
     heading: 'Need help?',
     items: [
-      { label: 'Contact', to: '/contact' },
-      { label: 'WhatsApp', href: 'https://wa.me/971507178156' },
-      { label: 'Book a consult', href: 'mailto:hello@finanshels.com' }
+      { label: 'Contact Us', to: '/contact' },
+      { label: 'Call Hotline', href: 'tel:+97145457841' },
+      { label: 'WhatsApp Now', href: 'https://wa.me/971521549572' },
+      { label: 'Book a consult', href: 'mailto:contact@finanshels.com' }
+    ]
+  },
+  {
+    heading: 'Locations',
+    items: [
+      { label: 'Accounting Services in Dubai', to: '/accounting-services-dubai' },
+      { label: 'Accounting Services in Abu Dhabi', to: '/accounting-services-abu-dhabi' },
+      { label: 'Accounting Services in Sharjah', to: '/accounting-services-sharjah' }
     ]
   }
 ]
@@ -57,8 +66,7 @@ export default function Footer() {
           <div className="space-y-6">
             <img src="/finanshels_logo.png" alt="Finanshels" className="h-10 w-auto" />
             <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
-              Finance partners for UAE startups, retailers, clinics, and SMBs. Accounting, tax, payroll, and CFO rituals run by a 135+ person team so
-              founders stay focused on growth.
+              Finanshels, the back office finance partner for 6000+ founders in the UAE run by 180+ members so founders can stay focused on growth.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               {SOCIALS.map((social) => (
@@ -73,10 +81,10 @@ export default function Footer() {
                 </a>
               ))}
               <a
-                href="mailto:hello@finanshels.com"
+                href="mailto:contact@finanshels.com"
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 font-semibold text-slate-700 hover:border-[#f16610]"
               >
-                hello@finanshels.com
+                contact@finanshels.com
                 <ArrowUpRight size={18} />
               </a>
             </div>
@@ -88,7 +96,7 @@ export default function Footer() {
                 <ul className="space-y-2 text-sm text-slate-600">
                   {section.items.map((item) => {
                     const Component = item.to ? Link : 'a'
-          const props = item.to ? { href: item.to } : { href: item.href, target: '_blank', rel: 'noreferrer' }
+                    const props = item.to ? { href: item.to } : { href: item.href, target: '_blank', rel: 'noreferrer' }
                     return (
                       <li key={item.label}>
                         <Component
@@ -104,27 +112,6 @@ export default function Footer() {
                 </ul>
               </div>
             ))}
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8 rounded-[30px] border border-slate-200 bg-white/80 p-6 shadow-[0_10px_50px_rgba(15,23,42,0.08)]">
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">Dubai HQ</p>
-            <p className="text-sm text-slate-600 flex items-center gap-2">
-              <MapPin size={18} className="text-[#f16610]" />
-              in5 Tech, Dubai Internet City
-            </p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">Ops hubs</p>
-            <p className="text-sm text-slate-600">Kerala • Abu Dhabi • KSA</p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">Hotline</p>
-            <p className="text-sm text-slate-600 flex items-center gap-2">
-              <Phone size={18} className="text-[#f16610]" />
-              +971 50 717 8156
-            </p>
           </div>
         </div>
 

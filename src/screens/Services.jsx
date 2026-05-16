@@ -31,18 +31,18 @@ const SERVICE_GROUPS = [
     title: 'Tax, VAT & Compliance',
     icon: ShieldCheck,
     description:
-      'Corporate tax, VAT, ESR, payroll, and regulatory filings executed by teams who live inside UAE regulations every day.',
-    items: ['Corporate tax computation & filing', 'VAT registration and returns', 'Economic substance reporting'],
+      'Corporate tax, VAT, AML, and audit-prep filings executed by teams who live inside UAE regulations every day.',
+    items: ['Corporate tax computation & filing', 'VAT registration and returns', 'AML policies & reviews'],
     accent: 'from-[#eef2ff] to-white',
     iconBg: 'bg-[#e9ecff] text-[#4f46e5]',
     glow: 'rgba(79,70,229,0.18)',
   },
   {
-    title: 'Payroll & People Finance',
+    title: 'Audit & Financial Modelling',
     icon: Wallet,
     description:
-      'WPS-compliant payroll, end-of-service, visa renewals, insurance, and HR ops backed by automated approvals and audit trails.',
-    items: ['Salary processing & WPS uploads', 'End-of-service automation', 'Visa & PRO coordination'],
+      'External-audit support, working papers, and founder-grade financial models that hold up in board rooms and data rooms.',
+    items: ['Year-end audit preparation', 'Three-statement & scenario models', 'Investor data room hygiene'],
     accent: 'from-[#ecfdf5] to-white',
     iconBg: 'bg-[#dcfce7] text-[#059669]',
     glow: 'rgba(5,150,105,0.18)',
@@ -58,11 +58,11 @@ const SERVICE_GROUPS = [
     glow: 'rgba(180,83,9,0.18)',
   },
   {
-    title: 'Entity Launch & Expansion',
+    title: 'Liquidation & Wind-down',
     icon: Building2,
     description:
-      'Company formation, multi-entity governance, bank accounts, cap table support, and cross-border compliance as you scale regionally.',
-    items: ['Entity advisory & incorporation', 'Banking & treasury set up', 'Cross-border documentation'],
+      'Clean shutdowns when it is time to wind down: regulator filings, final accounts, asset settlement, and clearance certificates.',
+    items: ['Liquidation filings & approvals', 'Final accounts & creditor notices', 'Clearance & deregistration support'],
     accent: 'from-[#fce7f3] to-white',
     iconBg: 'bg-[#fce7f3] text-[#db2777]',
     glow: 'rgba(219,39,119,0.18)',
@@ -89,7 +89,7 @@ const DELIVERY_PROCESS = [
   {
     title: 'Team assembly',
     description:
-      'Specialists across accounting, tax, payroll, and CFO are assigned to your business. Each team has a single point of accountability.',
+      'Specialists across accounting, tax, compliance, and CFO are assigned to your business. Each team has a single point of accountability.',
     icon: Users2,
   },
   {
@@ -107,7 +107,7 @@ const DELIVERY_PROCESS = [
 ]
 
 const METRICS = [
-  { label: 'finance operators in-house', value: '135+' },
+  { label: 'finance operators in-house', value: '180+' },
   { label: 'MENA markets supported', value: '12' },
   { label: 'avg. onboarding time', value: '30 days' },
   { label: 'customer satisfaction', value: '4.9/5' },
@@ -145,11 +145,11 @@ export default function Services() {
               .
             </h1>
             <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto">
-              Finanshels assembles dedicated teams across accounting, tax, payroll, and CFO so you can run a finance department built for velocity — without the overhead of hiring a dozen specialists.
+              Finanshels assembles dedicated teams across accounting, tax, compliance, and CFO so you can run a finance department built for velocity — without the overhead of hiring a dozen specialists.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <a
-                href="mailto:hello@finanshels.com"
+                href="mailto:contact@finanshels.com"
                 className="group inline-flex items-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#f16610]/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
               >
                 Design my finance team
@@ -314,13 +314,13 @@ export default function Services() {
               </div>
               <div className="flex flex-col gap-3 w-full md:w-auto">
                 <a
-                  href="mailto:hello@finanshels.com"
+                  href="mailto:contact@finanshels.com"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-[#f16610] shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
                 >
                   Talk to sales <ArrowRight size={18} />
                 </a>
                 <a
-                  href="https://wa.me/971507178156"
+                  href="https://wa.me/971521549572"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
                 >
                   <MessageSquare size={18} /> WhatsApp our team

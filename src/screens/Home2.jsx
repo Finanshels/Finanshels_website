@@ -37,7 +37,7 @@ export default function Home2() {
     {
       icon: Shield,
       title: "Compliance without anxiety",
-      description: "VAT, Corporate Tax, payroll, filings, renewals — handled locally, governed centrally. No surprises."
+      description: "VAT, Corporate Tax, AML, audit prep, and statutory filings — handled locally, governed centrally. No surprises."
     },
     {
       icon: BarChart3,
@@ -54,7 +54,7 @@ export default function Home2() {
   const timeline = [
     {
       title: "Weeks 1–2 — Connect and clean",
-      description: "We connect books, banks, payroll, PSPs, and entities. Gaps fixed. Structure put in place."
+      description: "We connect books, banks, PSPs, and entities. Gaps fixed. Structure put in place."
     },
     {
       title: "Weeks 3–4 — Make it visible",
@@ -129,7 +129,7 @@ export default function Home2() {
                 </div>
                 <div className="pt-6 border-t border-slate-200 space-y-3">
                   <p className="text-lg text-slate-900 leading-relaxed">
-                    <strong>Finanshels runs accounting, tax, payroll, and finance cadence as one system,</strong> providing one dashboard with the current financial snapshot — so founders can focus on building, not managing back offices.
+                    <strong>Finanshels runs accounting, tax, compliance, and finance cadence as one system,</strong> providing one dashboard with the current financial snapshot — so founders can focus on building, not managing back offices.
                   </p>
                 </div>
               </div>
@@ -150,7 +150,7 @@ export default function Home2() {
           <AnimatedSection animation="fade-up" delay={250}>
             <div className="mt-8 text-center">
               <p className="text-base text-slate-600">
-                Trusted by 6,000+ companies globally. Operated by 135+ finance specialists across 12 markets.
+                Trusted by 6,000+ companies globally. Operated by 180+ finance specialists across 12 markets.
               </p>
             </div>
           </AnimatedSection>
@@ -158,14 +158,14 @@ export default function Home2() {
           <AnimatedSection animation="fade-up" delay={300}>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href="mailto:hello@finanshels.com"
+                href="mailto:contact@finanshels.com"
                 className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#f16610] text-white font-bold text-lg shadow-lg shadow-[#f16610]/30 hover:bg-[#e55a00] transition-all hover:-translate-y-1 hover:shadow-xl"
               >
                 Book a Strategy Call
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </a>
               <a
-                href="https://wa.me/971507178156?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
+                href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-300 bg-white text-slate-700 font-bold text-lg hover:border-[#f16610] hover:text-[#f16610] hover:bg-[#fff9f5] transition-all"
@@ -180,7 +180,7 @@ export default function Home2() {
             <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8">
               {[
                 { value: 5000, suffix: '+', label: 'Companies trust us' },
-                { value: 135, suffix: '+', label: 'Finance specialists' },
+                { value: 180, suffix: '+', label: 'Finance specialists' },
                 { value: 12, suffix: '', label: 'Countries covered' },
                 { value: '24/7', suffix: '', label: 'Support access', isText: true }
               ].map((stat, index) => (
@@ -267,7 +267,7 @@ export default function Home2() {
           <AnimatedSection animation="fade-up" delay={400}>
             <div className="mt-10 text-center">
               <a
-                href="mailto:hello@finanshels.com"
+                href="mailto:contact@finanshels.com"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-[#f16610] text-[#f16610] font-bold hover:bg-[#f16610] hover:text-white transition-all hover:-translate-y-0.5"
               >
                 Check Availability
@@ -322,7 +322,7 @@ export default function Home2() {
 
               <div className="pt-8">
                 <a
-                  href="mailto:hello@finanshels.com"
+                  href="mailto:contact@finanshels.com"
                   className="group inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-[#f16610] font-bold text-xl shadow-2xl hover:shadow-3xl transition-all hover:-translate-y-1"
                 >
                   Get My Finance Roadmap
@@ -402,12 +402,12 @@ export default function Home2() {
               <div className="space-y-6">
                 <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
                   <p className="text-2xl font-bold mb-4 text-slate-900">You get a dedicated pod:</p>
-                  <p className="text-lg text-slate-700 mb-4">controllers, tax leads, payroll, and CFO support working together across jurisdictions.</p>
+                  <p className="text-lg text-slate-700 mb-4">controllers, tax leads, audit specialists, and CFO support working together across jurisdictions.</p>
                   <div className="space-y-3 text-lg">
                     {[
                       'Controllers who know your business',
                       'Tax specialists across jurisdictions',
-                      'Payroll experts who never miss a deadline',
+                      'Audit & AML experts who never miss a deadline',
                       'CFO support for strategic decisions'
                     ].map((item, index) => (
                       <div key={index} className="flex items-start gap-3 bg-[#fffdfb] rounded-xl p-3 border border-slate-100">
@@ -588,7 +588,7 @@ export default function Home2() {
                   <ArrowRight size={18} />
                 </Link>
                 <a
-                  href="mailto:hello@finanshels.com"
+                  href="mailto:contact@finanshels.com"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-slate-300 text-slate-700 font-semibold hover:border-[#f16610] hover:text-[#f16610] transition-all"
                 >
                   Talk to Sales
@@ -677,14 +677,14 @@ export default function Home2() {
                   
                   <div className="space-y-4 pt-6">
                     <a
-                      href="mailto:hello@finanshels.com"
+                      href="mailto:contact@finanshels.com"
                       className="group flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-[#f16610] text-white font-bold text-lg hover:bg-[#e55a00] transition-all hover:-translate-y-0.5 shadow-lg"
                     >
                       <span>Book a Strategy Call</span>
                       <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                     </a>
                     <a
-                      href="https://wa.me/971507178156?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
+                      href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center justify-between w-full px-6 py-4 rounded-2xl border-2 border-slate-200 text-slate-900 font-bold text-lg hover:border-[#f16610] hover:text-[#f16610] transition-all"

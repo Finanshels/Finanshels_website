@@ -103,7 +103,7 @@ export const SERVICE_PAGES = {
   },
   'compliance-services': {
     title: 'Compliance Services',
-    subtitle: 'AML, ESR, data room hygiene, and governance handled for you',
+    subtitle: 'AML, data room hygiene, and governance handled for you',
     description:
       'Teams maintain registers, filings, policies, and evidence so audits are straightforward and founders sleep better.',
     stats: [
@@ -112,7 +112,7 @@ export const SERVICE_PAGES = {
     ],
     valueProps: [
       'AML/CFT policy creation, training, and ongoing monitoring.',
-      'Economic substance notifications and reports for every entity.',
+      'Audit-ready evidence files, registers, and review trails.',
       'Board + shareholder governance packs with version control and approvals.'
     ],
     workflow: [
@@ -123,7 +123,7 @@ export const SERVICE_PAGES = {
     caseStudy: {
       logo: 'Hub71 Cohort',
       headline: 'Zero penalties across 18 portfolio companies',
-      result: 'Regulators documented Finanshels process as best practice for AML and ESR.'
+      result: 'Regulators documented Finanshels process as best practice for AML and audit readiness.'
     }
   },
   'vat-registration': {
@@ -184,8 +184,8 @@ export const SERVICE_PAGES = {
     ],
     valueProps: [
       'Closing financial statements, audit coordination, and bank closures.',
-      'Visa cancellations, WPS shutdown, and payroll settlements.',
-      'Government interactions through PRO network until final NOC.'
+      'Final-employee settlement reconciliations and creditor notices.',
+      'Regulatory filings, clearance certificates, and final deregistration.'
     ],
     workflow: [
       'Plan timeline and stakeholder map.',
@@ -200,7 +200,7 @@ export const SERVICE_PAGES = {
   },
   'hire-an-expert': {
     title: 'Hire an Expert',
-    subtitle: 'Deploy controllers, CFOs, or payroll leads in days',
+    subtitle: 'Deploy controllers, CFOs, or audit specialists in days',
     description:
       'Our bench plugs into your org chart full-time or part-time, backed by Finanshels IP and tooling.',
     stats: [
@@ -260,7 +260,7 @@ export const SERVICE_PAGES = {
     valueProps: [
       'POS + delivery aggregator integrations for realtime sales.',
       'Ingredient costing, wastage tracking, and vendor payments.',
-      'Payroll, visa, and gratuity automation for large staff.'
+      'Outlet-level audit prep and AML hygiene for franchise networks.'
     ],
     workflow: [
       'Setup: integrate POS, aggregators, and inventory tools.',
@@ -270,7 +270,7 @@ export const SERVICE_PAGES = {
     caseStudy: {
       logo: 'Kitch',
       headline: 'Expanded to 4 countries with consistent margins',
-      result: 'Unified cost tracking and payroll saved AED 1.2M annually.'
+      result: 'Unified cost tracking and supplier controls saved AED 1.2M annually.'
     }
   },
   startups: {
@@ -283,7 +283,7 @@ export const SERVICE_PAGES = {
     valueProps: [
       'SaaS metrics, cohort analyses, and growth dashboards.',
       'Fundraising prep, data rooms, and investor updates.',
-      'Compliance layer for CT, VAT, ESR, and payroll.'
+      'Compliance layer for CT, VAT, AML, and audit prep.'
     ],
     workflow: [
       'Diagnose tool stack + KPIs.',
@@ -333,7 +333,7 @@ export const SERVICE_PAGES = {
     ],
     workflow: [
       'Understand: goals, cash position, and current tools.',
-      'Build: custom team with controllers, tax, payroll, CFO leads.',
+      'Build: custom team with controllers, tax, audit, and CFO leads.',
       'Operate: monthly reviews, compliance calendar, and growth projects.'
     ],
     caseStudy: {

@@ -84,7 +84,7 @@ export const TESTIMONIALS = [
     role: "Founder, Bloom Cafe UAE",
     image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ranya&backgroundColor=fef3c7",
     quote:
-      "Finanshels turned our messy books into a CFO-grade finance function in a week. VAT, payroll, and board decks now run like clockwork while I stay focused on new stores.",
+      "Finanshels turned our messy books into a CFO-grade finance function in a week. VAT, audit prep, and board decks now run like clockwork while I stay focused on new stores.",
     rating: 5
   },
   {
@@ -124,7 +124,7 @@ export const TESTIMONIALS = [
     role: "Founder, FitLife Studios",
     image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Omar&backgroundColor=fce7f3",
     quote:
-      "Managing 8 locations across Dubai was a nightmare until Finanshels stepped in. Their bookkeeping and payroll services freed up my team to focus on what we do best—fitness.",
+      "Managing 8 locations across Dubai was a nightmare until Finanshels stepped in. Their bookkeeping and tax compliance freed up my team to focus on what we do best—fitness.",
     rating: 5
   },
   {

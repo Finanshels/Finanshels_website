@@ -28,7 +28,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { cn } from '../lib/utils'
 import { PRODUCT_CATEGORIES } from '../data/products'
 
-const SOLUTIONS_SECTIONS = [
+const SERVICES_SECTIONS = [
   {
     title: 'By Service',
     items: [
@@ -60,42 +60,54 @@ const SOLUTIONS_SECTIONS = [
   }
 ]
 
-const INSIGHTS_SECTIONS = [
+const RESOURCES_SECTIONS = [
   {
     title: 'Learn',
     items: [
-      { name: 'Glossary', description: 'Speak finance like a founder.', href: '/glossary', icon: MessageSquare },
       { name: 'Blog', description: 'Sharp takes on startup finance.', href: '/blog', icon: Megaphone },
+      { name: 'Glossary', description: 'Speak finance like a founder.', href: '/glossary', icon: BookOpen },
       { name: 'FAQs', description: 'Answers to the most common questions.', href: '/contact', icon: HelpCircle }
     ]
   },
   {
-    title: 'Explore',
+    title: 'Products & Tools',
     items: [
-      { name: 'Products', description: 'Purpose-built tools for finance teams.', href: '/products', icon: Briefcase },
-      { name: 'Solutions', description: 'Services tailored by business stage.', href: '/solutions', icon: Sparkles },
-      { name: 'Pricing', description: 'Plans for startups and growing teams.', href: '/pricing', icon: BookOpen }
+      { name: 'All Products', description: 'Purpose-built tools for finance teams.', href: '/products', icon: Briefcase },
+      ...PRODUCT_CATEGORIES.slice(0, 1).flatMap((section) =>
+        section.items.slice(0, 2).map((item) => ({
+          name: item.name,
+          description: item.description,
+          href: `/products/${item.slug}`,
+          icon: item.icon
+        }))
+      )
     ]
   },
   {
-    title: 'Company',
+    title: 'Customers',
     items: [
-      { name: 'About us', description: 'Who we are and why we build Finanshels.', href: '/about', icon: Building2 },
-      { name: 'Blogs', description: 'Sharp takes on startup finance.', href: '/blog', icon: Megaphone },
-      { name: 'Careers', description: 'We’re hiring!', badge: 'We\'re hiring!', href: '/careers', icon: Users }
+      { name: 'Case studies', description: 'See how teams scale with Finanshels.', href: '/customers', icon: Sparkles },
+      { name: 'Resources hub', description: 'Guides, templates, and playbooks.', href: '/resources', icon: FileText }
     ]
   }
 ]
 
-const PRODUCTS_SECTIONS = PRODUCT_CATEGORIES.map((section) => ({
-  title: section.title,
-  items: section.items.map((item) => ({
-    name: item.name,
-    description: item.description,
-    href: `/products/${item.slug}`,
-    icon: item.icon
-  }))
-}))
+const COMPANY_SECTIONS = [
+  {
+    title: 'About Finanshels',
+    items: [
+      { name: 'About us', description: 'Who we are and why we build Finanshels.', href: '/about', icon: Building2 },
+      { name: 'Careers', description: 'Join the team.', badge: "We're hiring!", href: '/careers', icon: Users }
+    ]
+  },
+  {
+    title: 'Get in touch',
+    items: [
+      { name: 'Contact', description: 'Talk to our team.', href: '/contact', icon: MessageSquare },
+      { name: 'Become a partner', description: 'Grow with the Finanshels partner network.', href: 'https://partner.finanshels.com', icon: Briefcase }
+    ]
+  }
+]
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -121,44 +133,42 @@ export default function Navbar() {
     () => [
       { name: 'Home', path: '/' },
       {
-        name: 'Solutions',
-        dropdown: SOLUTIONS_SECTIONS,
+        name: 'Services',
+        dropdown: SERVICES_SECTIONS,
         cta: {
           text: 'Need help scoping the right finance services for your business?',
-          primary: { href: 'mailto:hello@finanshels.com', label: 'Book now' },
+          primary: { href: 'mailto:contact@finanshels.com', label: 'Book now' },
           actions: [
             { href: '/pricing', label: 'Pricing' },
-            { href: 'https://wa.me/971507178156?text=Hi%20Team%20Finanshels%2C%20I%20need%20a%20finance%20consultation.', label: 'Chat to sales' }
+            { href: 'https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20I%20need%20a%20finance%20consultation.', label: 'Chat to sales' }
           ]
         }
       },
-      { name: 'Pricing', path: '/pricing' },
-      { name: 'Customers', path: '/customers' },
+      { name: 'Packages', path: '/pricing' },
       {
-        name: 'Insights',
-        dropdown: INSIGHTS_SECTIONS,
+        name: 'Resources',
+        dropdown: RESOURCES_SECTIONS,
         cta: {
-          text: 'Deep dives, podcasts, and live sessions for ambitious operators.',
-          primary: { href: 'https://www.finanshels.com/blog', label: 'View blog' },
+          text: 'Guides, products, and case studies for ambitious operators.',
+          primary: { href: '/blog', label: 'View blog' },
           actions: [
-            { href: 'https://www.finanshels.com/blog', label: 'Blog' },
-            { href: 'https://www.finanshels.com/careers', label: 'Careers' }
+            { href: '/products', label: 'Browse products' },
+            { href: '/customers', label: 'Customer stories' }
           ]
         }
       },
       {
-        name: 'Products',
-        dropdown: PRODUCTS_SECTIONS,
+        name: 'Company',
+        dropdown: COMPANY_SECTIONS,
         cta: {
-          text: 'Purpose-built tools for tax, cash, and collaboration.',
-          primary: { href: '/products', label: 'View all products' },
+          text: 'Learn about Finanshels, join the team, or grow with us as a partner.',
+          primary: { href: '/contact', label: 'Contact us' },
           actions: [
-            { href: '/solutions', label: 'Pair with services' },
-            { href: 'mailto:hello@finanshels.com?subject=Finanshels%20Products', label: 'Talk to sales' }
+            { href: '/careers', label: 'Careers' },
+            { href: 'https://partner.finanshels.com', label: 'Become a partner' }
           ]
         }
-      },
-      { name: 'Contact', path: '/contact' }
+      }
     ],
     []
   )
@@ -282,6 +292,16 @@ export default function Navbar() {
                   </button>
                   {openDropdown === item.name && renderDropdown(item.dropdown, item.cta)}
                 </div>
+              ) : item.external ? (
+                <a
+                  key={item.name}
+                  href={item.path}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.35em] transition text-slate-600 hover:text-[#f16610]"
+                >
+                  {item.name}
+                </a>
               ) : (
                 <Link
                   key={item.name}
@@ -299,7 +319,7 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center">
             <a
-              href="https://wa.me/971507178156?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
+              href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-[18px] bg-[#0f5c4f] px-4 py-2 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(15,92,79,0.45)] hover:bg-[#0c4a3f]"
@@ -393,6 +413,17 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
+              ) : item.external ? (
+                <a
+                  key={item.name}
+                  href={item.path}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-5 py-3.5 rounded-xl font-semibold transition-all duration-300 text-slate-700 hover:bg-slate-50"
+                >
+                  {item.name}
+                </a>
               ) : (
                 <Link
                   key={item.name}
@@ -408,7 +439,7 @@ export default function Navbar() {
               )
             )}
             <a
-              href="https://wa.me/971507178156?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
+              href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
               target="_blank"
               rel="noreferrer"
               className="block text-center px-5 py-3.5 rounded-xl font-semibold border-2 border-[#0f5c4f] text-[#0f5c4f] hover:bg-[#0f5c4f] hover:text-white transition"
