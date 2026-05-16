@@ -280,7 +280,7 @@ export default function Navbar() {
             <span className="sr-only">Finanshels</span>
           </Link>
 
-          <div className="hidden md:flex flex-1 items-center justify-center gap-1 rounded-full border border-slate-200/80 bg-white/70 px-4 py-2 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
+          <div className="hidden md:flex mx-auto items-center justify-center gap-0.5 rounded-full border border-slate-200/80 bg-white/70 px-2 py-2 shadow-[0_6px_24px_rgba(15,23,42,0.06)]">
             {navItems.map((item) =>
               item.dropdown ? (
                 <div
@@ -290,7 +290,7 @@ export default function Navbar() {
                   onMouseLeave={() => setOpenDropdown(null)}
                 >
                   <button
-                    className="flex items-center gap-1 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-600 transition hover:text-[#f16610]"
+                    className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-600 transition hover:text-[#f16610]"
                   >
                     {item.name}
                     <ChevronDown size={14} className={cn('transition-transform', openDropdown === item.name && 'rotate-180')} />
@@ -303,7 +303,7 @@ export default function Navbar() {
                   href={item.path}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.35em] transition text-slate-600 hover:text-[#f16610]"
+                  className="px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.35em] transition text-slate-600 hover:text-[#f16610]"
                 >
                   {item.name}
                 </a>
@@ -312,7 +312,7 @@ export default function Navbar() {
                   key={item.name}
                   href={item.path}
                   className={cn(
-                    'px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.35em] transition',
+                    'px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.35em] transition',
                     isActive(item.path) ? 'text-[#f16610] bg-[#fff2ea] ring-1 ring-inset ring-[#f16610]/15' : 'text-slate-600 hover:text-[#f16610]'
                   )}
                 >

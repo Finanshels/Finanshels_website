@@ -30,9 +30,7 @@ export function ChatWidget() {
   useEffect(() => {
     if (!open) return
     const previousOverflow = document.body.style.overflow
-    if (window.matchMedia('(max-width: 640px)').matches) {
-      document.body.style.overflow = 'hidden'
-    }
+    document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = previousOverflow
     }
@@ -62,53 +60,26 @@ export function ChatWidget() {
       )}
 
       {open && (
-        <>
-          {/* Mobile bottom sheet (<=640px) */}
-          <div className="fixed inset-0 z-[70] sm:hidden">
-            <div
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"
-              onClick={() => setOpen(false)}
-            />
-            <div
-              className="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-3xl bg-white shadow-2xl"
-              style={{
-                height: '85dvh',
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-                animation: 'finanshels-chat-rise 220ms cubic-bezier(0.16, 1, 0.3, 1)',
-              }}
-            >
-              <div className="flex justify-center pt-2">
-                <span className="h-1.5 w-10 rounded-full bg-slate-200" aria-hidden />
-              </div>
-              <div className="h-[calc(85dvh-12px)]">
-                <ChatPanel onClose={() => setOpen(false)} />
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop floating panel (>=640px) */}
-          <div
-            className="fixed bottom-5 right-5 z-[70] hidden sm:bottom-6 sm:right-6 sm:flex"
-            style={{ animation: 'finanshels-chat-rise 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
-          >
-            <div
-              className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl shadow-slate-900/20 ring-1 ring-slate-200"
-              style={{ width: '400px', height: 'min(640px, calc(100dvh - 48px))' }}
-            >
-              <ChatPanel onClose={() => setOpen(false)} />
-            </div>
-          </div>
-        </>
+        <div
+          className="fixed inset-0 z-[70] flex bg-white"
+          style={{
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            animation: 'finanshels-chat-rise 220ms cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Chat with Finny"
+        >
+          <ChatPanel onClose={() => setOpen(false)} />
+        </div>
       )}
 
       <style jsx global>{`
         @keyframes finanshels-chat-rise {
           from {
-            transform: translateY(24px);
             opacity: 0;
           }
           to {
-            transform: translateY(0);
             opacity: 1;
           }
         }
