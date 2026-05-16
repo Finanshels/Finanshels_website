@@ -7,7 +7,7 @@ import { Loader2, Send, X } from 'lucide-react'
 import { ChatMessage } from './ChatMessage'
 
 const WELCOME_TEXT =
-  "Hi! I'm Finny — I can answer questions about Finanshels' accounting, VAT, corporate tax, payroll, and CFO services using our actual content. What's on your mind?"
+  "I'm Finny — fluent in debits, credits, and founder-speak. Ask me anything about Finanshels."
 
 const SUGGESTED_PROMPTS = [
   'Pricing for bookkeeping',

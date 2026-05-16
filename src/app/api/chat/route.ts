@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { streamText, tool, convertToModelMessages, type UIMessage } from 'ai'
+import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  streamText,
+  tool,
+  convertToModelMessages,
+  type UIMessage,
+} from 'ai'
 import { z } from 'zod'
 
 import {
@@ -22,6 +29,8 @@ import {
   isValidPhone,
 } from '@/lib/chat/guards'
 import { SYSTEM_PROMPT } from '@/lib/chat/prompt'
+import { matchQuickReply } from '@/lib/chat/quickReplies'
+import { buildSiteAnswer } from '@/lib/chat/siteAnswer'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -44,6 +53,35 @@ function messageId(): string {
   const bytes = new Uint8Array(8)
   crypto.getRandomValues(bytes)
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+function synthesizeAssistantReply(text: string, sessionId: string): Response {
+  const assistantMessageId = messageId()
+  const textPartId = messageId()
+  const stream = createUIMessageStream({
+    execute: ({ writer }) => {
+      writer.write({ type: 'start', messageId: assistantMessageId })
+      writer.write({ type: 'start-step' })
+      writer.write({ type: 'text-start', id: textPartId })
+      writer.write({ type: 'text-delta', id: textPartId, delta: text })
+      writer.write({ type: 'text-end', id: textPartId })
+      writer.write({ type: 'finish-step' })
+      writer.write({ type: 'finish' })
+    },
+  })
+  // fire-and-forget persistence so the response returns immediately
+  void appendMessages(sessionId, [
+    { id: assistantMessageId, role: 'assistant', content: text },
+  ]).catch((err) => {
+    console.warn(
+      '[chat] failed to persist synthetic assistant message:',
+      err instanceof Error ? err.message : err,
+    )
+  })
+  return createUIMessageStreamResponse({
+    stream,
+    headers: { 'x-finanshels-session': sessionId },
+  })
 }
 
 function uiMessageText(message: UIMessage): string {
@@ -132,6 +170,23 @@ export async function POST(request: Request) {
     ? '\n\nThe user just sent a high-intent message. Your next reply should warmly offer to capture their details via the captureLead tool.'
     : ''
 
+  // ─── Tier 1: canned options (no AI, no network) ───────────────────────────
+  const quick = matchQuickReply(lastUserText)
+  if (quick) {
+    return synthesizeAssistantReply(quick.text, persistedSessionId)
+  }
+
+  // ─── Tier 2: website RAG only (no AI) ─────────────────────────────────────
+  try {
+    const siteAnswer = await buildSiteAnswer(lastUserText)
+    if (siteAnswer) {
+      return synthesizeAssistantReply(siteAnswer.text, persistedSessionId)
+    }
+  } catch (err) {
+    console.warn('[chat] site answer failed, falling through to AI:', err instanceof Error ? err.message : err)
+  }
+
+  // ─── Tier 3: AI fallback (gateway) ────────────────────────────────────────
   let lastSearchCorpus = ''
 
   const tools = {

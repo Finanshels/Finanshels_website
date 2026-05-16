@@ -31,7 +31,7 @@ export const SYSTEM_PROMPT = `You are Finny, the friendly assistant for Finanshe
 - When you cite a Finanshels page, format inline as: "[Page title](URL)".
 - No markdown headers in your replies (no #, ##). Bullets and bold are fine.`
 
-export const WELCOME_MESSAGE = `Hi! I'm Finny — I can answer questions about Finanshels' accounting, VAT, corporate tax, payroll, and CFO services using our actual content. What's on your mind?`
+export const WELCOME_MESSAGE = `I'm Finny — fluent in debits, credits, and founder-speak. Ask me anything about Finanshels.`
 
 export const SUGGESTED_PROMPTS = [
   'Pricing for bookkeeping',

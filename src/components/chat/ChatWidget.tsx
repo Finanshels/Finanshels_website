@@ -17,6 +17,17 @@ export function ChatWidget() {
   }, [])
 
   useEffect(() => {
+    if (!mounted) return
+    if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return
+    if (sessionStorage.getItem('finanshels:chat:auto-opened') === '1') return
+    const timer = window.setTimeout(() => {
+      setOpen(true)
+      sessionStorage.setItem('finanshels:chat:auto-opened', '1')
+    }, 7500)
+    return () => window.clearTimeout(timer)
+  }, [mounted, pathname])
+
+  useEffect(() => {
     if (!open) return
     const previousOverflow = document.body.style.overflow
     if (window.matchMedia('(max-width: 640px)').matches) {
@@ -35,15 +46,18 @@ export function ChatWidget() {
       {!open && (
         <button
           type="button"
-          aria-label="Open chat"
+          aria-label="Talk to Finny"
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-orange-600 text-white shadow-xl shadow-orange-600/30 transition hover:scale-105 hover:bg-orange-700 focus:outline-none focus:ring-4 focus:ring-orange-200 sm:bottom-6 sm:right-6"
+          className="fixed bottom-5 right-5 z-[60] inline-flex items-center gap-2.5 rounded-full bg-orange-600 pl-4 pr-5 py-3 text-sm font-semibold text-white shadow-xl shadow-orange-600/30 transition hover:scale-[1.03] hover:bg-orange-700 focus:outline-none focus:ring-4 focus:ring-orange-200 sm:bottom-6 sm:right-6"
         >
-          <MessageCircle className="h-6 w-6" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-60" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-orange-400" />
+          <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-white/15">
+            <MessageCircle className="h-4 w-4" />
+            <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-300 opacity-70" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-orange-300" />
+            </span>
           </span>
+          <span className="whitespace-nowrap">Talk to Finny</span>
         </button>
       )}
 

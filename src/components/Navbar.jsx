@@ -270,7 +270,7 @@ export default function Navbar() {
             <img
               src="/finanshels_logo.png"
               alt="Finanshels"
-              className="h-9 w-auto transition-transform duration-200 group-hover:scale-[1.04]"
+              className="h-7 w-auto transition-transform duration-200 group-hover:scale-[1.04]"
             />
             <span className="sr-only">Finanshels</span>
           </Link>
@@ -308,7 +308,7 @@ export default function Navbar() {
                   href={item.path}
                   className={cn(
                     'px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.35em] transition',
-                    isActive(item.path) ? 'text-[#f16610] bg-[#fff2ea] shadow-[0_8px_20px_rgba(241,102,16,0.15)]' : 'text-slate-600 hover:text-[#f16610]'
+                    isActive(item.path) ? 'text-[#f16610] bg-[#fff2ea] ring-1 ring-inset ring-[#f16610]/15' : 'text-slate-600 hover:text-[#f16610]'
                   )}
                 >
                   {item.name}
