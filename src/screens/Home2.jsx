@@ -21,176 +21,150 @@ import { TESTIMONIALS } from '../data/team'
 
 export default function Home2() {
   const problems = [
-    "Local accountants who don't talk to each other",
-    "Month-end closes that drag on across entities",
-    "Tax handled country by country, not centrally",
-    "Investors asking for consolidated views you don't have",
-    "Cash position unclear unless someone pulls it manually"
+    "Your accountant in Dubai and your accountant in London have never spoken.",
+    "Month-end takes eight working days because each entity closes on its own clock.",
+    "Tax is handled by whoever you found locally. Nobody owns the group position.",
+    "An investor asks for a group P&L. You ask Slack who has the latest version.",
+    "Group cash is whatever the last person to update the sheet thought it was."
   ]
 
   const benefits = [
     {
       icon: Clock,
-      title: "Time back, everywhere",
-      description: "Founders reclaim 10+ hours a week by removing follow-ups, reconciliations, and reporting chaos — even across multiple countries."
+      title: "Roughly ten hours back a week",
+      description: "Mostly the ones you spend chasing accountants, reconciling between tools, and re-explaining the same thing to three different vendors."
     },
     {
       icon: Shield,
-      title: "Compliance without anxiety",
-      description: "VAT, Corporate Tax, AML, audit prep, and statutory filings — handled locally, governed centrally. No surprises."
+      title: "VAT, CT, AML, audit prep, statutory filings",
+      description: "Filed on time, in every jurisdiction you operate in. You stop being the person who remembers when things are due."
     },
     {
       icon: BarChart3,
-      title: "Numbers you can actually use",
-      description: "Dashboards and reviews that explain what changed and why, not just raw data."
+      title: "Reports that come with a sentence",
+      description: "Every monthly pack has a one-line read on why the numbers moved, so you don't have to call your accountant to interpret them."
     },
     {
       icon: TrendingUp,
-      title: "Investor-ready by default",
-      description: "Clean books, consolidated reporting, board packs, and forecasts that hold up globally."
+      title: "Board packs that don't require a Saturday",
+      description: "Clean books and a consolidated view sit on top of one ledger structure. The forecast holds up under questions."
     }
   ]
 
   const timeline = [
     {
-      title: "Weeks 1–2 — Connect and clean",
-      description: "We connect books, banks, PSPs, and entities. Gaps fixed. Structure put in place."
+      title: "Weeks 1–2: we get our hands on everything",
+      description: "Books, banks, PSPs, payroll, prior filings, entity register. Whatever's broken gets logged. Whatever's missing gets asked for once."
     },
     {
-      title: "Weeks 3–4 — Make it visible",
-      description: "Books cleaned. Compliance mapped. Dashboards live. First consolidated review delivered."
+      title: "Weeks 3–4: it starts feeling boring (good boring)",
+      description: "Cleaned books, mapped compliance, a working dashboard. You get the first consolidated review and a list of what we want to change next quarter."
     },
     {
-      title: "Ongoing — Stay in control",
-      description: "Monthly packs, forecasts, variance reviews, and direct access to your pod keep finance steady as you scale."
+      title: "From month two: a rhythm you don't have to run",
+      description: "Monthly close on a fixed day. Quarterly forecast review. A pod you can WhatsApp. Filings done before you think about them."
     }
   ]
 
   const faqs = [
     {
-      question: "How fast can we start?",
-      answer: "Most companies see structure and visibility within 3–4 weeks, even with multiple entities."
+      question: "How long before this actually feels different?",
+      answer: "Three to four weeks. The first close on our cadence is usually where founders notice it."
     },
     {
-      question: "Which tools and countries do you support?",
-      answer: "We work with Zoho, Xero, QuickBooks, banks, PSPs, and support multi-country setups across key global markets."
+      question: "Which tools do you work with?",
+      answer: "Zoho, Xero, QuickBooks, NetSuite for the books, plus your banks, PSPs, and payroll system. If you're already on something, we keep it."
     },
     {
-      question: "What happens as we add new markets?",
-      answer: "That's expected. Your finance pod expands with you."
+      question: "What happens when we add another entity?",
+      answer: "Tell us a week before. The pod absorbs it. The cadence doesn't change."
     },
     {
-      question: "What if it's not a fit?",
-      answer: "No lock-in. First month is free. Walk away if it doesn't help."
+      question: "What if it's not working?",
+      answer: "First month is free and there's no lock-in. If we're not pulling our weight, leave."
     }
   ]
 
   return (
     <div className="min-h-screen bg-[#fffdfb]">
       {/* Hero Section */}
-      <section className="relative px-6 sm:px-10 lg:px-16 pt-32 pb-24 overflow-hidden bg-gradient-to-b from-[#f7f0ff] via-white to-white">
+      <section className="relative px-5 sm:px-10 lg:px-16 pt-24 sm:pt-32 pb-20 sm:pb-24 overflow-hidden bg-gradient-to-b from-[#f7f0ff] via-white to-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(241,102,16,0.06),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(241,102,16,0.04),transparent_60%)]" />
-        
+
         <div className="max-w-6xl mx-auto relative z-10">
           <AnimatedSection animation="fade-up">
-            <div className="text-center space-y-8">
-              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-slate-200 text-sm font-semibold text-[#f16610] shadow-sm">
-                <Globe2 size={18} />
-                Finance as a Service for Global Founders
+            <div className="max-w-4xl space-y-6 sm:space-y-7">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-[11px] sm:text-xs font-semibold tracking-wide uppercase text-slate-700">
+                <Globe2 size={14} className="text-[#f16610]" />
+                Finance, tax, audit, CFO — one team
               </div>
-              
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 leading-[1.15] tracking-tight max-w-4xl mx-auto">
-                Finance as a Service for founders who plan to scale globally
+
+              <h1 className="text-[2rem] sm:text-5xl lg:text-7xl font-bold text-slate-900 leading-[1.08] sm:leading-[1.04] lg:leading-[1.02] tracking-[-0.02em]">
+                Most finance setups break the year you start scaling.
+                <span className="block text-[#f16610] mt-1.5 sm:mt-2">Ours doesn&rsquo;t.</span>
               </h1>
-              
-              <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-                Finance shouldn't slow you down as your company grows across borders.
+
+              <p className="text-base sm:text-xl lg:text-2xl text-slate-700 max-w-2xl leading-snug">
+                We run your bookkeeping, tax, audit prep, and CFO function as one team. On one cadence. Across every entity you operate.
               </p>
             </div>
           </AnimatedSection>
 
-          <AnimatedSection animation="fade-up" delay={100}>
-            <div className="mt-12 max-w-3xl mx-auto">
-              <div className="bg-white rounded-[32px] border border-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.08)] p-8 md:p-12 space-y-6">
-                <p className="text-lg text-slate-700 leading-relaxed">
-                  If you're building a serious business — in the UAE, Europe, the US, or Asia — finance can't stay fragmented, reactive, or local-only.
+          <AnimatedSection animation="fade-up" delay={150}>
+            <div className="mt-10 sm:mt-12 grid lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-10 lg:items-end">
+              <div className="space-y-4 text-base sm:text-lg text-slate-700 leading-relaxed border-l-2 border-[#f16610]/30 pl-5 sm:pl-6">
+                <p>
+                  Around entity number three is where it usually starts. The Dubai books look fine. The UK books look fine. Nobody owns the consolidated view, and month-end takes a week longer than it should.
                 </p>
-                <div className="space-y-3 pt-2">
-                  <p className="text-base text-slate-900 font-semibold">
-                    Regulation is tightening everywhere.
-                  </p>
-                  <p className="text-base text-slate-900 font-semibold">
-                    Investors expect clean, explainable numbers.
-                  </p>
-                  <p className="text-base text-slate-900 font-semibold">
-                    And scaling across entities, countries, and currencies breaks most finance setups.
-                  </p>
-                </div>
-                <div className="pt-6 border-t border-slate-200 space-y-3">
-                  <p className="text-lg text-slate-900 leading-relaxed">
-                    <strong>Finanshels runs accounting, tax, compliance, and finance cadence as one system,</strong> providing one dashboard with the current financial snapshot — so founders can focus on building, not managing back offices.
-                  </p>
-                </div>
+                <p className="text-slate-900 font-medium">
+                  We&rsquo;re the team you bring in before that becomes the next quarter&rsquo;s emergency.
+                </p>
               </div>
-            </div>
-          </AnimatedSection>
 
-          <AnimatedSection animation="fade-up" delay={200}>
-            <div className="mt-12 text-center space-y-3 max-w-2xl mx-auto">
-              <p className="text-3xl font-bold text-slate-900 leading-tight">
-                We don't replace your ambition.
-              </p>
-              <p className="text-3xl font-bold text-slate-900 leading-tight">
-                We remove the friction underneath it.
-              </p>
-            </div>
-          </AnimatedSection>
-
-          <AnimatedSection animation="fade-up" delay={250}>
-            <div className="mt-8 text-center">
-              <p className="text-base text-slate-600">
-                Trusted by 6,000+ companies globally. Operated by 180+ finance specialists across 12 markets.
-              </p>
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 lg:items-stretch">
+                <a
+                  href="mailto:contact@finanshels.com"
+                  className="group inline-flex w-full sm:w-auto lg:w-full items-center justify-between gap-3 px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl bg-[#f16610] text-white font-semibold text-base shadow-lg shadow-[#f16610]/30 hover:bg-[#e55a00] transition-all hover:-translate-y-0.5"
+                >
+                  Book a strategy call
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </a>
+                <a
+                  href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex w-full sm:w-auto lg:w-full items-center justify-between gap-3 px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl border border-slate-300 bg-white text-slate-800 font-semibold text-base hover:border-[#f16610] hover:text-[#f16610] hover:bg-[#fff9f5] transition-all"
+                >
+                  <span className="flex items-center gap-2">
+                    <MessageSquare size={18} />
+                    WhatsApp us
+                  </span>
+                  <ArrowRight size={16} className="opacity-60" />
+                </a>
+              </div>
             </div>
           </AnimatedSection>
 
           <AnimatedSection animation="fade-up" delay={300}>
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href="mailto:contact@finanshels.com"
-                className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#f16610] text-white font-bold text-lg shadow-lg shadow-[#f16610]/30 hover:bg-[#e55a00] transition-all hover:-translate-y-1 hover:shadow-xl"
-              >
-                Book a Strategy Call
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </a>
-              <a
-                href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-300 bg-white text-slate-700 font-bold text-lg hover:border-[#f16610] hover:text-[#f16610] hover:bg-[#fff9f5] transition-all"
-              >
-                <MessageSquare size={20} />
-                WhatsApp Us
-              </a>
-            </div>
-          </AnimatedSection>
-
-          <AnimatedSection animation="fade-up" delay={400}>
-            <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8">
-              {[
-                { value: 5000, suffix: '+', label: 'Companies trust us' },
-                { value: 180, suffix: '+', label: 'Finance specialists' },
-                { value: 12, suffix: '', label: 'Countries covered' },
-                { value: '24/7', suffix: '', label: 'Support access', isText: true }
-              ].map((stat, index) => (
-                <div key={index} className="text-center space-y-2">
-                  <div className="text-4xl font-bold text-[#f16610]">
-                    {stat.isText ? stat.value : <AnimatedCounter end={stat.value} duration={2000} />}{stat.suffix}
+            <div className="mt-16 sm:mt-20 border-t border-slate-200 pt-8 sm:pt-10">
+              <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-5 sm:mb-6">
+                Where we are right now
+              </p>
+              <div className="grid grid-cols-3 gap-3 sm:gap-8 lg:gap-10">
+                {[
+                  { value: 6000, suffix: '+', label: 'Companies on our books' },
+                  { value: 180, suffix: '+', label: 'On the finance team' },
+                  { value: 1, suffix: 'B+', prefix: '$', label: 'Value accounted for' }
+                ].map((stat, index) => (
+                  <div key={index} className="space-y-1 sm:space-y-1.5 min-w-0">
+                    <div className="text-[1.5rem] sm:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight whitespace-nowrap">
+                      {stat.prefix}<AnimatedCounter end={stat.value} duration={2000} />{stat.suffix}
+                    </div>
+                    <div className="text-xs sm:text-sm text-slate-600 leading-tight">{stat.label}</div>
                   </div>
-                  <div className="text-sm text-slate-600 font-semibold">{stat.label}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </AnimatedSection>
         </div>
@@ -199,82 +173,57 @@ export default function Home2() {
       {/* Why Switch Section */}
       <section className="px-6 sm:px-10 lg:px-16 py-24 bg-white">
         <div className="max-w-6xl mx-auto">
-          <AnimatedSection animation="fade-up">
-            <div className="text-center space-y-6 mb-16">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-semibold text-[#f16610]/80">
-                <TrendingUp size={16} />
-                The quiet revolution
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
-                Why 6,000+ founders moved<br />their finance ops here
-              </h2>
-              <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-                This shift isn't loud — but it's happening fast.
-              </p>
-            </div>
-          </AnimatedSection>
-
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <AnimatedSection animation="fade-up" delay={100}>
-              <div className="space-y-6 text-lg text-slate-700">
-                <p className="text-2xl font-bold text-slate-900">Founders who scale early are standardising finance before things get complex.</p>
-                <p>
-                  They're done with patchwork accountants, local silos, and delayed closes.
+          <div className="grid lg:grid-cols-[0.85fr_1.15fr] gap-12 lg:gap-20 items-start">
+            <AnimatedSection animation="fade-up">
+              <div className="lg:sticky lg:top-24 space-y-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f16610]">
+                  Why founders move
                 </p>
-                <p className="text-xl font-semibold text-slate-900">
-                  They want:
+                <h2 className="text-4xl md:text-5xl font-bold text-slate-900 leading-[1.05] tracking-tight">
+                  The kind of switch you make once and never revisit.
+                </h2>
+                <p className="text-lg text-slate-600 leading-relaxed">
+                  It usually happens after a bad month-end. Or right before fundraising. Or the first time a tax notice arrives in a country nobody on the team thought about.
                 </p>
+                <a
+                  href="mailto:contact@finanshels.com"
+                  className="inline-flex items-center gap-2 text-base font-semibold text-[#f16610] hover:gap-3 transition-all"
+                >
+                  See if we have a pod for you
+                  <ArrowRight size={18} />
+                </a>
               </div>
             </AnimatedSection>
 
-            <AnimatedSection animation="fade-up" delay={200}>
-              <div className="bg-white rounded-[32px] border border-slate-100 p-10 space-y-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-                <p className="text-2xl font-bold text-slate-900">The new standard:</p>
-                <div className="space-y-4">
-                  {[
-                    { icon: Users, text: "One finance owner" },
-                    { icon: Clock, text: "One reporting rhythm" },
-                    { icon: Globe2, text: "One system that works across countries" }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-start gap-4 bg-[#fffdfb] rounded-2xl p-4 border border-slate-100">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center">
-                        <item.icon size={22} className="text-[#f16610]" />
-                      </div>
-                      <p className="text-lg font-semibold leading-snug text-slate-900">{item.text}</p>
-                    </div>
-                  ))}
+            <AnimatedSection animation="fade-up" delay={150}>
+              <div className="space-y-10">
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">What changes the day you switch</p>
+                  <ol className="space-y-5">
+                    {[
+                      { n: '01', title: 'One person owns finance again', body: 'Not three vendors who copy-paste each other. A pod that sees every entity and every ledger.' },
+                      { n: '02', title: 'Reporting follows a fixed clock', body: 'Close lands on the same working day each month. Forecasts get updated. Variance gets explained.' },
+                      { n: '03', title: 'The same system, every market you add', body: 'You don’t rebuild finance every time you incorporate somewhere new. The new entity slots in.' },
+                    ].map((item) => (
+                      <li key={item.n} className="grid grid-cols-[auto_1fr] gap-5 pb-5 border-b border-slate-100 last:border-0">
+                        <span className="text-sm font-semibold text-[#f16610] tabular-nums pt-1">{item.n}</span>
+                        <div>
+                          <p className="text-xl font-semibold text-slate-900 leading-snug">{item.title}</p>
+                          <p className="text-base text-slate-600 mt-1.5 leading-relaxed">{item.body}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
-                <p className="text-lg pt-4 text-slate-700">
-                  That's why teams from startups to multi-entity groups are moving their finance to Finanshels.
-                </p>
+
+                <div className="rounded-2xl bg-[#fff9f5] border border-[#f16610]/15 p-6">
+                  <p className="text-base text-slate-800 leading-relaxed">
+                    Most teams that move tell us the same thing afterwards: they wish they&rsquo;d done it two quarters earlier.
+                  </p>
+                </div>
               </div>
             </AnimatedSection>
           </div>
-
-          <AnimatedSection animation="fade-up" delay={300}>
-            <div className="mt-16 text-center">
-              <div className="inline-block bg-white rounded-3xl border border-slate-100 p-8 max-w-2xl shadow-[0_15px_40px_rgba(15,23,42,0.08)]">
-                <p className="text-2xl font-bold text-slate-900 mb-4">
-                  Momentum matters:
-                </p>
-                <p className="text-lg text-slate-700 leading-relaxed">
-                  Waiting usually costs more than moving early.
-                </p>
-              </div>
-            </div>
-          </AnimatedSection>
-
-          <AnimatedSection animation="fade-up" delay={400}>
-            <div className="mt-10 text-center">
-              <a
-                href="mailto:contact@finanshels.com"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-[#f16610] text-[#f16610] font-bold hover:bg-[#f16610] hover:text-white transition-all hover:-translate-y-0.5"
-              >
-                Check Availability
-                <ArrowRight size={18} />
-              </a>
-            </div>
-          </AnimatedSection>
         </div>
       </section>
 
@@ -285,37 +234,31 @@ export default function Home2() {
             <div className="text-center space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-semibold text-[#f16610]/80">
                 <FileText size={16} />
-                Free Finance Assessment
+                Free finance assessment
               </div>
               <h2 className="text-4xl md:text-5xl font-bold leading-tight text-slate-900">
-                Get a clear finance roadmap<br />
-                <span className="text-slate-600">(free)</span>
+                A read on what&rsquo;s working,<br />
+                <span className="text-slate-600">and what&rsquo;s about to break.</span>
               </h2>
               <div className="max-w-3xl mx-auto space-y-4">
-                <p className="text-2xl font-semibold text-slate-900">
-                  This isn't a demo.
+                <p className="text-xl leading-relaxed text-slate-700">
+                  Send us your current setup. We look at the tools you&rsquo;re on, the entities you run, how you&rsquo;re filing in each country, and where the reporting actually lives.
                 </p>
-                <p className="text-xl font-semibold text-slate-900">
-                  And it's not a sales call.
-                </p>
-                <p className="text-xl leading-relaxed text-slate-600">
-                  We look at your current setup — tools, entities, jurisdictions, reporting gaps, and risks — and tell you what's working, what isn't, and what will break as you scale.
-                </p>
-                <p className="text-lg font-bold bg-white rounded-2xl px-6 py-4 border border-slate-100 inline-block text-slate-900 shadow-sm">
-                  You'll leave with a clear plan, whether you work with us or not.
+                <p className="text-xl leading-relaxed text-slate-700">
+                  You get a one-page read on what we&rsquo;d change, what we&rsquo;d leave alone, and what we&rsquo;d worry about at the next stage. Whether or not you work with us.
                 </p>
               </div>
-              
+
               <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto pt-6">
                 {[
-                  { icon: Clock, text: 'Response in 48 hours' },
-                  { icon: Shield, text: 'Zero commitment required' },
-                  { icon: MessageSquare, text: 'WhatsApp-first approach' },
-                  { icon: CheckCircle2, text: 'Your data stays private' }
+                  { icon: Clock, text: 'You hear back within two business days' },
+                  { icon: Shield, text: 'No commitment, no NDA theatre' },
+                  { icon: MessageSquare, text: 'WhatsApp works, email works' },
+                  { icon: CheckCircle2, text: 'Your numbers don&rsquo;t leave our team' }
                 ].map((item, index) => (
                   <div key={index} className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3 border border-slate-100">
                     <item.icon size={20} className="flex-shrink-0 text-[#f16610]" />
-                    <span className="font-semibold text-left text-slate-900">{item.text}</span>
+                    <span className="font-medium text-left text-slate-900">{item.text}</span>
                   </div>
                 ))}
               </div>
@@ -325,7 +268,7 @@ export default function Home2() {
                   href="mailto:contact@finanshels.com"
                   className="group inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-[#f16610] font-bold text-xl shadow-2xl hover:shadow-3xl transition-all hover:-translate-y-1"
                 >
-                  Get My Finance Roadmap
+                  Get my finance read
                   <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
                 </a>
               </div>
@@ -344,9 +287,9 @@ export default function Home2() {
                 The reality check
               </div>
               <h2 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
-                This is what founders everywhere<br />are dealing with
+                Five sentences founders<br />keep saying to us
               </h2>
-              <p className="text-xl text-slate-600 max-w-2xl mx-auto">Different countries. Same problems.</p>
+              <p className="text-xl text-slate-600 max-w-2xl mx-auto">If two of these sound like you, this page is probably for you.</p>
             </div>
           </AnimatedSection>
 
@@ -368,9 +311,8 @@ export default function Home2() {
           <AnimatedSection animation="fade-up" delay={400}>
             <div className="mt-12 text-center max-w-3xl mx-auto">
               <div className="bg-white rounded-3xl p-10 border border-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-                <p className="text-2xl font-bold mb-4 text-slate-900">Here's the truth:</p>
                 <p className="text-xl leading-relaxed text-slate-700">
-                  This isn't about working harder or being smarter. It's about having the right infrastructure for the stage you're in.
+                  None of this is a smarts problem. It&rsquo;s a wiring problem. The setup you built for one country and ten people isn&rsquo;t the setup you need for four countries and a board.
                 </p>
               </div>
             </div>
@@ -388,11 +330,10 @@ export default function Home2() {
                 How we work
               </div>
               <h2 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
-                How Finanshels actually works
+                You get a pod, not a portal.
               </h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-                We don't act like an outsourced firm.<br />
-                We plug in as your finance function — globally.
+                Real names, real Slack handles, real WhatsApp numbers. We sit inside your finance function, not next to it.
               </p>
             </div>
           </AnimatedSection>
@@ -401,18 +342,18 @@ export default function Home2() {
             <AnimatedSection animation="fade-up" delay={100}>
               <div className="space-y-6">
                 <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-                  <p className="text-2xl font-bold mb-4 text-slate-900">You get a dedicated pod:</p>
-                  <p className="text-lg text-slate-700 mb-4">controllers, tax leads, audit specialists, and CFO support working together across jurisdictions.</p>
+                  <p className="text-2xl font-bold mb-4 text-slate-900">What&rsquo;s on the pod</p>
+                  <p className="text-lg text-slate-700 mb-4">Four roles, working on your books together. Not a sales channel routing to subcontractors.</p>
                   <div className="space-y-3 text-lg">
                     {[
-                      'Controllers who know your business',
-                      'Tax specialists across jurisdictions',
-                      'Audit & AML experts who never miss a deadline',
-                      'CFO support for strategic decisions'
+                      'A controller who runs your monthly close',
+                      'A tax lead who covers every jurisdiction you operate in',
+                      'An audit and AML specialist who watches the deadlines',
+                      'A fractional CFO when you need the strategic call'
                     ].map((item, index) => (
                       <div key={index} className="flex items-start gap-3 bg-[#fffdfb] rounded-xl p-3 border border-slate-100">
                         <CheckCircle2 size={20} className="flex-shrink-0 mt-0.5 text-[#f16610]" />
-                        <span className="font-semibold text-slate-900">{item}</span>
+                        <span className="font-medium text-slate-900">{item}</span>
                       </div>
                     ))}
                   </div>
@@ -423,13 +364,13 @@ export default function Home2() {
             <AnimatedSection animation="fade-up" delay={200}>
               <div className="space-y-8">
                 <div>
-                  <p className="text-2xl font-bold text-slate-900 mb-4">What that gives you:</p>
+                  <p className="text-2xl font-bold text-slate-900 mb-4">What it gives you</p>
                   <div className="space-y-4">
                     {[
-                      { icon: Users, title: 'one accountable team', desc: 'No more coordinating between multiple vendors' },
-                      { icon: Clock, title: 'one global finance calendar', desc: 'Global sync, local execution' },
-                      { icon: BarChart3, title: 'one monthly operating cadence', desc: 'Monthly reviews that actually help' },
-                      { icon: MessageSquare, title: 'one place to get answers, fast', desc: '' }
+                      { icon: Users, title: 'One team to escalate to', desc: 'Not a help-desk queue and three vendor email threads.' },
+                      { icon: Clock, title: 'One close calendar across entities', desc: 'Everyone closes on the same working day each month.' },
+                      { icon: BarChart3, title: 'One monthly review you actually read', desc: 'Numbers, a one-line read on what moved, and the decisions it implies.' },
+                      { icon: MessageSquare, title: 'One WhatsApp thread for the messy questions', desc: 'Reply within the working day, not the working week.' }
                     ].map((item, index) => (
                       <div key={index} className="flex items-start gap-4 bg-white rounded-2xl p-5 border border-slate-100 hover:border-[#f16610]/40 transition-colors">
                         <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center">
@@ -444,10 +385,9 @@ export default function Home2() {
                   </div>
                 </div>
                 <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                  <p className="text-xl font-bold text-slate-900">
-                    Finance becomes boring. Predictable. Reliable.
+                  <p className="text-lg text-slate-700 leading-relaxed">
+                    Most of our clients describe finance, after a couple of months with us, as the part of the company they think about least. We take that as the compliment.
                   </p>
-                  <p className="text-lg text-slate-700 mt-2">That's the point.</p>
                 </div>
               </div>
             </AnimatedSection>
@@ -461,7 +401,7 @@ export default function Home2() {
           <AnimatedSection animation="fade-up">
             <div className="text-center space-y-4 mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
-                Why founders switch to us — and don't go back
+                What you actually notice after a quarter with us
               </h2>
             </div>
           </AnimatedSection>
@@ -492,13 +432,10 @@ export default function Home2() {
           <AnimatedSection animation="fade-up">
             <div className="text-center space-y-4 mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
-                Trusted by 6,000+ companies worldwide
+                Six thousand teams already let us run this
               </h2>
-              <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-                From fast-growing startups to multi-entity groups, founders trust Finanshels to run finance properly.
-              </p>
-              <p className="text-slate-600 font-medium">
-                Logos you'll recognise. Founders you can hear from. Operators who've already made the switch.
+              <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                Some are a founder and a co-founder. Some are mid-Series-B with four entities. Most started with one bad month-end.
               </p>
             </div>
           </AnimatedSection>
@@ -516,13 +453,13 @@ export default function Home2() {
             <div className="text-center space-y-6 mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-semibold text-slate-700">
                 <Clock size={16} />
-                Quick onboarding
+                Onboarding
               </div>
               <h2 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
-                How we get you live<br />(without slowing you down)
+                What the first month looks like
               </h2>
-              <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                
+              <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                You stay in your day job. We do the heavy lift on getting your books, filings, and entities into one place.
               </p>
             </div>
           </AnimatedSection>
@@ -551,31 +488,30 @@ export default function Home2() {
       <section className="px-6 sm:px-10 lg:px-16 py-24 bg-white">
         <div className="max-w-6xl mx-auto">
           <AnimatedSection animation="fade-up">
-            <div className="text-center space-y-8 bg-white rounded-[40px] border border-slate-100 p-12 lg:p-16 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+            <div className="text-center space-y-6 sm:space-y-8 bg-white rounded-3xl sm:rounded-[40px] border border-slate-100 p-6 sm:p-10 lg:p-16 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-semibold text-[#f16610]/80">
                 <TrendingUp size={16} />
-                Transparent pricing
+                Pricing
               </div>
               <h2 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
-                Pricing that scales with you
+                Priced for the company you have, not the one you&rsquo;ll have in three years.
               </h2>
-              <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                No hidden fees. No long-term lock-ins.<br />
-                Pricing reflects complexity, not hype.
+              <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                We quote against the actual shape of your business: entities, transactions, filings, headcount. Adjust the scope, adjust the price. No multi-year contracts.
               </p>
-              
+
               <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
                 <div className="flex items-center gap-2 text-slate-700">
                   <CheckCircle2 className="text-[#f16610]" size={20} />
-                  <span className="font-semibold">First month free</span>
+                  <span className="font-medium">First month is on us</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-700">
                   <CheckCircle2 className="text-[#f16610]" size={20} />
-                  <span className="font-semibold">Money-back guarantee</span>
+                  <span className="font-medium">Month-to-month after that</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-700">
                   <CheckCircle2 className="text-[#f16610]" size={20} />
-                  <span className="font-semibold">Scale up or down as entities and markets grow</span>
+                  <span className="font-medium">Scale up or down as entities change</span>
                 </div>
               </div>
 
@@ -584,14 +520,14 @@ export default function Home2() {
                   href="/pricing"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#f16610] text-white font-semibold hover:bg-[#e55a00] transition-all"
                 >
-                  View Pricing
+                  See the brackets
                   <ArrowRight size={18} />
                 </Link>
                 <a
                   href="mailto:contact@finanshels.com"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-slate-300 text-slate-700 font-semibold hover:border-[#f16610] hover:text-[#f16610] transition-all"
                 >
-                  Talk to Sales
+                  Get a quote for your setup
                   <MessageSquare size={18} />
                 </a>
               </div>
@@ -607,10 +543,10 @@ export default function Home2() {
             <div className="text-center space-y-4 mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-semibold text-slate-700">
                 <HelpCircle size={16} />
-                Common questions
+                FAQ
               </div>
               <h2 className="text-4xl md:text-5xl font-bold text-slate-900">
-                Straight answers
+                The questions we get on the first call
               </h2>
             </div>
           </AnimatedSection>
@@ -629,80 +565,57 @@ export default function Home2() {
       </section>
 
       {/* Founder Note */}
-      <section className="px-6 sm:px-10 lg:px-16 py-24 bg-white relative overflow-hidden">
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <AnimatedSection animation="fade-up">
-              <div className="space-y-6">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-semibold text-[#f16610]/80">
-                  <Users size={16} />
-                  From our founder
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold leading-tight text-slate-900">
-                  A note from the founder
-                </h2>
-                <div className="space-y-5 text-lg leading-relaxed">
-                  <p className="text-slate-600">
-                    Global companies don't break because founders lack ambition.
-                  </p>
-                  <p className="text-xl font-bold text-slate-900">
-                    They break because finance doesn't keep up with growth.
-                  </p>
-                  <p className="text-slate-600">
-                    Finanshels exists to give founders control early — before complexity turns into drag.
-                  </p>
-                  <p className="text-slate-600">
-                    If you're building something that crosses borders, this is one of those decisions that's easier to make sooner than later.
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-slate-200">
-                  <p className="text-2xl font-bold text-slate-900">If you're ready, let's talk.</p>
-                  <p className="text-lg text-slate-600 mt-2"></p>
-                </div>
-              </div>
-            </AnimatedSection>
+      <section className="px-5 sm:px-10 lg:px-16 py-20 sm:py-28 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(241,102,16,0.05),transparent_55%)]" />
 
-            <AnimatedSection animation="fade-up" delay={100}>
-              <div className="bg-white rounded-3xl border border-slate-100 p-10 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-2xl bg-[#f16610] flex items-center justify-center text-white text-3xl font-bold shadow-xl">
-                      F
-                    </div>
-                    <div>
-                      <p className="text-xl font-bold text-slate-900">Finanshels Team</p>
-                      <p className="text-slate-600">Global Finance Partner</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 pt-6">
-                    <a
-                      href="mailto:contact@finanshels.com"
-                      className="group flex items-center justify-between w-full px-6 py-4 rounded-2xl bg-[#f16610] text-white font-bold text-lg hover:bg-[#e55a00] transition-all hover:-translate-y-0.5 shadow-lg"
-                    >
-                      <span>Book a Strategy Call</span>
-                      <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                    </a>
-                    <a
-                      href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-between w-full px-6 py-4 rounded-2xl border-2 border-slate-200 text-slate-900 font-bold text-lg hover:border-[#f16610] hover:text-[#f16610] transition-all"
-                    >
-                      <span>WhatsApp Us</span>
-                      <MessageSquare size={20} />
-                    </a>
-                  </div>
+        <div className="max-w-4xl mx-auto relative z-10">
+          <AnimatedSection animation="fade-up">
+            <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-[#f16610] mb-6 sm:mb-8">
+              A note from the team
+            </p>
 
-                  <div className="pt-6 border-t border-slate-200 text-center">
-                    <p className="text-sm text-slate-600">
-                      Response within 48 hours • No commitment required
-                    </p>
-                  </div>
-                </div>
+            <div className="space-y-5 sm:space-y-7 text-lg sm:text-2xl md:text-[1.65rem] leading-[1.5] sm:leading-[1.45] text-slate-900 font-serif tracking-tight">
+              <p>
+                Most of our clients didn&rsquo;t come to us because finance was on fire. They came because it was quietly slipping — a tax notice nobody saw coming, a board pack stitched together at 2am, a month-end that took twice as long as last quarter.
+              </p>
+              <p>
+                None of that is a competence problem. It&rsquo;s what happens when a finance setup designed for one country and a small team has to absorb three more countries and a board.
+              </p>
+              <p className="text-[#f16610]">
+                We&rsquo;re the team you bring in before that gets expensive.
+              </p>
+            </div>
+
+            <div className="mt-10 sm:mt-12 pt-8 sm:pt-10 border-t border-slate-200">
+              <p className="text-sm text-slate-500 mb-5 sm:mb-6">
+                If any of this sounds like the next twelve months for you, we&rsquo;re a short email or WhatsApp away.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                  href="mailto:contact@finanshels.com"
+                  className="group inline-flex w-full sm:w-auto items-center justify-between gap-3 px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl bg-slate-900 text-white font-semibold text-base hover:bg-slate-800 transition-all"
+                >
+                  Email us about your setup
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </a>
+                <a
+                  href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex w-full sm:w-auto items-center justify-between gap-3 px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl border border-slate-300 text-slate-800 font-semibold text-base hover:border-[#f16610] hover:text-[#f16610] transition-all"
+                >
+                  <span className="flex items-center gap-2">
+                    <MessageSquare size={18} />
+                    WhatsApp instead
+                  </span>
+                  <ArrowRight size={16} className="opacity-60" />
+                </a>
               </div>
-            </AnimatedSection>
-          </div>
+              <p className="text-xs text-slate-500 mt-5">
+                Reply within two business days. First conversation isn&rsquo;t a pitch.
+              </p>
+            </div>
+          </AnimatedSection>
         </div>
       </section>
     </div>

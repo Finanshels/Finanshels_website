@@ -409,7 +409,7 @@ export default function Home() {
   return (
     <div className="bg-[#fffdfb] text-slate-900 overflow-hidden">
       {/* HERO */}
-      <section className="relative pt-32 pb-24 px-6 sm:px-10 lg:px-16">
+      <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 px-5 sm:px-10 lg:px-16">
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute inset-x-0 top-0 h-[480px] bg-gradient-to-b from-[#fef3eb] via-[#fffaf3] to-transparent" />
           <div className="absolute -top-20 -left-32 w-[420px] h-[420px] rounded-full bg-[#f16610]/15 blur-[120px]" />
@@ -417,25 +417,24 @@ export default function Home() {
           <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.04)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]" />
         </div>
 
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-14 items-center">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-14 lg:items-center">
           <AnimatedSection animation="fade-right">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-white/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#f16610] backdrop-blur">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-white/70 px-3 py-1.5 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.22em] sm:tracking-[0.25em] text-[#f16610] backdrop-blur">
               <Sparkles size={13} /> Finance operators for founders
             </span>
-            <h1 className="mt-6 text-[clamp(2.5rem,5vw,4rem)] font-semibold leading-[1.05] tracking-tight">
-              Focus on growth.
-              <br />
-              We take care of{' '}
-              <br />
+            <h1 className="mt-5 sm:mt-6 text-[2.25rem] sm:text-[clamp(2.5rem,5vw,4rem)] font-bold leading-[1.1] sm:leading-[1.05] tracking-tight">
+              Focus on growth.{' '}
+              <span className="sm:hidden">We take care of </span>
+              <span className="hidden sm:inline"><br />We take care of <br /></span>
               <span className="relative inline-block">
-                <span className="relative z-10 text-[#f16610]">your numbers</span>
+                <span className="relative z-10 text-[#f16610]">your numbers.</span>
                 <span className="absolute inset-x-0 bottom-1 h-3 bg-[#ffd19b] -z-0 -skew-x-6" />
               </span>
             </h1>
-            <p className="mt-6 text-lg text-slate-600 max-w-xl">
-              Accounting, tax, compliance, and CFO partners on autopilot. Finanshels builds a finance command centre around your company so you can focus on growth — trusted by 6,000+ UAE clients.
+            <p className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed">
+              Accounting, tax, compliance, and CFO on autopilot — your finance command centre, trusted by 6,000+ UAE clients.
             </p>
-            <div className="mt-7 grid gap-2.5 max-w-lg">
+            <div className="mt-6 sm:mt-7 grid gap-2.5 max-w-lg">
               {HERO_BULLETS.map((bullet) => (
                 <div key={bullet} className="flex items-start gap-2.5 text-sm text-slate-700">
                   <CheckCircle2 className="text-[#f16610] mt-0.5 flex-shrink-0" size={18} />
@@ -443,23 +442,23 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <div className="mt-9 flex flex-wrap gap-3">
+            <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row sm:flex-wrap gap-3">
               <Link
                 href="/contact"
-                className="group inline-flex items-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#f16610]/30 hover:shadow-xl hover:shadow-[#f16610]/40 hover:-translate-y-0.5 transition-all"
+                className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#f16610]/30 hover:shadow-xl hover:shadow-[#f16610]/40 hover:-translate-y-0.5 transition-all"
               >
                 Speak to our team
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <a
                 href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
-                className="inline-flex items-center gap-2 rounded-2xl border-2 border-slate-900 bg-white px-6 py-3.5 font-semibold text-slate-900 hover:bg-slate-900 hover:text-white transition"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 bg-white px-6 py-3.5 font-semibold text-slate-900 hover:bg-slate-900 hover:text-white transition"
               >
                 <MessageSquare size={18} />
                 WhatsApp us
               </a>
             </div>
-            <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs text-slate-500">
+            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-y-3 gap-x-8 text-xs text-slate-500">
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
                   {['#f16610', '#4f46e5', '#059669', '#d946ef'].map((c, i) => (
@@ -470,11 +469,11 @@ export default function Home() {
                     />
                   ))}
                 </div>
-                <span><strong className="text-slate-900">6,000+ founders</strong> trust us with their numbers</span>
+                <span><strong className="text-slate-900">6,000+ UAE businesses</strong> trust us with their numbers</span>
               </div>
               <div className="flex items-center gap-1 text-amber-500">
                 {'★★★★★'.split('').map((s, i) => <span key={i}>{s}</span>)}
-                <span className="text-slate-600 ml-1.5">4.9 on Google · 280+ reviews</span>
+                <span className="text-slate-600 ml-1.5">4.9 on Trustpilot · 280+ reviews</span>
               </div>
             </div>
           </AnimatedSection>
@@ -555,31 +554,31 @@ export default function Home() {
       </section>
 
       {/* DARK STATS BAND */}
-      <section className="px-6 sm:px-10 lg:px-16 py-20">
+      <section className="px-5 sm:px-10 lg:px-16 py-16 sm:py-20">
         <AnimatedSection animation="fade-up">
-          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[44px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-10 sm:p-14 text-white">
+          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-3xl sm:rounded-[44px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-6 sm:p-10 lg:p-14 text-white">
             <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#f16610]/30 blur-[120px]" />
             <div className="absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-[#7e8bff]/30 blur-[140px]" />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:60px_60px]" />
             <div className="relative z-10">
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 sm:gap-6 mb-8 sm:mb-12">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-[#ff8a3c] font-semibold">By the numbers</p>
-                  <h2 className="mt-3 text-3xl sm:text-4xl font-semibold max-w-xl">
+                  <p className="text-[10px] sm:text-xs uppercase tracking-[0.32em] sm:tracking-[0.4em] text-[#ff8a3c] font-semibold">By the numbers</p>
+                  <h2 className="mt-2.5 sm:mt-3 text-2xl sm:text-4xl font-semibold max-w-xl leading-tight">
                     Compounding trust across the region.
                   </h2>
                 </div>
-                <p className="text-slate-300 max-w-md text-sm">
+                <p className="text-slate-300 max-w-md text-sm leading-relaxed">
                   Every metric below is live. The same operators ship your books, file your taxes, and brief your board this month.
                 </p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
                 {HERO_STATS.map((stat) => (
-                  <div key={stat.label} className="space-y-1.5">
-                    <p className="text-4xl sm:text-5xl font-semibold tracking-tight bg-gradient-to-r from-white to-[#ff8a3c] bg-clip-text text-transparent">
+                  <div key={stat.label} className="space-y-1 sm:space-y-1.5 min-w-0">
+                    <p className="text-[1.75rem] sm:text-4xl lg:text-5xl font-semibold tracking-tight bg-gradient-to-r from-white to-[#ff8a3c] bg-clip-text text-transparent whitespace-nowrap">
                       {stat.value}
                     </p>
-                    <p className="text-xs uppercase tracking-[0.25em] text-slate-400">{stat.label}</p>
+                    <p className="text-[10px] sm:text-xs uppercase tracking-[0.22em] sm:tracking-[0.25em] text-slate-400 leading-tight">{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -757,33 +756,33 @@ export default function Home() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="px-6 sm:px-10 lg:px-16 pb-24">
+      <section className="px-5 sm:px-10 lg:px-16 pb-16 sm:pb-24">
         <AnimatedSection animation="fade-up">
-          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[44px] bg-gradient-to-br from-[#f16610] via-[#ff7a23] to-[#ff8a3c] p-10 sm:p-16 text-white">
+          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-3xl sm:rounded-[44px] bg-gradient-to-br from-[#f16610] via-[#ff7a23] to-[#ff8a3c] p-6 sm:p-10 lg:p-16 text-white">
             <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/15 blur-3xl" />
             <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-amber-200/30 blur-3xl" />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:48px_48px]" />
-            <div className="relative z-10 grid md:grid-cols-[1.4fr_1fr] gap-10 items-center">
+            <div className="relative z-10 grid md:grid-cols-[1.4fr_1fr] gap-8 sm:gap-10 md:items-center">
               <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-white/80 font-semibold">Let&apos;s build your finance command centre</p>
-                <h2 className="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
-                  Plug Finanshels into your stack.<br />
-                  <span className="text-amber-100">Sleep through your next filing.</span>
+                <p className="text-[10px] sm:text-xs uppercase tracking-[0.32em] sm:tracking-[0.4em] text-white/80 font-semibold">Let&apos;s build your finance command centre</p>
+                <h2 className="mt-2.5 sm:mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.15]">
+                  Plug Finanshels into your stack.{' '}
+                  <span className="text-amber-100 block sm:inline">Sleep through your next filing.</span>
                 </h2>
-                <p className="mt-5 text-white/85 text-lg max-w-xl">
+                <p className="mt-4 sm:mt-5 text-white/85 text-base sm:text-lg max-w-xl leading-relaxed">
                   Share your tooling, team, and deadlines. We respond within 48 hours with a tailored roadmap and pricing snapshot.
                 </p>
-                <div className="mt-8 flex flex-wrap gap-3">
+                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-3">
                   <Link
                     href="/contact"
-                    className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-[#f16610] shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-[#f16610] shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
                   >
                     Speak to our team
                     <ArrowRight size={18} />
                   </Link>
                   <Link
                     href="/pricing"
-                    className="inline-flex items-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
                   >
                     View pricing
                   </Link>
@@ -795,18 +794,18 @@ export default function Home() {
                     <a
                       key={cta.label}
                       href={cta.href}
-                      className="group flex items-center justify-between rounded-2xl bg-white/10 backdrop-blur border border-white/20 px-5 py-4 text-white hover:bg-white/20 transition-all"
+                      className="group flex items-center justify-between rounded-2xl bg-white/10 backdrop-blur border border-white/20 px-5 py-3.5 sm:py-4 text-white hover:bg-white/20 transition-all"
                     >
-                      <span className="font-semibold">{cta.label}</span>
+                      <span className="font-semibold text-sm sm:text-base">{cta.label}</span>
                       <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                     </a>
                   ) : (
                     <Link
                       key={cta.label}
                       href={cta.href}
-                      className="group flex items-center justify-between rounded-2xl bg-white/10 backdrop-blur border border-white/20 px-5 py-4 text-white hover:bg-white/20 transition-all"
+                      className="group flex items-center justify-between rounded-2xl bg-white/10 backdrop-blur border border-white/20 px-5 py-3.5 sm:py-4 text-white hover:bg-white/20 transition-all"
                     >
-                      <span className="font-semibold">{cta.label}</span>
+                      <span className="font-semibold text-sm sm:text-base">{cta.label}</span>
                       <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                     </Link>
                   )

@@ -24,7 +24,7 @@ const QUICK_REPLIES: QuickReply[] = [
       /\b(get|jump) on a call\b/i,
     ],
     reply:
-      "Happy to connect you with our team. Share your **name** and the best way to reach you (WhatsApp number or email) and we'll follow up shortly.",
+      "Sure — what's your name and WhatsApp number (or email)? Our team will follow up shortly.",
     triggersLeadCapture: true,
   },
   {

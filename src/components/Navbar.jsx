@@ -129,9 +129,14 @@ export default function Navbar() {
     return pathname.startsWith(path)
   }
 
+  const isOnHome2 = pathname === '/home2'
+  const homeToggleItem = isOnHome2
+    ? { name: 'Home', path: '/' }
+    : { name: 'Why?', path: '/home2' }
+
   const navItems = useMemo(
     () => [
-      { name: 'Home', path: '/' },
+      homeToggleItem,
       {
         name: 'Services',
         dropdown: SERVICES_SECTIONS,
@@ -170,7 +175,7 @@ export default function Navbar() {
         }
       }
     ],
-    []
+    [homeToggleItem]
   )
 
   const renderDropdown = (sections, cta) => (

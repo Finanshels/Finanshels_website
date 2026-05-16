@@ -62,8 +62,8 @@ export function ChatPanel({ onClose, pageUrl }: ChatPanelProps) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-white">
-      <header className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+    <div className="flex h-full min-w-0 flex-col overflow-hidden bg-white">
+      <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-5">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-sm font-semibold text-white">
             F
@@ -83,7 +83,7 @@ export function ChatPanel({ onClose, pageUrl }: ChatPanelProps) {
         </button>
       </header>
 
-      <div ref={scrollerRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5">
+      <div ref={scrollerRef} className="flex-1 min-w-0 space-y-3 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-5">
         {messages.length === 0 && (
           <div className="space-y-4">
             <div className="rounded-2xl rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-900 shadow-sm">
