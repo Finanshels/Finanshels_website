@@ -7,6 +7,20 @@ import { listPublishedBlogPosts } from '@/lib/cms/blogRepository'
 
 export const revalidate = 300
 
+export const metadata = {
+  title: 'Blog',
+  description:
+    'Sharp takes on startup finance, tax, and operations — built for teams scaling across MENA.',
+  alternates: { canonical: '/blog' },
+  openGraph: {
+    title: 'Finanshels Blog',
+    description:
+      'Sharp takes on startup finance, tax, and operations — built for teams scaling across MENA.',
+    url: '/blog',
+    type: 'website',
+  },
+}
+
 export default async function BlogIndexPage() {
   const posts = await listPublishedBlogPosts().catch((err) => {
     console.warn('[blog] listing failed:', err instanceof Error ? err.message : err)

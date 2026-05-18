@@ -82,7 +82,6 @@ export const TESTIMONIALS = [
   {
     name: "Ranya Al Suwaidi",
     role: "Founder, Bloom Cafe UAE",
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ranya&backgroundColor=fef3c7",
     quote:
       "Finanshels turned our messy books into a CFO-grade finance function in a week. VAT, audit prep, and board decks now run like clockwork while I stay focused on new stores.",
     rating: 5
@@ -90,7 +89,6 @@ export const TESTIMONIALS = [
   {
     name: "Sami Khan",
     role: "CEO, desertcart.ae",
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sami&backgroundColor=fee2e2",
     quote:
       "Having controllers, tax leads, and a fractional CFO in one WhatsApp group changed how we operate. Collections, PSP reconciliations, and CT filings are proactive instead of reactive.",
     rating: 5
@@ -98,7 +96,6 @@ export const TESTIMONIALS = [
   {
     name: "Leena Kurian",
     role: "Co-founder, Atlas Clinics",
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Leena&backgroundColor=ede9fe",
     quote:
       "Our investors demanded monthly packs and compliance proof. Finanshels gave us both—clean numbers, scenario planning, and a tax desk that understands UAE healthcare regulations.",
     rating: 5
@@ -106,7 +103,6 @@ export const TESTIMONIALS = [
   {
     name: "Hussein Ali",
     role: "Managing Partner, Khaleej Capital",
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Hussein&backgroundColor=ecfccb",
     quote:
       "Portfolio visibility jumped overnight. Finanshels runs bookkeeping and compliance for multiple SPVs and reports back with insights we can trust during board meetings.",
     rating: 5
@@ -114,7 +110,6 @@ export const TESTIMONIALS = [
   {
     name: "Fatima Al Hashimi",
     role: "CFO, TechVentures DMCC",
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima&backgroundColor=dbeafe",
     quote:
       "The speed at which Finanshels onboarded us was incredible. Within days, they understood our complex multi-entity structure and started delivering actionable insights.",
     rating: 5
@@ -122,7 +117,6 @@ export const TESTIMONIALS = [
   {
     name: "Omar Youssef",
     role: "Founder, FitLife Studios",
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Omar&backgroundColor=fce7f3",
     quote:
       "Managing 8 locations across Dubai was a nightmare until Finanshels stepped in. Their bookkeeping and tax compliance freed up my team to focus on what we do best—fitness.",
     rating: 5
@@ -130,7 +124,6 @@ export const TESTIMONIALS = [
   {
     name: "Priya Sharma",
     role: "Director, Nexus Consulting",
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya&backgroundColor=e0e7ff",
     quote:
       "Finanshels doesn't just do compliance—they think like business partners. Their fractional CFO helped us restructure our pricing and improve margins by 18%.",
     rating: 5
@@ -138,7 +131,6 @@ export const TESTIMONIALS = [
   {
     name: "Ahmed Khalil",
     role: "CEO, Greenfield Properties",
-    image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmed&backgroundColor=fef9c3",
     quote:
       "Real estate finance is tricky with escrow accounts and project-based accounting. Finanshels handled it seamlessly, giving us crystal-clear visibility into every project.",
     rating: 5

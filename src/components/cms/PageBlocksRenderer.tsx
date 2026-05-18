@@ -1,5 +1,10 @@
 import { ArticleBody } from '@/components/cms/ArticleBody'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
+import { getCmsDocument, listCmsDocuments } from '@/lib/cms/collectionRepository'
+import {
+  CMS_COLLECTION_DEFINITION_MAP,
+  type CmsCollectionKey,
+} from '@/lib/cms/collectionDefinitions'
 
 type Block = Record<string, unknown> & { type: string }
 
@@ -9,6 +14,26 @@ function readString(value: unknown): string {
 
 function readArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : []
+}
+
+/** Reference fields inside a block may arrive as an array or a comma-separated string. */
+function readRefIds(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean)
+  if (typeof value === 'string') return value.split(',').map((s) => s.trim()).filter(Boolean)
+  return []
+}
+
+function isCollectionKey(value: string): value is CmsCollectionKey {
+  return Object.prototype.hasOwnProperty.call(CMS_COLLECTION_DEFINITION_MAP, value)
+}
+
+/** Builds a public detail URL for a doc, only for single-parameter `/path/[slug]` patterns. */
+function detailHref(collection: CmsCollectionKey, slug: string): string | null {
+  const pattern = CMS_COLLECTION_DEFINITION_MAP[collection]?.routePattern
+  if (!pattern) return null
+  const params = pattern.match(/\[[^\]]+\]/g) ?? []
+  if (params.length !== 1 || params[0] !== '[slug]') return null
+  return pattern.replace('[slug]', encodeURIComponent(slug))
 }
 
 function HeroBlock({ block }: { block: Block }) {
@@ -265,6 +290,219 @@ function TimelineBlock({ block }: { block: Block }) {
   )
 }
 
+async function ToolEmbedBlock({ block }: { block: Block }) {
+  let heading = readString(block.heading)
+  let description = readString(block.description)
+  const toolUrl = readString(block.toolUrl)
+  const toolRefId = readRefIds(block.toolRef)[0]
+
+  let toolHref: string | null = null
+  if (toolRefId) {
+    const tool = await getCmsDocument('tools', toolRefId)
+    if (tool) {
+      heading = heading || readString(tool.tool_name)
+      description = description || readString(tool.short_description)
+      const slug = readString(tool.slug) || toolRefId
+      toolHref = detailHref('tools', slug)
+    }
+  }
+
+  if (!heading && !description && !toolUrl && !toolHref) return null
+
+  return (
+    <section className="bg-white py-12">
+      <div className="mx-auto max-w-4xl px-6">
+        {heading ? <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {description ? <p className="mt-2 text-slate-700">{description}</p> : null}
+        {toolUrl ? (
+          <div className="mt-6 aspect-video overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+            <iframe src={toolUrl} title={heading || 'Embedded tool'} className="h-full w-full" />
+          </div>
+        ) : toolHref ? (
+          <a
+            href={toolHref}
+            className="mt-6 inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark hover:brightness-110"
+          >
+            Open the tool
+          </a>
+        ) : null}
+      </div>
+    </section>
+  )
+}
+
+function FormBlock({ block }: { block: Block }) {
+  const heading = readString(block.heading)
+  const subheading = readString(block.subheading)
+  const embedUrl = readString(block.embedUrl)
+  const submitLabel = readString(block.submitLabel) || 'Get in touch'
+
+  if (!heading && !subheading && !embedUrl) return null
+
+  return (
+    <section className="bg-[#fff8f1] py-12">
+      <div className="mx-auto max-w-3xl px-6 text-center">
+        {heading ? <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {subheading ? <p className="mt-3 text-base text-slate-600">{subheading}</p> : null}
+        {embedUrl ? (
+          <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <iframe src={embedUrl} title={heading || 'Form'} className="h-[520px] w-full" />
+          </div>
+        ) : (
+          <a
+            href="/contact"
+            className="mt-6 inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark hover:brightness-110"
+          >
+            {submitLabel}
+          </a>
+        )}
+      </div>
+    </section>
+  )
+}
+
+async function SpeakerBlock({ block }: { block: Block }) {
+  const heading = readString(block.heading)
+  const memberIds = readRefIds(block.memberRefs)
+  if (memberIds.length === 0) return null
+
+  const members = (
+    await Promise.all(memberIds.map((id) => getCmsDocument('team_members', id)))
+  ).filter((m): m is Record<string, unknown> => m !== null)
+
+  if (members.length === 0) return null
+
+  return (
+    <section className="bg-white py-12">
+      <div className="mx-auto max-w-5xl px-6">
+        {heading ? <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        <div className="mt-6 grid gap-6 sm:grid-cols-2">
+          {members.map((member, idx) => {
+            const name = readString(member.full_name)
+            const role = readString(member.job_title)
+            const bio = readString(member.short_bio)
+            const photo = readString(member.photo)
+            const slug = readString(member.slug)
+            const href = slug ? detailHref('team_members', slug) : null
+            const card = (
+              <div className="flex gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-5">
+                {photo ? (
+                  <img src={photo} alt={name} className="h-16 w-16 flex-shrink-0 rounded-full object-cover" />
+                ) : null}
+                <div>
+                  {name ? <p className="text-base font-semibold text-slate-900">{name}</p> : null}
+                  {role ? <p className="text-sm text-brand-primary">{role}</p> : null}
+                  {bio ? <p className="mt-1 text-sm text-slate-600">{bio}</p> : null}
+                </div>
+              </div>
+            )
+            return href ? (
+              <a key={idx} href={href} className="block transition hover:opacity-90">
+                {card}
+              </a>
+            ) : (
+              <div key={idx}>{card}</div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+interface RelatedCard {
+  title: string
+  href: string
+}
+
+async function resolveCard(
+  collection: CmsCollectionKey,
+  docId: string
+): Promise<RelatedCard | null> {
+  const definition = CMS_COLLECTION_DEFINITION_MAP[collection]
+  if (!definition) return null
+  const doc = await getCmsDocument(collection, docId)
+  if (!doc) return null
+  const slug = readString(doc[definition.slugField]) || docId
+  const href = detailHref(collection, slug)
+  if (!href) return null
+  const title = readString(doc[definition.titleField]) || slug
+  return { title, href }
+}
+
+async function RelatedContentBlock({ block }: { block: Block }) {
+  const heading = readString(block.heading)
+  const mode = readString(block.mode) || 'manual'
+  const maxItemsRaw = typeof block.maxItems === 'number' ? block.maxItems : 6
+  const maxItems = Math.max(1, Math.min(24, maxItemsRaw))
+
+  const cards: RelatedCard[] = []
+  const seen = new Set<string>()
+
+  const pushCard = (card: RelatedCard | null) => {
+    if (!card || seen.has(card.href) || cards.length >= maxItems) return
+    seen.add(card.href)
+    cards.push(card)
+  }
+
+  // Manual references: [{ collection, id }]
+  if (mode !== 'auto') {
+    const manualRefs = readArray(block.manualRefs)
+    for (const ref of manualRefs) {
+      if (!ref || typeof ref !== 'object') continue
+      const entry = ref as Record<string, unknown>
+      const collection = readString(entry.collection)
+      const id = readString(entry.id)
+      if (!collection || !id || !isCollectionKey(collection)) continue
+      pushCard(await resolveCard(collection, id))
+    }
+  }
+
+  // Auto fill from source collections.
+  if (mode !== 'manual' && cards.length < maxItems) {
+    const sources = readRefIds(block.sourceCollections)
+    for (const source of sources) {
+      if (cards.length >= maxItems || !isCollectionKey(source)) continue
+      const definition = CMS_COLLECTION_DEFINITION_MAP[source]
+      const docs = await listCmsDocuments(
+        source,
+        definition.titleField,
+        definition.slugField,
+        maxItems * 2
+      )
+      for (const doc of docs) {
+        if (cards.length >= maxItems) break
+        if (doc.status !== 'published') continue
+        const href = detailHref(source, doc.slug)
+        if (!href) continue
+        pushCard({ title: doc.title || doc.slug, href })
+      }
+    }
+  }
+
+  if (cards.length === 0) return null
+
+  return (
+    <section className="bg-white py-12">
+      <div className="mx-auto max-w-5xl px-6">
+        {heading ? <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((card) => (
+            <a
+              key={card.href}
+              href={card.href}
+              className="block rounded-2xl border border-slate-100 bg-slate-50 p-5 transition hover:border-brand-primary hover:bg-white"
+            >
+              <p className="text-base font-semibold text-slate-900">{card.title}</p>
+              <span className="mt-2 inline-block text-sm font-semibold text-brand-primary">Read more →</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export function PageBlocksRenderer({ blocks }: { blocks: unknown }) {
   const list = readArray(blocks) as Block[]
   if (list.length === 0) return null
@@ -295,22 +533,16 @@ export function PageBlocksRenderer({ blocks }: { blocks: unknown }) {
             return <LogoWallBlock key={key} block={block} />
           case 'video_embed':
             return <VideoEmbedBlock key={key} block={block} />
-          // FIX-023: tool_embed / form / speaker were rendering as generic CtaBlock
-          // stubs that silently discarded their unique semantic fields (toolRef,
-          // embedUrl, memberRefs) — see MM-008 in admin-audit.md. Returning null
-          // until proper components ship signals an implementation gap rather
-          // than rendering false content.
-          // TODO(FIX-MM-008): implement ToolEmbedBlock, FormBlock, SpeakerBlock.
           case 'tool_embed':
-            return null
+            return <ToolEmbedBlock key={key} block={block} />
           case 'form':
-            return null
+            return <FormBlock key={key} block={block} />
           case 'download':
             return <DownloadBlock key={key} block={block} />
           case 'speaker':
-            return null
+            return <SpeakerBlock key={key} block={block} />
           case 'related_content':
-            return null
+            return <RelatedContentBlock key={key} block={block} />
           case 'table':
             return <TableBlock key={key} block={block} />
           case 'timeline':

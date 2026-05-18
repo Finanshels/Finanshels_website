@@ -1,5 +1,19 @@
 import Link from 'next/link'
 
+export const metadata = {
+  title: 'Careers',
+  description:
+    'Join Finanshels. We hire operators who enjoy solving finance and compliance challenges for ambitious companies across MENA.',
+  alternates: { canonical: '/careers' },
+  openGraph: {
+    title: 'Careers at Finanshels',
+    description:
+      'We hire operators who enjoy solving finance and compliance challenges for ambitious companies across MENA.',
+    url: '/careers',
+    type: 'website',
+  },
+}
+
 export default function CareersRoute() {
   return (
     <section className="bg-white text-slate-900">

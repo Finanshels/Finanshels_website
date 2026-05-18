@@ -1,3 +1,5 @@
+'use client'
+
 import { ArrowRight, Star, Award, Users, TrendingUp } from 'lucide-react'
 import AnimatedSection from '../components/AnimatedSection'
 import { Card } from '../components/ui/Card'
@@ -46,7 +48,7 @@ export default function Customers() {
               operators to keep everyone aligned on the numbers that matter.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
-              <Button as="a" href="mailto:hello@finanshels.com" size="lg">
+              <Button as="a" href="mailto:contact@finanshels.com" size="lg">
                 Request customer intro
                 <ArrowRight size={18} className="ml-2" />
               </Button>
@@ -163,7 +165,7 @@ export default function Customers() {
             </p>
           </AnimatedSection>
           <AnimatedSection animation="fade-up" delay={80}>
-            <Button as="a" href="mailto:hello@finanshels.com" size="lg">
+            <Button as="a" href="mailto:contact@finanshels.com" size="lg">
               Talk to references
               <ArrowRight size={18} className="ml-2" />
             </Button>

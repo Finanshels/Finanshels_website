@@ -7,6 +7,20 @@ import { listPublishedGlossaryTerms } from '@/lib/cms/glossaryRepository'
 
 export const revalidate = 600
 
+export const metadata = {
+  title: 'Finance & Tax Glossary',
+  description:
+    'Clear definitions of UAE finance, tax, accounting, and compliance terms — from VAT and corporate tax to bookkeeping and audit.',
+  alternates: { canonical: '/glossary' },
+  openGraph: {
+    title: 'Finanshels Finance & Tax Glossary',
+    description:
+      'Clear definitions of UAE finance, tax, accounting, and compliance terms.',
+    url: '/glossary',
+    type: 'website',
+  },
+}
+
 export default async function GlossaryIndexPage() {
   const terms = await listPublishedGlossaryTerms().catch((err) => {
     console.warn('[glossary] listing failed:', err instanceof Error ? err.message : err)

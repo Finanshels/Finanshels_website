@@ -9,6 +9,11 @@ export const PRIMARY_STATIC_ROUTES = [
   '/customers',
   '/careers',
   '/home2',
+  '/privacy',
+  '/terms',
+  '/accounting-services-dubai',
+  '/accounting-services-abu-dhabi',
+  '/accounting-services-sharjah',
 ] as const
 
 export const LEGACY_STATIC_ROUTES = [

@@ -168,7 +168,7 @@ export default function ProductDetailPage({ product }) {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
               <a
-                href="mailto:hello@finanshels.com"
+                href="mailto:contact@finanshels.com"
                 className="inline-flex items-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3 font-semibold text-white"
               >
                 Talk to sales

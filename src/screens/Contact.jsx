@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import {
   ArrowRight,
@@ -23,7 +25,7 @@ const OFFICES = [
     role: 'Global HQ',
     address: 'in5 Tech, Dubai Internet City',
     phone: '+971 50 717 8156',
-    email: 'hello@finanshels.com',
+    email: 'contact@finanshels.com',
     accent: 'from-[#fff4ec] to-white',
     glow: 'rgba(241,102,16,0.3)',
   },
@@ -57,9 +59,9 @@ const REASONS = [
 ]
 
 const HELP_TOPICS = [
-  { icon: Calendar, title: 'Book a 30-min scoping call', desc: 'Walk us through your books, tooling, and headcount. Get a roadmap.', cta: 'Schedule', href: 'mailto:hello@finanshels.com?subject=Scoping%20call' },
+  { icon: Calendar, title: 'Book a 30-min scoping call', desc: 'Walk us through your books, tooling, and headcount. Get a roadmap.', cta: 'Schedule', href: 'mailto:contact@finanshels.com?subject=Scoping%20call' },
   { icon: MessageCircle, title: 'WhatsApp our team', desc: 'Senior operators answer in minutes during UAE working hours.', cta: 'Message', href: 'https://wa.me/971507178156' },
-  { icon: Send, title: 'Async Loom or deck', desc: 'Drop a Loom at hello@finanshels.com — annotated reply within 48h.', cta: 'Email', href: 'mailto:hello@finanshels.com' },
+  { icon: Send, title: 'Async Loom or deck', desc: 'Drop a Loom at contact@finanshels.com — annotated reply within 48h.', cta: 'Email', href: 'mailto:contact@finanshels.com' },
 ]
 
 const TRUST_BADGES = [
@@ -73,19 +75,47 @@ export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', company: '', message: '', reason: 'sales' })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   const handleChange = (event) => {
     const { name, value } = event.target
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     setSubmitting(true)
-    setTimeout(() => {
-      setSubmitting(false)
+    setError('')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          company: form.company,
+          message: form.message,
+          reason: form.reason,
+          pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        setError(
+          data.error === 'rate_limited'
+            ? 'Too many submissions. Please try again in a few minutes.'
+            : data.error === 'invalid_email'
+              ? 'Please enter a valid email address.'
+              : 'Something went wrong sending your message. Please email contact@finanshels.com directly.'
+        )
+        return
+      }
       setSubmitted(true)
-    }, 600)
+    } catch {
+      setError('Could not reach our servers. Please email contact@finanshels.com directly.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const selectReason = (value) => setForm((prev) => ({ ...prev, reason: value }))
@@ -158,7 +188,7 @@ export default function Contact() {
                     <h3 className="text-xl font-semibold">Message received.</h3>
                     <p className="mt-2 text-slate-600">
                       Our team will reply within 24 hours from{' '}
-                      <span className="font-semibold text-slate-900">hello@finanshels.com</span>. Keep an eye on your inbox (and spam, just in case).
+                      <span className="font-semibold text-slate-900">contact@finanshels.com</span>. Keep an eye on your inbox (and spam, just in case).
                     </p>
                     <a
                       href="https://wa.me/971507178156"
@@ -258,6 +288,12 @@ export default function Contact() {
                       />
                     </div>
 
+                    {error && (
+                      <p className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {error}
+                      </p>
+                    )}
+
                     <button
                       type="submit"
                       disabled={submitting}
@@ -322,7 +358,7 @@ export default function Contact() {
                 <p className="text-[10px] uppercase tracking-[0.3em] text-[#f16610] font-semibold">Direct lines</p>
                 <div className="mt-4 space-y-3">
                   <a
-                    href="mailto:hello@finanshels.com"
+                    href="mailto:contact@finanshels.com"
                     className="group flex items-center gap-3 rounded-2xl border border-slate-100 px-4 py-3 hover:border-[#f16610]/40 hover:bg-[#fff8f0] transition"
                   >
                     <div className="h-9 w-9 rounded-xl bg-[#fff4ec] text-[#f16610] flex items-center justify-center">
@@ -330,7 +366,7 @@ export default function Contact() {
                     </div>
                     <div className="flex-1">
                       <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Email</p>
-                      <p className="font-semibold text-sm">hello@finanshels.com</p>
+                      <p className="font-semibold text-sm">contact@finanshels.com</p>
                     </div>
                     <ArrowRight size={14} className="text-slate-300 group-hover:text-[#f16610] group-hover:translate-x-1 transition" />
                   </a>
@@ -492,7 +528,7 @@ export default function Contact() {
                       <MapPin size={16} /> Open in Maps
                     </a>
                     <a
-                      href="mailto:hello@finanshels.com?subject=Office%20visit"
+                      href="mailto:contact@finanshels.com?subject=Office%20visit"
                       className="inline-flex items-center gap-2 rounded-2xl border-2 border-white/40 bg-white/10 backdrop-blur px-5 py-3 font-semibold text-white hover:bg-white/20 transition"
                     >
                       <Calendar size={16} /> Schedule a visit
@@ -537,7 +573,7 @@ export default function Contact() {
               </div>
               <div className="flex flex-col gap-3 w-full md:w-auto">
                 <a
-                  href="mailto:hello@finanshels.com?subject=Loom%20review"
+                  href="mailto:contact@finanshels.com?subject=Loom%20review"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-[#f16610] shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
                 >
                   Email a Loom <ArrowRight size={18} />

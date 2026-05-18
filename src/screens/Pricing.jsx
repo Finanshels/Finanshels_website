@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo, useState } from 'react'
 import {
   ArrowRight,
@@ -10,6 +12,9 @@ import {
   Calculator,
   Wallet,
   MessageSquare,
+  Users,
+  Building2,
+  BarChart3,
 } from 'lucide-react'
 import AnimatedSection from '../components/AnimatedSection'
 import { Button } from '../components/ui/Button'
@@ -21,6 +26,7 @@ const PLANS = [
     key: 'essential',
     name: 'Essential',
     tag: 'Lean',
+    bestFor: 'Best for solo founders & lean LLCs',
     price: '4,999',
     currency: 'AED / mo',
     description: 'Cash-basis bookkeeping, VAT, and corporate tax handled every year for lean UAE businesses.',
@@ -40,6 +46,7 @@ const PLANS = [
     key: 'growth',
     name: 'Growth',
     tag: 'Most picked',
+    bestFor: 'Best for scaling teams, VAT-registered',
     price: '9,999',
     currency: 'AED / mo',
     description: 'Quarterly accounting, VAT, and tax advisory for teams scaling across the UAE.',
@@ -60,6 +67,7 @@ const PLANS = [
     key: 'scale',
     name: 'Scale',
     tag: '2 mo free annual',
+    bestFor: 'Best for multi-entity & investor-backed operators',
     price: '14,999',
     currency: 'AED / mo',
     description: 'Monthly accrual accounting, CFO attention, and expanded compliance for complex operators.',
@@ -99,6 +107,14 @@ const FAQS = [
   { q: 'How do we communicate?', a: 'WhatsApp / Slack for quick updates, weekly or bi-weekly finance reviews, monthly board-ready packs, plus quarterly strategic planning.' },
   { q: 'Is there a setup fee?', a: 'Setup is included for annual plans. For quarterly/monthly we charge a one-time onboarding fee based on historical clean-up volume.' },
   { q: 'Can I switch plans later?', a: 'Yes — upgrade or downgrade any time. Most clients start on Growth and move to Scale around their Series A.' },
+  {
+    q: 'How is finanshels different from Osome or a Big Four firm?',
+    a: "finanshels is a managed, embedded finance team — not accounting software you operate yourself, and not a Big Four engagement you wait months to see results from. We handle all UAE compliance (VAT, corporate tax, AML, audit prep) under one roof, at transparent fixed prices with a <24h reply SLA. You get a dedicated finance pod that knows your business, not a ticket queue or a rotating audit team.",
+  },
+  {
+    q: "I'm switching from accounting software or another firm — how hard is it?",
+    a: "Not hard at all. Our onboarding (day 0–7) covers historical clean-up, data migration, and reconciling any gaps from your previous setup. We handle the transition as part of getting started — no downtime, no data loss, no disruption to your filing deadlines.",
+  },
 ]
 
 const CAPACITY_OPTIONS = [
@@ -139,6 +155,8 @@ const PLAN_MATRIX = [
   { feature: 'Dedicated CFO touchpoints', essential: false, growth: false, scale: true },
 ]
 
+const PLAN_PRICES = { essential: 'AED 4,999/mo', growth: 'AED 9,999/mo', scale: 'AED 14,999/mo' }
+
 const PLAN_KEYS = ['essential', 'growth', 'scale']
 
 const SERVICE_LIST = Object.entries(SERVICE_PAGES).map(([slug, details]) => ({
@@ -153,6 +171,27 @@ const SERVICE_LIST = Object.entries(SERVICE_PAGES).map(([slug, details]) => ({
     ? 'Industry programs'
     : 'Managed services',
 }))
+
+const REVENUE_OPTIONS = [
+  { label: 'Under AED 375K', value: 'low' },
+  { label: 'AED 375K – 3M', value: 'mid' },
+  { label: 'AED 3M+', value: 'high' },
+]
+
+const FREQUENCY_OPTIONS = [
+  { label: 'Once a year is fine', value: 'annual' },
+  { label: 'Quarterly', value: 'quarterly' },
+  { label: 'Every month', value: 'monthly' },
+]
+
+function computeRecommendedPlan(revenue, frequency) {
+  const revenueScore = { low: 0, mid: 1, high: 2 }[revenue] ?? 0
+  const frequencyScore = { annual: 0, quarterly: 1, monthly: 2 }[frequency] ?? 0
+  const total = revenueScore + frequencyScore
+  if (total <= 1) return 'essential'
+  if (total <= 3) return 'growth'
+  return 'scale'
+}
 
 function PriceSparkline() {
   return (
@@ -187,6 +226,13 @@ export default function Pricing() {
   const [currency, setCurrency] = useState('aed')
   const [modules, setModules] = useState(() => MODULES.map((m) => m.id))
   const [billing, setBilling] = useState('monthly')
+  const [revenueAnswer, setRevenueAnswer] = useState(null)
+  const [frequencyAnswer, setFrequencyAnswer] = useState(null)
+
+  const recommendedPlan = useMemo(() => {
+    if (!revenueAnswer || !frequencyAnswer) return null
+    return computeRecommendedPlan(revenueAnswer, frequencyAnswer)
+  }, [revenueAnswer, frequencyAnswer])
 
   const estimate = useMemo(() => {
     const baseMap = { essential: 4999, growth: 9999, scale: 14999 }
@@ -211,6 +257,15 @@ export default function Pricing() {
     setModules((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]))
   }
 
+  const scrollToPlan = (planKey) => {
+    const el = document.getElementById(`plan-${planKey}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
+
+  const planDisplayName = (key) => PLANS.find((p) => p.key === key)?.name ?? key
+
   return (
     <div className="bg-[#fffdfb] text-slate-900 overflow-hidden">
       {/* HERO */}
@@ -224,9 +279,15 @@ export default function Pricing() {
 
         <div className="max-w-6xl mx-auto text-center">
           <AnimatedSection animation="fade-down">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-white/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#f16610] backdrop-blur">
-              <Wallet size={13} /> Transparent pricing
-            </span>
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-1">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-white/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#f16610] backdrop-blur">
+                <Wallet size={13} /> Transparent pricing
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50/80 px-3 py-1.5 text-[11px] font-semibold text-amber-700 backdrop-blur">
+                <span className="text-amber-400 tracking-tighter text-sm leading-none">★★★★★</span>
+                <span>4.9/5 · Rated by UAE founders</span>
+              </span>
+            </div>
             <h1 className="mt-6 text-[clamp(2.5rem,5vw,4rem)] font-semibold leading-[1.05] tracking-tight">
               Finance partnerships{' '}
               <span className="relative inline-block">
@@ -256,9 +317,94 @@ export default function Pricing() {
               >
                 Annual
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">
-                  −17%
+                  2 months free
                 </span>
               </button>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* PLAN FINDER */}
+      <section className="px-6 sm:px-10 lg:px-16 pb-14">
+        <div className="max-w-3xl mx-auto">
+          <AnimatedSection animation="fade-up">
+            <div className="rounded-[32px] border border-slate-200 bg-white shadow-[0_15px_40px_-20px_rgba(15,23,42,0.10)] p-8 sm:p-10 space-y-8">
+              <div className="text-center">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-[#fff4ec] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#f16610]">
+                  <Sparkles size={11} /> Find your plan
+                </span>
+                <p className="mt-3 text-lg font-semibold tracking-tight text-slate-900">
+                  Answer two questions — we'll point you to the right fit.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 font-semibold">
+                  What&apos;s your annual revenue?
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {REVENUE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setRevenueAnswer(opt.value)}
+                      className={`rounded-full border-2 px-4 py-2 text-sm font-semibold transition-all ${
+                        revenueAnswer === opt.value
+                          ? 'border-[#f16610] bg-[#fff4ec] text-[#f16610] shadow-sm shadow-[#f16610]/20'
+                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500 font-semibold">
+                  How often do you need management numbers?
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {FREQUENCY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFrequencyAnswer(opt.value)}
+                      className={`rounded-full border-2 px-4 py-2 text-sm font-semibold transition-all ${
+                        frequencyAnswer === opt.value
+                          ? 'border-[#f16610] bg-[#fff4ec] text-[#f16610] shadow-sm shadow-[#f16610]/20'
+                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`rounded-2xl px-6 py-4 text-center transition-all ${
+                recommendedPlan
+                  ? 'bg-[#fff4ec] border border-[#f16610]/30'
+                  : 'bg-slate-50 border border-slate-200'
+              }`}>
+                {recommendedPlan ? (
+                  <div className="space-y-3">
+                    <p className="text-slate-700 text-sm">
+                      Based on your answers, the{' '}
+                      <strong className="text-[#f16610]">{planDisplayName(recommendedPlan)}</strong> plan fits best.
+                    </p>
+                    <button
+                      onClick={() => scrollToPlan(recommendedPlan)}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#f16610] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#f16610]/30 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                    >
+                      See {planDisplayName(recommendedPlan)} plan <ArrowRight size={15} />
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-slate-500 text-sm">
+                    Select both options above and we&apos;ll recommend the right plan for you.
+                  </p>
+                )}
+              </div>
             </div>
           </AnimatedSection>
         </div>
@@ -267,73 +413,96 @@ export default function Pricing() {
       {/* PLAN CARDS */}
       <section className="px-6 sm:px-10 lg:px-16 pb-24">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-3 gap-6">
-          {PLANS.map((plan, i) => (
-            <AnimatedSection key={plan.key} animation="fade-up" delay={i * 100}>
-              <div
-                className={`relative h-full rounded-[32px] border-2 ${plan.border} p-8 overflow-hidden transition-all hover:-translate-y-1.5`}
-                style={
-                  plan.dark
-                    ? { background: 'linear-gradient(135deg, #0f172a 0%, #1a253a 50%, #0f172a 100%)' }
-                    : plan.key === 'growth'
-                    ? { background: 'linear-gradient(135deg, #fff1e5 0%, #fff8f0 50%, #ffffff 100%)' }
-                    : { background: 'linear-gradient(135deg, #fff4ec 0%, #ffffff 100%)' }
-                }
+          {PLANS.map((plan, i) => {
+            const isRecommended = recommendedPlan === plan.key
+            return (
+              <AnimatedSection
+                key={plan.key}
+                animation="fade-up"
+                delay={i * 100}
+                className={plan.key === 'growth' ? 'order-first lg:order-none' : ''}
               >
                 <div
-                  className="absolute -top-20 -right-20 h-52 w-52 rounded-full blur-3xl opacity-60"
-                  style={{ background: plan.glow }}
-                />
-                {plan.badge && (
-                  <div className="absolute top-5 right-5 inline-flex items-center gap-1.5 rounded-full bg-[#f16610] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg shadow-[#f16610]/40">
-                    <Sparkles size={11} /> {plan.badge}
-                  </div>
-                )}
+                  id={`plan-${plan.key}`}
+                  className={`relative h-full rounded-[32px] border-2 ${
+                    isRecommended ? 'border-[#f16610] ring-4 ring-[#f16610]/25' : plan.border
+                  } p-8 overflow-hidden transition-all hover:-translate-y-1.5`}
+                  style={
+                    plan.dark
+                      ? { background: 'linear-gradient(135deg, #0f172a 0%, #1a253a 50%, #0f172a 100%)' }
+                      : plan.key === 'growth'
+                      ? { background: 'linear-gradient(135deg, #fff1e5 0%, #fff8f0 50%, #ffffff 100%)' }
+                      : { background: 'linear-gradient(135deg, #fff4ec 0%, #ffffff 100%)' }
+                  }
+                >
+                  {isRecommended && (
+                    <div className="absolute top-5 left-5 inline-flex items-center gap-1 rounded-full bg-[#f16610] px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white shadow">
+                      Recommended for you
+                    </div>
+                  )}
+                  <div
+                    className="absolute -top-20 -right-20 h-52 w-52 rounded-full blur-3xl opacity-60"
+                    style={{ background: plan.glow }}
+                  />
+                  {plan.badge && (
+                    <div className={`absolute right-5 inline-flex items-center gap-1.5 rounded-full bg-[#f16610] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg shadow-[#f16610]/40 ${isRecommended ? 'top-14' : 'top-5'}`}>
+                      <Sparkles size={11} /> {plan.badge}
+                    </div>
+                  )}
 
-                <div className={`relative z-10 ${plan.dark ? 'text-white' : ''}`}>
-                  <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${plan.dark ? 'text-[#ff8a3c]' : 'text-[#f16610]'}`}>
-                    {plan.tag}
-                  </p>
-                  <h3 className={`mt-2 text-3xl font-semibold tracking-tight ${plan.dark ? 'text-white' : 'text-slate-900'}`}>
-                    {plan.name}
-                  </h3>
-                  <p className={`mt-1 text-sm ${plan.dark ? 'text-white/70' : 'text-slate-600'}`}>{plan.limit}</p>
+                  <div className={`relative z-10 ${plan.dark ? 'text-white' : ''} ${isRecommended ? 'pt-6' : ''}`}>
+                    <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${plan.dark ? 'text-[#ff8a3c]' : 'text-[#f16610]'}`}>
+                      {plan.tag}
+                    </p>
+                    <h3 className={`mt-2 text-3xl font-semibold tracking-tight ${plan.dark ? 'text-white' : 'text-slate-900'}`}>
+                      {plan.name}
+                    </h3>
+                    <p className={`mt-1 text-xs font-medium ${plan.dark ? 'text-[#ff8a3c]/80' : 'text-[#f16610]'}`}>
+                      {plan.bestFor}
+                    </p>
+                    <p className={`mt-1 text-sm ${plan.dark ? 'text-white/70' : 'text-slate-600'}`}>{plan.limit}</p>
 
-                  <div className="mt-7 flex items-baseline gap-2">
-                    <span className={`text-5xl font-semibold tracking-tight ${plan.dark ? 'text-white' : 'text-slate-900'}`}>
-                      {plan.price}
-                    </span>
-                    <span className={`text-sm font-medium ${plan.dark ? 'text-white/60' : 'text-slate-500'}`}>{plan.currency}</span>
-                  </div>
-                  <p className={`mt-2 text-sm ${plan.dark ? 'text-white/70' : 'text-slate-600'}`}>{plan.description}</p>
+                    <div className="mt-7 flex items-baseline gap-2">
+                      <span className={`text-5xl font-semibold tracking-tight ${plan.dark ? 'text-white' : 'text-slate-900'}`}>
+                        {plan.price}
+                      </span>
+                      <span className={`text-sm font-medium ${plan.dark ? 'text-white/60' : 'text-slate-500'}`}>{plan.currency}</span>
+                    </div>
+                    <p className={`mt-2 text-sm ${plan.dark ? 'text-white/70' : 'text-slate-600'}`}>{plan.description}</p>
 
-                  <a
-                    href={plan.ctaHref}
-                    className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 font-semibold transition-all ${
-                      plan.dark
-                        ? 'bg-white text-slate-900 hover:bg-[#ff8a3c] hover:text-white'
-                        : plan.key === 'growth'
-                        ? 'bg-[#f16610] text-white shadow-lg shadow-[#f16610]/30 hover:shadow-xl hover:-translate-y-0.5'
-                        : 'border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white'
-                    }`}
-                  >
-                    Chat with expert <ArrowRight size={16} />
-                  </a>
+                    <a
+                      href={plan.ctaHref}
+                      className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 font-semibold transition-all ${
+                        plan.dark
+                          ? 'bg-white text-slate-900 hover:bg-[#ff8a3c] hover:text-white'
+                          : plan.key === 'growth'
+                          ? 'bg-[#f16610] text-white shadow-lg shadow-[#f16610]/30 hover:shadow-xl hover:-translate-y-0.5'
+                          : 'border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white'
+                      }`}
+                    >
+                      Chat with expert <ArrowRight size={16} />
+                    </a>
 
-                  <div className={`mt-7 pt-6 border-t ${plan.dark ? 'border-white/15' : 'border-slate-200/60'} space-y-3`}>
-                    {plan.highlights.map((h) => (
-                      <div key={h} className="flex items-start gap-3 text-sm">
-                        <CheckCircle2
-                          size={18}
-                          className={`mt-0.5 flex-shrink-0 ${plan.dark ? 'text-[#ff8a3c]' : 'text-[#f16610]'}`}
-                        />
-                        <span className={plan.dark ? 'text-white/90' : 'text-slate-700'}>{h}</span>
-                      </div>
-                    ))}
+                    <p className={`mt-2 text-center text-[11px] ${plan.dark ? 'text-white/40' : 'text-slate-400'}`}>
+                      No setup fee on annual · Cancel anytime · Reply in &lt;24h
+                    </p>
+
+                    <div className={`mt-6 pt-6 border-t ${plan.dark ? 'border-white/15' : 'border-slate-200/60'} space-y-3`}>
+                      {plan.highlights.map((h) => (
+                        <div key={h} className="flex items-start gap-3 text-sm">
+                          <CheckCircle2
+                            size={18}
+                            className={`mt-0.5 flex-shrink-0 ${plan.dark ? 'text-[#ff8a3c]' : 'text-[#f16610]'}`}
+                          />
+                          <span className={plan.dark ? 'text-white/90' : 'text-slate-700'}>{h}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </AnimatedSection>
-          ))}
+              </AnimatedSection>
+            )
+          })}
         </div>
       </section>
 
@@ -568,21 +737,24 @@ export default function Pricing() {
           </AnimatedSection>
 
           <AnimatedSection animation="fade-up">
-            <div className="overflow-x-auto rounded-[28px] border border-slate-100 bg-white shadow-[0_15px_40px_-20px_rgba(15,23,42,0.1)]">
+            <div className="overflow-x-auto lg:overflow-x-visible rounded-[28px] border border-slate-100 bg-white shadow-[0_15px_40px_-20px_rgba(15,23,42,0.1)]">
               <table className="w-full text-sm text-slate-700 min-w-[640px]">
-                <thead className="bg-slate-50/80">
+                <thead className="bg-slate-50/90 sticky top-16 z-20">
                   <tr className="border-b border-slate-200 text-left">
-                    <th className="py-4 px-5 font-semibold text-slate-500 text-[10px] uppercase tracking-[0.3em]">Feature</th>
+                    <th className="py-4 px-5 font-semibold text-slate-500 text-[10px] uppercase tracking-[0.3em] bg-slate-50/90">Feature</th>
                     {PLAN_KEYS.map((key, index) => (
                       <th
                         key={key}
                         className={`py-4 px-5 font-semibold text-[10px] uppercase tracking-[0.3em] text-center ${
-                          key === 'growth' ? 'text-[#f16610] bg-[#fff8f0]' : 'text-slate-500'
+                          key === 'growth' ? 'text-[#f16610] bg-[#fff8f0]' : 'text-slate-500 bg-slate-50/90'
                         }`}
                       >
                         {PLANS[index].name}
+                        <span className={`block text-[9px] mt-0.5 font-bold ${key === 'growth' ? 'text-[#f16610]' : 'text-slate-400'}`}>
+                          {PLAN_PRICES[key]}
+                        </span>
                         {key === 'growth' && (
-                          <span className="block text-[8px] mt-1 font-bold text-[#f16610]">★ MOST POPULAR</span>
+                          <span className="block text-[8px] mt-0.5 font-bold text-[#f16610]">★ MOST POPULAR</span>
                         )}
                       </th>
                     ))}
@@ -614,37 +786,106 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* DARK STATS BAND */}
+      {/* DARK STATS BAND + THREE WAYS TO RUN FINANCE */}
       <section className="px-6 sm:px-10 lg:px-16 py-20">
         <AnimatedSection animation="fade-up">
           <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[44px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-10 sm:p-14 text-white">
             <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#f16610]/30 blur-[120px]" />
             <div className="absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-[#7e8bff]/30 blur-[140px]" />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:60px_60px]" />
-            <div className="relative z-10 grid md:grid-cols-2 gap-10 items-center">
-              <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-[#ff8a3c] font-semibold">Founder ROI</p>
-                <h2 className="mt-3 text-3xl sm:text-4xl font-semibold leading-tight">
-                  Average client saves <span className="text-[#ff8a3c]">AED 142,000</span> a year vs in-house.
-                </h2>
-                <p className="mt-4 text-slate-300">
-                  No hiring lag, no benefits, no severance risk. One subscription replaces a controller, a tax lead, an audit manager, and a fractional CFO.
-                </p>
+
+            <div className="relative z-10 space-y-12">
+              {/* Stats intro row */}
+              <div className="grid md:grid-cols-2 gap-10 items-center">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-[#ff8a3c] font-semibold">Founder ROI</p>
+                  <h2 className="mt-3 text-3xl sm:text-4xl font-semibold leading-tight">
+                    Average client saves <span className="text-[#ff8a3c]">AED 142,000</span> a year vs in-house.
+                  </h2>
+                  <p className="mt-4 text-slate-300">
+                    No hiring lag, no benefits, no severance risk. One subscription replaces a controller, a tax lead, an audit manager, and a fractional CFO.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-5">
+                  {[
+                    { value: '142k', label: 'avg AED annual saving' },
+                    { value: '<24h', label: 'reply SLA' },
+                    { value: '99.4%', label: 'on-time filings' },
+                    { value: '4.9★', label: 'Google rating' },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur p-5">
+                      <p className="text-3xl font-semibold tracking-tight bg-gradient-to-r from-white to-[#ff8a3c] bg-clip-text text-transparent">
+                        {s.value}
+                      </p>
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 mt-1">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-5">
-                {[
-                  { value: '142k', label: 'avg AED annual saving' },
-                  { value: '<24h', label: 'reply SLA' },
-                  { value: '99.4%', label: 'on-time filings' },
-                  { value: '4.9★', label: 'Google rating' },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur p-5">
-                    <p className="text-3xl font-semibold tracking-tight bg-gradient-to-r from-white to-[#ff8a3c] bg-clip-text text-transparent">
-                      {s.value}
-                    </p>
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 mt-1">{s.label}</p>
-                  </div>
-                ))}
+
+              {/* Three ways comparison */}
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em] text-[#ff8a3c] font-semibold mb-4">Three ways to run finance</p>
+                <div className="overflow-x-auto -mx-2 px-2">
+                  <table className="w-full min-w-[560px] text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="py-3 px-4 text-left text-[10px] uppercase tracking-[0.3em] text-slate-400 font-semibold w-[28%]">Criteria</th>
+                        <th className="py-3 px-4 text-center text-[10px] uppercase tracking-[0.3em] text-slate-400 font-semibold">
+                          <div className="inline-flex items-center gap-1.5"><Users size={12} /> In-house hire</div>
+                        </th>
+                        <th className="py-3 px-4 text-center text-[10px] uppercase tracking-[0.3em] text-slate-400 font-semibold">
+                          <div className="inline-flex items-center gap-1.5"><Building2 size={12} /> Traditional firm</div>
+                        </th>
+                        <th className="py-3 px-4 text-center text-[10px] uppercase tracking-[0.3em] text-[#ff8a3c] font-semibold">
+                          <div className="inline-flex items-center gap-1.5"><BarChart3 size={12} /> finanshels</div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        {
+                          criteria: 'Monthly cost',
+                          inhouse: 'AED 12,000–25,000+ salary, visa & benefits — typical UAE market range',
+                          firm: 'AED 3,000–10,000+, often billed by the hour',
+                          finanshels: 'From AED 4,999, fixed monthly',
+                        },
+                        {
+                          criteria: 'Time to productive',
+                          inhouse: '3–6 months (hiring, onboarding, visa)',
+                          firm: '2–4 weeks scoping, slow ramp-up',
+                          finanshels: 'Fully operational within 7 days',
+                        },
+                        {
+                          criteria: 'Coverage',
+                          inhouse: 'One generalist — gaps in VAT, CT, or CFO work',
+                          firm: 'Audit or tax only; rarely both',
+                          finanshels: 'VAT, CT, AML, accounting & CFO under one roof',
+                        },
+                        {
+                          criteria: 'Compliance risk',
+                          inhouse: 'Single point of failure; high if staff leaves',
+                          firm: 'Reactive — you chase them for updates',
+                          finanshels: '99.4% on-time filings, proactive alerts',
+                        },
+                        {
+                          criteria: 'Scales with you',
+                          inhouse: 'Requires another hire per growth stage',
+                          firm: 'Re-scope & renegotiate each year',
+                          finanshels: 'Upgrade plan in minutes, no new contract',
+                        },
+                      ].map((row, idx) => (
+                        <tr key={row.criteria} className={`border-b border-white/5 ${idx % 2 === 0 ? '' : 'bg-white/[0.02]'}`}>
+                          <td className="py-4 px-4 font-semibold text-white text-xs">{row.criteria}</td>
+                          <td className="py-4 px-4 text-slate-400 text-xs text-center">{row.inhouse}</td>
+                          <td className="py-4 px-4 text-slate-400 text-xs text-center">{row.firm}</td>
+                          <td className="py-4 px-4 text-[#ff8a3c] text-xs text-center font-medium bg-white/[0.04] rounded-sm">{row.finanshels}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-3 text-[10px] text-slate-500 italic">In-house cost figures reflect typical UAE market ranges and are not finanshels-verified statistics.</p>
               </div>
             </div>
           </div>

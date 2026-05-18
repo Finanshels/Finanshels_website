@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import AnimatedSection from '../components/AnimatedSection'
@@ -24,7 +26,7 @@ export default function Products() {
             </p>
             <div className="flex flex-wrap gap-3 mt-8">
               <a
-                href="mailto:hello@finanshels.com?subject=Finanshels%20Products"
+                href="mailto:contact@finanshels.com?subject=Finanshels%20Products"
                 className="inline-flex items-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3 font-semibold text-white shadow-lg shadow-[#f16610]/30"
               >
                 Talk to sales
@@ -93,7 +95,7 @@ export default function Products() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
                 <a
-                  href="mailto:hello@finanshels.com"
+                  href="mailto:contact@finanshels.com"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3 font-semibold text-white"
                 >
                   Share your challenges
