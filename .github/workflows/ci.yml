@@ -19,7 +19,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        # Using `npm install` (not `npm ci`) so CI tolerates short-lived
+        # lockfile drift between `npm ci`-strict syncs. When the lockfile is
+        # known-clean on main, swap back to `npm ci` for reproducible builds.
+        run: npm install --no-audit --no-fund
 
       - name: Typecheck
         run: npm run typecheck
