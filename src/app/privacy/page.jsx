@@ -6,7 +6,7 @@ export const metadata = {
   robots: { index: true, follow: true },
 }
 
-const LAST_UPDATED = '18 May 2026'
+const LAST_UPDATED = '20 May 2026'
 
 const SECTIONS = [
   {
@@ -49,9 +49,11 @@ const SECTIONS = [
     ],
   },
   {
-    heading: '7. Cookies',
+    heading: '7. Cookies and analytics',
     body: [
-      'We use cookies and similar technologies to operate the website, remember your preferences, and measure performance. You can control cookies through your browser settings; disabling them may affect site functionality.',
+      'We use cookies and similar local-storage technologies to operate the website, remember your preferences, and measure aggregate performance. Strictly necessary cookies (such as the consent acknowledgement stored in your browser) are required for the site to work. Analytics cookies collect anonymous, aggregated usage information that helps us improve the site.',
+      'We do not use cookies for cross-site advertising or to build personal profiles. When you first visit, a consent banner notifies you of cookie use; you can also control cookies through your browser settings. Disabling strictly necessary cookies may affect site functionality.',
+      'Where we use third-party tracking pixels on specific landing pages (such as Google Tag conversion tracking), they are loaded only on those pages and only after the page becomes interactive.',
     ],
   },
   {

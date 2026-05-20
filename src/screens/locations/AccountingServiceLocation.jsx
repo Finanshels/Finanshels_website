@@ -61,11 +61,40 @@ export default function AccountingServiceLocation({ city }) {
     description: `Accounting, VAT, corporate tax, and CFO services for businesses in ${city.name}, UAE.`,
   }
 
+  const citySlug = city.name.toLowerCase().replace(/\s+/g, '-')
+  const localBusinessSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'AccountingService',
+    '@id': `https://www.finanshels.com/accounting-services-${citySlug}#business`,
+    name: `Finanshels — Accounting Services in ${city.name}`,
+    url: `https://www.finanshels.com/accounting-services-${citySlug}`,
+    image: 'https://www.finanshels.com/finanshels_logo.png',
+    description: `Accounting, bookkeeping, VAT, and corporate tax services for businesses in ${city.name}, UAE.`,
+    telephone: '+971-50-717-8156',
+    email: 'contact@finanshels.com',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: city.name,
+      addressRegion: city.name,
+      addressCountry: 'AE',
+    },
+    areaServed: { '@type': 'City', name: city.name },
+    priceRange: '$$',
+    sameAs: [
+      'https://linkedin.com/company/finanshels',
+      'https://twitter.com/finanshels',
+    ],
+  }
+
   return (
     <div className="bg-white text-slate-900">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
       />
       <script
         type="application/ld+json"

@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        # Using `npm install` (not `npm ci`) so CI tolerates short-lived
+        # lockfile drift between `npm ci`-strict syncs. When the lockfile is
+        # known-clean on main, swap back to `npm ci` for reproducible builds.
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build
+        run: npm run build
+        env:
+          # The build needs a public site URL; CMS calls are guarded by
+          # isCmsConfigured() so the build degrades gracefully without secrets.
+          NEXT_PUBLIC_SITE_URL: https://www.finanshels.com
+          # The admin session module requires this at module-eval time.
+          CMS_ADMIN_SESSION_SECRET: ci-only-dummy-secret-not-for-production

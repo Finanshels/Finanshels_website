@@ -7,6 +7,11 @@ import {
   prettyTitleFromPath,
 } from '@/lib/staticPageRoutes'
 
+// Paths with dedicated app/<route>/page.{tsx,jsx} files. The catch-all must
+// NOT claim them via generateStaticParams — when both render the same URL,
+// static-output collisions can overwrite the dedicated page's HTML (observed
+// on /accounting-services-{city}: catch-all's generic template shadowed the
+// AccountingServiceLocation screen, breaking LocalBusiness JSON-LD).
 const EXISTING_APP_ROUTES = new Set<string>([
   '/',
   '/about',
@@ -18,6 +23,11 @@ const EXISTING_APP_ROUTES = new Set<string>([
   '/customers',
   '/careers',
   '/home2',
+  '/privacy',
+  '/terms',
+  '/accounting-services-dubai',
+  '/accounting-services-abu-dhabi',
+  '/accounting-services-sharjah',
 ])
 
 const CATCH_ALL_STATIC_PATHS = NON_RESOURCE_STATIC_PAGE_PATHS.filter(

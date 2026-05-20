@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { ArticleBody } from '@/components/cms/ArticleBody'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { getCmsDocument, listCmsDocuments } from '@/lib/cms/collectionRepository'
@@ -52,7 +53,13 @@ function HeroBlock({ block }: { block: Block }) {
         {heading ? <h2 className="mt-3 text-4xl font-semibold tracking-tight">{heading}</h2> : null}
         {subheading ? <p className="mt-4 max-w-2xl text-lg text-white/70">{subheading}</p> : null}
         {imageUrl ? (
-          <img src={imageUrl} alt={readString(block.imageAlt)} className="mt-8 w-full rounded-2xl object-cover" />
+          <Image
+            src={imageUrl}
+            alt={readString(block.imageAlt)}
+            width={1200}
+            height={630}
+            className="mt-8 w-full rounded-2xl object-cover"
+          />
         ) : null}
         {ctaLabel && ctaUrl ? (
           <a href={ctaUrl} className="mt-8 inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark">
@@ -168,7 +175,15 @@ function DownloadBlock({ block }: { block: Block }) {
   return (
     <section className="bg-white py-12">
       <div className="mx-auto grid max-w-5xl gap-6 px-6 sm:grid-cols-[160px,1fr]">
-        {cover ? <img src={cover} alt={heading} className="h-40 w-40 rounded-xl object-cover" /> : null}
+        {cover ? (
+          <Image
+            src={cover}
+            alt={heading}
+            width={160}
+            height={160}
+            className="h-40 w-40 rounded-xl object-cover"
+          />
+        ) : null}
         <div>
           {heading ? <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
           {description ? <p className="mt-2 text-slate-700">{description}</p> : null}
@@ -216,7 +231,14 @@ function LogoWallBlock({ block }: { block: Block }) {
         {heading ? <p className="text-center text-xs font-semibold uppercase tracking-[0.32em] text-slate-500">{heading}</p> : null}
         <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-4 md:grid-cols-6">
           {logos.map((logo, idx) => (
-            <img key={idx} src={logo.src} alt={logo.alt ?? 'Logo'} className="h-10 w-full object-contain opacity-70" />
+            <Image
+              key={idx}
+              src={logo.src}
+              alt={logo.alt ?? 'Logo'}
+              width={160}
+              height={40}
+              className="h-10 w-full object-contain opacity-70"
+            />
           ))}
         </div>
       </div>
@@ -387,7 +409,13 @@ async function SpeakerBlock({ block }: { block: Block }) {
             const card = (
               <div className="flex gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-5">
                 {photo ? (
-                  <img src={photo} alt={name} className="h-16 w-16 flex-shrink-0 rounded-full object-cover" />
+                  <Image
+                    src={photo}
+                    alt={name}
+                    width={64}
+                    height={64}
+                    className="h-16 w-16 flex-shrink-0 rounded-full object-cover"
+                  />
                 ) : null}
                 <div>
                   {name ? <p className="text-base font-semibold text-slate-900">{name}</p> : null}

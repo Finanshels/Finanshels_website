@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Star } from 'lucide-react'
 import { Card } from './ui/Card'
 
@@ -22,10 +23,12 @@ export default function TestimonialCard({ testimonial }) {
         </p>
         
         <div className="flex items-center gap-5">
-          <img 
-            src={testimonial.image} 
+          <Image
+            src={testimonial.image}
             alt={testimonial.name}
-            className="w-16 h-16 rounded-2xl ring-4 ring-indigo-50 group-hover:ring-indigo-100 transition-all"
+            width={64}
+            height={64}
+            className="w-16 h-16 rounded-2xl ring-4 ring-indigo-50 group-hover:ring-indigo-100 transition-all object-cover"
           />
           <div>
             <div className="font-bold text-slate-900 text-lg">{testimonial.name}</div>

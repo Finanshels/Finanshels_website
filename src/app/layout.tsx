@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Fraunces, Plus_Jakarta_Sans } from 'next/font/google'
 import '../index.css'
 import AppChrome from '../components/AppChrome'
+import CookieConsent from '../components/CookieConsent'
 
 const fontSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -48,6 +49,12 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     site: '@finanshels',
   },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    other: process.env.BING_SITE_VERIFICATION
+      ? { 'msvalidate.01': process.env.BING_SITE_VERIFICATION }
+      : undefined,
+  },
 }
 
 export const viewport: Viewport = {
@@ -92,6 +99,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
         <AppChrome>{children}</AppChrome>
+        <CookieConsent />
       </body>
     </html>
   )

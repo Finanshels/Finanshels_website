@@ -10,6 +10,7 @@ import {
 } from '@/lib/cms/collectionDefinitions'
 import { getCmsDocument } from '@/lib/cms/collectionRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
+import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
 
 type Props = {
   params: Promise<{ collection: string; slug: string }>
@@ -352,11 +353,20 @@ export default async function CmsCollectionContentPage({ params }: Props) {
 
   const blocks = Array.isArray(doc.page_blocks) ? doc.page_blocks : []
 
+  const listingTrail = definition.listingRoute
+    ? [{ name: definition.singularLabel, path: definition.listingRoute }]
+    : []
+  const breadcrumbLd = buildBreadcrumbList([
+    ...listingTrail,
+    { name: resolveTitle(doc, definition.singularLabel), path: canonical },
+  ])
+
   return (
     <>
       {renderTemplate(definition.key, doc)}
       {blocks.length > 0 ? <PageBlocksRenderer blocks={blocks} /> : null}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(baseSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} /> : null}
     </>
   )
