@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import * as Lucide from 'lucide-react'
 import { useState } from 'react'
 import LeadForm from '../LeadForm'
@@ -80,8 +81,14 @@ export function TrustBar({ props }: Common) {
           {heading ? <p className="text-sm font-medium text-slate-600 text-center sm:text-left">{heading}</p> : null}
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 opacity-80">
             {logos.map((logo, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={logo.src} alt={logo.alt ?? ''} className="h-7 sm:h-8 w-auto object-contain grayscale" />
+              <Image
+                key={i}
+                src={logo.src}
+                alt={logo.alt ?? ''}
+                width={120}
+                height={32}
+                className="h-7 sm:h-8 w-auto object-contain grayscale"
+              />
             ))}
           </div>
           {ratingLabel ? (
@@ -203,8 +210,14 @@ export function AwardsPress({ props }: Common) {
           <p className="text-xs font-semibold tracking-wider uppercase text-slate-500">{heading}</p>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 opacity-80">
             {logos.map((logo, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={logo.src} alt={logo.alt ?? ''} className="h-8 sm:h-10 w-auto object-contain grayscale" />
+              <Image
+                key={i}
+                src={logo.src}
+                alt={logo.alt ?? ''}
+                width={140}
+                height={40}
+                className="h-8 sm:h-10 w-auto object-contain grayscale"
+              />
             ))}
           </div>
         </div>
@@ -470,8 +483,13 @@ export function LeadMagnet({ props, ...formProps }: WithLeadForm) {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center max-w-5xl mx-auto">
           <div className="flex justify-center">
             {coverImageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={coverImageUrl} alt="" className="max-h-80 rounded-xl shadow-lg" />
+              <Image
+                src={coverImageUrl}
+                alt=""
+                width={640}
+                height={480}
+                className="max-h-80 w-auto rounded-xl shadow-lg"
+              />
             ) : (
               <div className="size-48 rounded-xl bg-amber-100 flex items-center justify-center">
                 <Lucide.FileDown className="size-16 text-amber-700" />

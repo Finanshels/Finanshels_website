@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ArticleBody } from '@/components/cms/ArticleBody'
@@ -6,6 +7,7 @@ import { PageBlocksRenderer } from '@/components/cms/PageBlocksRenderer'
 import { getSiteUrl } from '@/lib/cms/config'
 import { getBlogPostBySlug } from '@/lib/cms/blogRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
+import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
 
 export const revalidate = 300
 
@@ -79,6 +81,10 @@ export default async function BlogArticlePage({ params }: Props) {
     author: post.author || post.authorName ? { '@type': 'Person', name: post.author ?? post.authorName } : undefined,
     image: ogImage ? [ogImage] : undefined,
   }
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: 'Blog', path: '/blog' },
+    { name: post.title, path: `/blog/${post.slug}` },
+  ])
 
   return (
     <>
@@ -87,6 +93,11 @@ export default async function BlogArticlePage({ params }: Props) {
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger -- emitting JSON-LD for crawlers
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger -- emitting JSON-LD for crawlers
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       <article>
         <header className="border-b border-slate-100 bg-gradient-to-b from-slate-950 to-slate-900 text-white">
@@ -110,8 +121,14 @@ export default async function BlogArticlePage({ params }: Props) {
         {(post.featured_image ?? post.heroImageUrl) ? (
           <div className="mx-auto -mt-8 max-w-4xl px-6 sm:px-10">
             <div className="relative aspect-[21/9] overflow-hidden rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-slate-900/30">
-              {/* eslint-disable-next-line @next/next/no-img-element -- hero image; admin-controlled URL */}
-              <img src={String(post.featured_image ?? post.heroImageUrl)} alt="" className="h-full w-full object-cover" />
+              <Image
+                src={String(post.featured_image ?? post.heroImageUrl)}
+                alt=""
+                fill
+                sizes="(min-width: 1024px) 896px, 100vw"
+                className="object-cover"
+                priority
+              />
             </div>
           </div>
         ) : null}

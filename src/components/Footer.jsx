@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { Linkedin, Twitter, Instagram, Youtube, ArrowUpRight } from 'lucide-react'
 import { usePathname } from 'next/navigation'
@@ -64,7 +65,14 @@ export default function Footer() {
       <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-10 lg:px-16 py-16 space-y-12">
         <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-12">
           <div className="space-y-6">
-            <img src="/finanshels_logo.png" alt="Finanshels" className="h-10 w-auto" />
+            <Image
+              src="/finanshels_logo.png"
+              alt="Finanshels"
+              width={160}
+              height={40}
+              className="h-10 w-auto"
+              priority
+            />
             <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
               Finanshels, the back office finance partner for 6000+ founders in the UAE run by 180+ members so founders can stay focused on growth.
             </p>

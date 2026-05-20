@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { useOnboarding } from '../../../contexts/OnboardingContext'
 import { Button } from '../../ui/Button'
 import { Card } from '../../ui/Card'
@@ -29,10 +30,12 @@ export default function FounderMessageStep() {
           <AnimatedSection animation="fade-right" delay={100}>
             <Card className="border-2 border-orange-200 shadow-2xl overflow-hidden bg-white sticky top-8">
               <div className="relative h-[450px] bg-gradient-to-br from-slate-50 to-orange-50 overflow-hidden">
-                <img 
+                <Image
                   src="/shafeekh.png"
                   alt="Mohammed Shafeekh - CEO & Founder"
-                  className="absolute inset-0 w-full h-full object-cover object-top"
+                  fill
+                  sizes="(min-width: 1024px) 400px, 100vw"
+                  className="object-cover object-top"
                 />
               </div>
               <div className="p-6 bg-white border-t-2 border-orange-100">

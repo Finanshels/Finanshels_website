@@ -6,6 +6,7 @@ import { DevCmsBanner } from '@/components/cms/DevCmsBanner'
 import { getSiteUrl } from '@/lib/cms/config'
 import { getGlossaryTermBySlug } from '@/lib/cms/glossaryRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
+import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
 
 export const revalidate = 600
 
@@ -52,6 +53,10 @@ export default async function GlossaryTermPage({ params }: Props) {
     (item): item is { question: string; answer: string } =>
       typeof item?.question === 'string' && typeof item?.answer === 'string' && item.question.trim().length > 0
   )
+  const breadcrumbLd = buildBreadcrumbList([
+    { name: 'Glossary', path: '/glossary' },
+    { name: term.term, path: `/glossary/${term.slug}` },
+  ])
   const faqLd: Record<string, unknown> | null =
     faqItems.length > 0
       ? {
@@ -72,6 +77,11 @@ export default async function GlossaryTermPage({ params }: Props) {
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger -- JSON-LD for crawlers
         dangerouslySetInnerHTML={{ __html: JSON.stringify(definedTermLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger -- JSON-LD for crawlers
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       {faqLd ? (
         <script
