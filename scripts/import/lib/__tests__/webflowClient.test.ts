@@ -4,7 +4,7 @@ import { createWebflowClient } from '../webflowClient'
 
 function makeFetchStub(responses: Array<{ status: number, body: unknown, headers?: Record<string, string> }>) {
   let call = 0
-  return mock.fn(async () => {
+  return mock.fn(async (_input: Request | URL | string, _init?: RequestInit) => {
     const r = responses[call++]
     return new Response(JSON.stringify(r.body), {
       status: r.status,
