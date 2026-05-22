@@ -391,7 +391,7 @@ function UserRow({
               <select
                 name="role"
                 defaultValue={user.role}
-                className="rounded-lg border border-[#e8dccf] bg-white px-2 py-1 text-xs text-slate-700"
+                className="rounded-lg border border-cms-rule bg-white px-2 py-1 text-xs text-slate-700"
               >
                 {assignableRoles.map((r) => (
                   <option key={r} value={r}>
@@ -401,7 +401,7 @@ function UserRow({
               </select>
               <button
                 type="submit"
-                className="rounded-lg border border-[#e8dccf] bg-[#fffaf5] px-2 py-1 text-xs text-slate-700 hover:bg-[#fff3e8]"
+                className="rounded-lg border border-cms-rule bg-cms-soft px-2 py-1 text-xs text-slate-700 hover:bg-cms-hover"
               >
                 Save role
               </button>
@@ -445,11 +445,11 @@ function UserRow({
                 type="text"
                 name="newPassword"
                 placeholder="New password (≥ 8 chars)"
-                className="w-44 rounded-lg border border-[#e8dccf] bg-white px-2 py-1 text-xs text-slate-700 placeholder:text-slate-400"
+                className="w-44 rounded-lg border border-cms-rule bg-white px-2 py-1 text-xs text-slate-700 placeholder:text-slate-400"
               />
               <button
                 type="submit"
-                className="rounded-lg border border-[#e8dccf] bg-[#fffaf5] px-2 py-1 text-xs text-slate-700 hover:bg-[#fff3e8]"
+                className="rounded-lg border border-cms-rule bg-cms-soft px-2 py-1 text-xs text-slate-700 hover:bg-cms-hover"
               >
                 Reset
               </button>
@@ -493,7 +493,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
 
   if (!dbConfigured) {
     return (
-      <section className="min-h-screen bg-[#f7f3ee] text-slate-900">
+      <section className="min-h-screen bg-cms-canvas text-slate-900">
         <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
           <div className="grid gap-3 xl:grid-cols-[minmax(260px,320px)_1fr]">
             <SettingsSidebar
@@ -545,7 +545,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
   }
 
   return (
-    <section className="min-h-screen bg-[#f7f3ee] text-slate-900">
+    <section className="min-h-screen bg-cms-canvas text-slate-900">
       <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
         <div className="grid gap-3 xl:min-h-[calc(100vh-1.5rem)] xl:grid-cols-[minmax(260px,320px)_1fr]">
           <SettingsSidebar
@@ -555,7 +555,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
             currentUserEmail={session.kind === 'user' ? session.user.email : null}
           />
 
-          <div className="space-y-4 rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
+          <div className="space-y-4 rounded-2xl border border-cms-rule bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
             <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Settings</p>
@@ -566,7 +566,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
                 </p>
               </div>
               <form action={logoutAction}>
-                <button type="submit" className="rounded-xl border border-[#e8dccf] bg-[#fffaf5] px-3 py-2 text-sm text-slate-700 hover:bg-[#fff3e8]">
+                <button type="submit" className="rounded-xl border border-cms-rule bg-cms-soft px-3 py-2 text-sm text-slate-700 hover:bg-cms-hover">
                   Sign out
                 </button>
               </form>
@@ -624,7 +624,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
               </div>
             ) : null}
 
-            <section className="rounded-2xl border border-[#e8dccf] bg-[#fffaf5] p-4">
+            <section className="rounded-2xl border border-cms-rule bg-cms-soft p-4">
               <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Invite a team member</h2>
               <p className="mt-1 text-xs text-slate-500">
                 We'll email a one-time link so they can set their own password. The invite expires in 7 days; you can resend
@@ -637,7 +637,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
                     type="text"
                     name="name"
                     required
-                    className="mt-1.5 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900"
+                    className="mt-1.5 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900"
                     placeholder="Sara Marketing"
                   />
                 </label>
@@ -647,7 +647,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
                     type="email"
                     name="email"
                     required
-                    className="mt-1.5 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900"
+                    className="mt-1.5 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900"
                     placeholder="sara@finanshels.com"
                   />
                 </label>
@@ -656,7 +656,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
                   <select
                     name="role"
                     defaultValue="editor"
-                    className="mt-1.5 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900"
+                    className="mt-1.5 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900"
                   >
                     <option value="viewer">{ROLE_LABEL.viewer} — read-only</option>
                     <option value="editor">{ROLE_LABEL.editor} — content edit/publish</option>
@@ -678,8 +678,8 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
               </form>
             </section>
 
-            <section className="rounded-2xl border border-[#e8dccf] bg-white">
-              <header className="flex items-center justify-between border-b border-[#eee2d3] bg-[#fffaf5] px-4 py-3">
+            <section className="rounded-2xl border border-cms-rule bg-white">
+              <header className="flex items-center justify-between border-b border-cms-rule bg-cms-soft px-4 py-3">
                 <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Team members</h2>
                 <Link href="#role-reference" className="text-xs text-slate-500 hover:text-brand-primary">
                   Role reference ↓
@@ -692,7 +692,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
-                    <thead className="border-b border-[#eee2d3] bg-[#fffaf5] text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    <thead className="border-b border-cms-rule bg-cms-soft text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                       <tr>
                         <th className="px-4 py-3 font-semibold">Name / email</th>
                         <th className="px-4 py-3 font-semibold">Role</th>
@@ -702,7 +702,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
                         <th className="px-4 py-3 font-semibold">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#f0e6db]">
+                    <tbody className="divide-y divide-cms-rule">
                       {users.map((u) => (
                         <UserRow key={u.id} user={u} actorRole={actorRole} actorUserId={actorId} />
                       ))}
@@ -712,7 +712,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
               )}
             </section>
 
-            <section id="role-reference" className="rounded-2xl border border-[#e8dccf] bg-[#fffaf5] p-4">
+            <section id="role-reference" className="rounded-2xl border border-cms-rule bg-cms-soft p-4">
               <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Role reference</h2>
               <ul className="mt-3 space-y-2 text-sm">
                 {(['owner', 'admin', 'editor', 'viewer'] as CmsUserRole[]).map((r) => (

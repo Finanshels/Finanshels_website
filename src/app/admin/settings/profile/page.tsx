@@ -45,7 +45,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Sear
   const role = sessionRole(session)
 
   return (
-    <section className="min-h-screen bg-[#f7f3ee] text-slate-900">
+    <section className="min-h-screen bg-cms-canvas text-slate-900">
       <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
         <div className="grid gap-3 xl:min-h-[calc(100vh-1.5rem)] xl:grid-cols-[minmax(260px,320px)_1fr]">
           <SettingsSidebar
@@ -55,7 +55,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Sear
             currentUserEmail={session.kind === 'user' ? session.user.email : null}
           />
 
-          <div className="space-y-4 rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
+          <div className="space-y-4 rounded-2xl border border-cms-rule bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
             <header>
               <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Settings</p>
               <h1 className="mt-1 text-xl font-semibold text-slate-900">My profile</h1>
@@ -77,7 +77,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Sear
               </p>
             ) : null}
 
-            <section className="rounded-2xl border border-[#e8dccf] bg-[#fffaf5] p-4">
+            <section className="rounded-2xl border border-cms-rule bg-cms-soft p-4">
               <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Change password</h2>
               <form action={changeOwnPasswordAction} className="mt-4 grid gap-3 max-w-md">
                 <label className="block text-sm text-slate-700">
@@ -87,7 +87,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Sear
                     name="newPassword"
                     required
                     minLength={8}
-                    className="mt-1.5 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900"
+                    className="mt-1.5 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900"
                   />
                 </label>
                 <button

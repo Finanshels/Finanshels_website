@@ -61,7 +61,7 @@ function ToolbarGroup({ children }: { children: React.ReactNode }) {
 }
 
 function ToolbarRow({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap items-center gap-0.5 rounded-md border border-[#ebe0d2] bg-white p-0.5">{children}</div>
+  return <div className="flex flex-wrap items-center gap-0.5 rounded-md border border-cms-rule bg-white p-0.5">{children}</div>
 }
 
 function IconBtn({
@@ -88,7 +88,7 @@ function IconBtn({
       className={`inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-[12px] font-medium transition ${
         active
           ? 'bg-brand-primary/15 text-brand-primary shadow-[inset_0_0_0_1px_rgba(241,102,16,0.35)]'
-          : 'text-slate-700 hover:bg-[#fff3e8] hover:text-slate-900'
+          : 'text-slate-700 hover:bg-cms-hover hover:text-slate-900'
       } disabled:cursor-not-allowed disabled:opacity-40`}
     >
       {children}
@@ -97,7 +97,7 @@ function IconBtn({
 }
 
 function Sep() {
-  return <span aria-hidden className="mx-0.5 h-4 w-px bg-[#eee2d3]" />
+  return <span aria-hidden className="mx-0.5 h-4 w-px bg-cms-soft" />
 }
 
 export default function RichTextField({ name, initialValue, placeholder }: Props) {
@@ -195,9 +195,9 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
     <div className="mt-2">
       <input type="hidden" name={name} value={html} readOnly />
 
-      <div className="overflow-hidden rounded-xl border border-[#e7dccf] bg-white shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+      <div className="overflow-hidden rounded-xl border border-cms-rule bg-white shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
         {/* Toolbar */}
-        <div className="border-b border-[#efe5da] bg-[#fffaf5] px-3 pt-2 pb-2">
+        <div className="border-b border-cms-rule bg-cms-soft px-3 pt-2 pb-2">
           <p className="mb-1.5 px-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">Essentials</p>
           <ToolbarRow>
             <IconBtn label="Paragraph" active={editor?.isActive('paragraph')} onClick={() => editor?.chain().focus().setParagraph().run()}>
@@ -253,11 +253,11 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
             </IconBtn>
           </ToolbarRow>
 
-          <details className="mt-2 rounded-lg border border-[#ebe0d2] bg-white/80 open:bg-white">
+          <details className="mt-2 rounded-lg border border-cms-rule bg-white/80 open:bg-white">
             <summary className="cursor-pointer select-none px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 marker:text-slate-400">
               Advanced formatting &amp; HTML
             </summary>
-            <div className="border-t border-[#efe5da] px-2 py-2">
+            <div className="border-t border-cms-rule px-2 py-2">
               <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
                 <ToolbarGroup>
                   <GroupLabel>Heading</GroupLabel>
@@ -351,7 +351,7 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
 
         {/* Editor surface */}
         <div className={`grid ${showPreview ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
-          <div className={showPreview ? 'border-r border-[#efe5da]' : ''}>
+          <div className={showPreview ? 'border-r border-cms-rule' : ''}>
             {showSource ? (
               <textarea
                 value={html}
@@ -364,7 +364,7 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
             )}
           </div>
           {showPreview ? (
-            <div className="min-h-[240px] bg-[#fffaf5] px-5 py-5 md:min-h-[320px]">
+            <div className="min-h-[240px] bg-cms-soft px-5 py-5 md:min-h-[320px]">
               <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Live preview</p>
               <article
                 className="prose prose-slate max-w-none text-[15px] leading-7"
@@ -374,7 +374,7 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#efe5da] bg-[#fffcf8] px-3 py-2 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-cms-rule bg-cms-soft px-3 py-2 text-xs text-slate-500">
           <p className="text-[11px]">Tips: hover buttons for shortcuts. Open Advanced for alignment, tables, and raw HTML.</p>
           <div className="flex items-center gap-3">
             <span><strong className="font-semibold text-slate-700">{wordCount}</strong> words</span>

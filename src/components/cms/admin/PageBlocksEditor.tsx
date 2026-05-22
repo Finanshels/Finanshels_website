@@ -143,7 +143,7 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
       <input type="hidden" name={name} value={serialised} readOnly />
 
       {blocks.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#e8dccf] bg-[#fffaf5] px-6 py-10 text-center">
+        <div className="rounded-2xl border border-dashed border-cms-rule bg-cms-soft px-6 py-10 text-center">
           <p className="text-sm font-medium text-slate-700">No blocks yet</p>
           <p className="mt-1 text-xs text-slate-500">
             Compose this detail page from reusable blocks. Each block is rendered top-to-bottom on the page.
@@ -163,9 +163,9 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
             return (
               <li
                 key={block.id ?? `${block.type}-${index}`}
-                className="overflow-hidden rounded-2xl border border-[#e8dccf] bg-white"
+                className="overflow-hidden rounded-2xl border border-cms-rule bg-white"
               >
-                <header className="flex items-center gap-2 border-b border-[#eee2d3] bg-[#fffaf5] px-3 py-2">
+                <header className="flex items-center gap-2 border-b border-cms-rule bg-cms-soft px-3 py-2">
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-300">
                     <GripVertical className="h-3.5 w-3.5" aria-hidden />
                   </span>
@@ -214,7 +214,7 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                     <button
                       type="button"
                       onClick={() => setOpenId(open ? null : block.id ?? null)}
-                      className="ml-1 inline-flex items-center gap-1 rounded-md border border-[#e8dccf] bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-[#fff3e8]"
+                      className="ml-1 inline-flex items-center gap-1 rounded-md border border-cms-rule bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-cms-hover"
                     >
                       {open ? 'Close' : 'Edit'}
                     </button>
@@ -248,7 +248,7 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                                 value={typeof value === 'string' ? value : ''}
                                 onChange={(e) => updateBlock(block.id ?? '', { [field.name]: e.target.value })}
                                 placeholder={field.placeholder}
-                                className="mt-2 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                                className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               />
                             ) : field.type === 'json' ? (
                               <textarea
@@ -265,13 +265,13 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                                 }}
                                 placeholder={field.placeholder}
                                 spellCheck={false}
-                                className="mt-2 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                                className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               />
                             ) : field.type === 'select' && field.options?.length ? (
                               <select
                                 value={typeof value === 'string' ? value : ''}
                                 onChange={(e) => updateBlock(block.id ?? '', { [field.name]: e.target.value })}
-                                className="mt-2 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                                className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               >
                                 <option value="">— select —</option>
                                 {field.options.map((o) => (
@@ -298,13 +298,13 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                                   updateBlock(block.id ?? '', { [field.name]: parseTags(e.target.value) })
                                 }
                                 placeholder={field.placeholder}
-                                className="mt-2 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                                className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               />
                             ) : field.type === 'reference' ? (
                               <select
                                 value={typeof value === 'string' ? value : ''}
                                 onChange={(e) => updateBlock(block.id ?? '', { [field.name]: e.target.value })}
-                                className="mt-2 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                                className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               >
                                 <option value="">— select —</option>
                                 {(field.referenceCollection
@@ -325,7 +325,7 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                                 }
                                 placeholder="id-one, id-two"
                                 list={`block-${block.id}-${field.name}-suggest`}
-                                className="mt-2 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                                className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               />
                             ) : (
                               <input
@@ -333,7 +333,7 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                                 value={typeof value === 'string' || typeof value === 'number' ? String(value) : ''}
                                 onChange={(e) => updateBlock(block.id ?? '', { [field.name]: e.target.value })}
                                 placeholder={field.placeholder}
-                                className="mt-2 w-full rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                                className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               />
                             )}
                             {field.type === 'multi_reference' && field.referenceCollection ? (
@@ -444,7 +444,7 @@ function BlockTypePicker({
           ref={menuRef}
           role="menu"
           aria-label="Insert block"
-          className="absolute z-30 mt-1.5 grid w-[min(640px,calc(100vw-2rem))] grid-cols-1 gap-1 overflow-hidden rounded-2xl border border-[#e8dccf] bg-white p-2 text-sm shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:grid-cols-2"
+          className="absolute z-30 mt-1.5 grid w-[min(640px,calc(100vw-2rem))] grid-cols-1 gap-1 overflow-hidden rounded-2xl border border-cms-rule bg-white p-2 text-sm shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:grid-cols-2"
         >
           {CMS_BLOCK_TYPES.map((type, i) => (
             <button
@@ -459,7 +459,7 @@ function BlockTypePicker({
                 onClose()
                 triggerRef.current?.focus()
               }}
-              className="flex flex-col items-start rounded-lg border border-transparent px-3 py-2 text-left hover:border-[#e8dccf] hover:bg-[#fff8f1] focus:border-brand-primary focus:bg-brand-primary/5 focus:outline-none"
+              className="flex flex-col items-start rounded-lg border border-transparent px-3 py-2 text-left hover:border-cms-rule hover:bg-cms-soft focus:border-brand-primary focus:bg-brand-primary/5 focus:outline-none"
             >
               <span className="text-sm font-semibold text-slate-900">{type.label}</span>
               <span className="mt-0.5 text-xs text-slate-500">{type.description}</span>

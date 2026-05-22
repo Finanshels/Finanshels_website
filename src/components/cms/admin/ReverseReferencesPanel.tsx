@@ -10,13 +10,13 @@ type Props = {
 export function ReverseReferencesPanel({ groups }: Props) {
   const populated = groups.filter((g) => g.items.length > 0)
   return (
-    <section className="rounded-2xl border border-[#e8dccf] bg-white p-4">
+    <section className="rounded-2xl border border-cms-rule bg-white p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Where this is used</p>
       <p className="mt-1 text-xs text-slate-500">
         Inbound references from other collections. Updates take effect after the referencing entry is saved.
       </p>
       {populated.length === 0 ? (
-        <p className="mt-3 rounded-xl border border-dashed border-[#e8dccf] bg-[#fffaf5] px-3 py-4 text-xs text-slate-500">
+        <p className="mt-3 rounded-xl border border-dashed border-cms-rule bg-cms-soft px-3 py-4 text-xs text-slate-500">
           Nothing references this entry yet.
         </p>
       ) : (
@@ -24,7 +24,7 @@ export function ReverseReferencesPanel({ groups }: Props) {
           {populated.map((group) => {
             const def = CMS_COLLECTION_DEFINITION_MAP[group.source]
             return (
-              <div key={`${group.source}-${group.field}`} className="rounded-xl border border-[#efe4d8] bg-[#fffaf5] p-3">
+              <div key={`${group.source}-${group.field}`} className="rounded-xl border border-[#efe4d8] bg-cms-soft p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold text-slate-700">{group.label}</p>
                   <Link

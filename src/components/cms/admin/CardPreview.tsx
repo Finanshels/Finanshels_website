@@ -80,7 +80,7 @@ export default function CardPreview({
   const ctaLink = cardCtaLink || fallbackCtaUrl || '#'
 
   return (
-    <div className="rounded-2xl border border-dashed border-[#e8dccf] bg-[#fffaf5] p-4">
+    <div className="rounded-2xl border border-dashed border-cms-rule bg-cms-soft p-4">
       <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Card preview</p>
       <p className="mt-1 text-xs text-slate-500">
         Live preview of how this entry renders on listing pages. Falls back to publish-section fields.

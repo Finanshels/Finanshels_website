@@ -17,11 +17,11 @@ const ROLE_RANK: Record<CmsUserRole, number> = { viewer: 1, editor: 2, admin: 3,
 
 export function SettingsSidebar({ active, currentRole, currentUserName, currentUserEmail }: Props) {
   return (
-    <aside className="rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
+    <aside className="rounded-2xl border border-cms-rule bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
       <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-brand-primary">Settings</p>
       <Link
         href="/admin/cms"
-        className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-[#e8dccf] bg-[#fffaf5] px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#fff3e8]"
+        className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-cms-rule bg-cms-soft px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-cms-hover"
       >
         ← Back to CMS
       </Link>
@@ -39,7 +39,7 @@ export function SettingsSidebar({ active, currentRole, currentUserName, currentU
                   className={`block rounded-xl border px-3 py-2.5 text-sm transition ${
                     item.id === active
                       ? 'border-brand-primary/40 bg-brand-primary/10 text-slate-900'
-                      : 'border-transparent font-medium text-slate-700 hover:border-[#eadfce] hover:bg-[#fff8f1]'
+                      : 'border-transparent font-medium text-slate-700 hover:border-cms-rule hover:bg-cms-soft'
                   }`}
                 >
                   {item.label}
@@ -50,7 +50,7 @@ export function SettingsSidebar({ active, currentRole, currentUserName, currentU
         </ul>
       </div>
 
-      <div className="mt-6 rounded-xl border border-[#eee2d3] bg-[#fffaf3] p-3">
+      <div className="mt-6 rounded-xl border border-cms-rule bg-cms-soft p-3">
         <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Signed in as</p>
         <p className="mt-1 text-sm font-semibold text-slate-900">{currentUserName}</p>
         {currentUserEmail ? <p className="text-xs text-slate-500">{currentUserEmail}</p> : null}

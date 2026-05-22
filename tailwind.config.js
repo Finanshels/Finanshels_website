@@ -14,7 +14,17 @@ export default {
           darker: '#05070f',
           light: '#fff7f0',
           grey: '#f4e9df',
-        }
+        },
+        // FIX-039: CMS admin surface tokens. Collapses ~10 near-identical warm
+        // hex values across the admin panel into 4 semantic slots: canvas
+        // (body), soft (subdued surface), hover (orange-tinted active surface),
+        // and rule (borders/dividers).
+        cms: {
+          canvas: '#f7f3ee',
+          soft: '#fffaf5',
+          hover: '#fff3e8',
+          rule: '#e8dccf',
+        },
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],

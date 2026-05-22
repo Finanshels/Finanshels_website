@@ -312,6 +312,20 @@ function TimelineBlock({ block }: { block: Block }) {
   )
 }
 
+// FIX-040: every cross-collection lookup in a block must degrade gracefully.
+// A referenced doc can be deleted, renamed, or unpublished at any time —
+// throwing here would 500 the whole detail page.
+async function safeGetCmsDocument(
+  collection: Parameters<typeof getCmsDocument>[0],
+  id: string
+): Promise<Record<string, unknown> | null> {
+  try {
+    return (await getCmsDocument(collection, id)) as Record<string, unknown> | null
+  } catch {
+    return null
+  }
+}
+
 async function ToolEmbedBlock({ block }: { block: Block }) {
   let heading = readString(block.heading)
   let description = readString(block.description)
@@ -320,7 +334,7 @@ async function ToolEmbedBlock({ block }: { block: Block }) {
 
   let toolHref: string | null = null
   if (toolRefId) {
-    const tool = await getCmsDocument('tools', toolRefId)
+    const tool = await safeGetCmsDocument('tools', toolRefId)
     if (tool) {
       heading = heading || readString(tool.tool_name)
       description = description || readString(tool.short_description)
@@ -388,8 +402,10 @@ async function SpeakerBlock({ block }: { block: Block }) {
   const memberIds = readRefIds(block.memberRefs)
   if (memberIds.length === 0) return null
 
+  // FIX-040: a deleted team_members doc must not 500 this page. Each lookup is
+  // wrapped via safeGetCmsDocument so missing members are silently filtered out.
   const members = (
-    await Promise.all(memberIds.map((id) => getCmsDocument('team_members', id)))
+    await Promise.all(memberIds.map((id) => safeGetCmsDocument('team_members', id)))
   ).filter((m): m is Record<string, unknown> => m !== null)
 
   if (members.length === 0) return null
@@ -449,7 +465,8 @@ async function resolveCard(
 ): Promise<RelatedCard | null> {
   const definition = CMS_COLLECTION_DEFINITION_MAP[collection]
   if (!definition) return null
-  const doc = await getCmsDocument(collection, docId)
+  // FIX-040: tolerate deleted/unpublished refs without crashing the page.
+  const doc = await safeGetCmsDocument(collection, docId)
   if (!doc) return null
   const slug = readString(doc[definition.slugField]) || docId
   const href = detailHref(collection, slug)

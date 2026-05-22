@@ -1,11 +1,10 @@
 import Link from 'next/link'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
-import RichTextField from '@/components/cms/admin/RichTextField'
-import PageBlocksEditor from '@/components/cms/admin/PageBlocksEditor'
 import CardPreview from '@/components/cms/admin/CardPreview'
 import { CmsTitleSlugFields } from '@/components/cms/admin/CmsTitleSlugFields'
-import { CmsMultiReferencePick } from '@/components/cms/admin/CmsMultiReferencePick'
+// FIX-039: FieldRenderer extracted to a shared FieldEditor reused by the create flow.
+import { FieldEditor as FieldRenderer } from '@/components/cms/admin/FieldEditor'
 import { ReverseReferencesPanel } from '@/components/cms/admin/ReverseReferencesPanel'
 import { getStatusStyle } from '@/components/cms/admin/statusStyle'
 import { CmsCollectionItemTable } from '@/components/cms/admin/CmsCollectionItemTable'
@@ -132,21 +131,6 @@ function isMainContentField(field: CmsFieldDefinition): boolean {
   return isLongBodyField(field)
 }
 
-function fieldHint(field: CmsFieldDefinition): string | null {
-  if (field.type === 'tags') return 'Use comma-separated values and press save to store.'
-  if (field.type === 'json') return 'Valid JSON only. Invalid JSON will not be saved.'
-  if (field.type === 'url') return 'Use full URL including https://'
-  if (field.type === 'image')
-    return 'Paste a stable https:// image URL (CDN recommended). Listing cards suggest URLs from uploaded Media assets when available.'
-  if (field.type === 'file') return 'Paste a downloadable file URL (storage/CDN).'
-  if (field.type === 'icon')
-    return 'Lucide icon name in kebab-case (example: arrow-right), or paste a https:// URL to force an image. The site maps names to lucide-react at render time.'
-  if (field.type === 'datetime') return 'Use local datetime; this is saved as text/timestamp value.'
-  if (field.type === 'boolean') return 'Choose true or false.'
-  if (field.type === 'textarea') return 'Supports rich text/HTML where applicable.'
-  return null
-}
-
 function fieldColumnSpan(field: CmsFieldDefinition): string {
   if (field.type === 'blocks') return 'md:col-span-2'
   if (field.type === 'textarea') return 'md:col-span-2'
@@ -191,7 +175,7 @@ function renderChecklistCard(
   entries: { label: string; ok: boolean; points: number }[]
 ) {
   return (
-    <section className="rounded-2xl border border-[#e8dccf] bg-white p-4">
+    <section className="rounded-2xl border border-cms-rule bg-white p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{title}</p>
       <ul className="mt-3 space-y-2 text-sm">
         {entries.map((entry) => (
@@ -529,187 +513,6 @@ async function logoutAction() {
   redirect('/admin/login')
 }
 
-function FieldRenderer({
-  field,
-  value,
-  referenceOptions,
-  mediaAssetUrls,
-  documentHydrationKey = '',
-}: {
-  field: CmsFieldDefinition
-  value: string
-  referenceOptions: Record<string, Array<{ id: string; label: string }>>
-  mediaAssetUrls: string[]
-  /** Stable per open document so multi-reference picks remount after navigation. */
-  documentHydrationKey?: string
-}) {
-  const common =
-    'mt-2 w-full rounded-xl border border-[#e8dccf] bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20'
-  const hint = fieldHint(field)
-  const tagPreview =
-    field.type === 'tags'
-      ? value
-          .split(',')
-          .map((item) => item.trim())
-          .filter(Boolean)
-      : []
-  if (field.type === 'blocks') {
-    return (
-      <PageBlocksEditor
-        name={field.name}
-        initialValue={value}
-        referenceOptions={referenceOptions}
-      />
-    )
-  }
-  if (field.type === 'textarea' || field.type === 'json' || field.type === 'rows') {
-    if (field.type === 'textarea' && isLongBodyField(field)) {
-      return <RichTextField name={field.name} initialValue={value} placeholder={field.placeholder} />
-    }
-    const isCode = field.type === 'json' || field.type === 'rows'
-    const rowsAttr = field.type === 'json' ? 12 : field.type === 'rows' ? 6 : isLongBodyField(field) ? 16 : 5
-    const rowsHint =
-      field.type === 'rows'
-        ? field.description ||
-          (field.rowFormat ? `One per line. Format: ${field.rowFormat.join(' | ')}` : 'One per line.')
-        : hint
-    return (
-      <>
-        <textarea
-          name={field.name}
-          required={field.required}
-          rows={rowsAttr}
-          defaultValue={value}
-          placeholder={field.placeholder}
-          className={`${common} ${isCode ? 'font-mono text-xs' : ''}`}
-        />
-        {rowsHint ? <p className="mt-1 text-xs text-slate-500">{rowsHint}</p> : null}
-      </>
-    )
-  }
-  if (field.type === 'select' && field.options?.length) {
-    const defaultOption = typeof field.defaultValue === 'string' ? field.defaultValue : field.options[0]
-    return (
-      <>
-        <select name={field.name} required={field.required} defaultValue={value || defaultOption} className={common}>
-          {field.options.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt || '— none —'}
-            </option>
-          ))}
-        </select>
-        {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
-      </>
-    )
-  }
-  if (field.type === 'boolean') {
-    const normalized = value.toLowerCase()
-    const checked = normalized === 'true' || normalized === '1' || normalized === 'on' || normalized === 'yes'
-    return (
-      <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-700">
-        <input
-          type="checkbox"
-          name={field.name}
-          value="true"
-          defaultChecked={checked}
-          className="h-4 w-4 cursor-pointer rounded border-slate-300 bg-white accent-[var(--brand-primary,#f16610)]"
-        />
-        <span>Enabled</span>
-      </label>
-    )
-  }
-  if (field.type === 'datetime') {
-    return (
-      <>
-        <input
-          type="datetime-local"
-          name={field.name}
-          required={field.required}
-          defaultValue={value}
-          className={common}
-        />
-        {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
-      </>
-    )
-  }
-  if (field.type === 'reference') {
-    const options = field.referenceCollection ? referenceOptions[field.referenceCollection] ?? [] : []
-    return (
-      <>
-        <select name={field.name} required={field.required} defaultValue={value} className={common}>
-          <option value="">Select reference</option>
-          {options.map((opt) => (
-            <option key={opt.id} value={opt.id}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        {options.length === 0 ? (
-          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900">
-            No documents to link yet in <span className="font-mono">{field.referenceCollection ?? '—'}</span>. Create one in that
-            collection (or check Firestore config) so it appears here.
-          </p>
-        ) : null}
-        {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
-      </>
-    )
-  }
-  if (field.type === 'multi_reference') {
-    const options = field.referenceCollection ? referenceOptions[field.referenceCollection] ?? [] : []
-    return (
-      <>
-        <CmsMultiReferencePick
-          key={`${documentHydrationKey}:${field.name}:${value}`}
-          name={field.name}
-          label={field.label}
-          options={options}
-          valueCsv={value}
-        />
-        {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
-      </>
-    )
-  }
-  return (
-    <>
-      <input
-        type={
-          field.type === 'url' || field.type === 'image' || field.type === 'file'
-            ? 'url'
-            : field.type === 'number'
-            ? 'number'
-            : field.type === 'email'
-            ? 'email'
-            : 'text'
-        }
-        step={field.type === 'number' ? 'any' : undefined}
-        name={field.name}
-        required={field.required}
-        defaultValue={value}
-        placeholder={field.placeholder}
-        list={field.type === 'url' && mediaAssetUrls.length > 0 ? `${field.name}-asset-suggestions` : undefined}
-        className={common}
-      />
-      {field.type === 'url' && mediaAssetUrls.length > 0 ? (
-        <datalist id={`${field.name}-asset-suggestions`}>
-          {mediaAssetUrls.map((url) => (
-            <option key={`${field.name}-${url}`} value={url} />
-          ))}
-        </datalist>
-      ) : null}
-      {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
-      {tagPreview.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {tagPreview.map((tag) => (
-            <span key={`${field.name}-${tag}`} className="rounded-full border border-brand-primary/30 bg-brand-primary/10 px-2 py-0.5 text-xs text-brand-primary">
-              {tag}
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </>
-  )
-}
-
 function renderSection(
   id: string,
   title: string,
@@ -720,7 +523,7 @@ function renderSection(
   documentHydrationKey = ''
 ) {
   return (
-    <section id={id} className="rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+    <section id={id} className="rounded-2xl border border-cms-rule bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
       <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{title}</h3>
       <div className="mt-3 grid gap-4 md:grid-cols-2">
         {fields.map((field) => {
@@ -787,7 +590,7 @@ function renderMainEditorSection(
   const restFields = useSyncedPair ? fields.slice(2) : fields
 
   return (
-    <section id={id} className="rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+    <section id={id} className="rounded-2xl border border-cms-rule bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
       <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{titleText}</h3>
       <div className="mt-3 grid gap-4 md:grid-cols-2">
         {useSyncedPair ? (
@@ -860,7 +663,7 @@ function renderSidebarSection(
   documentHydrationKey = ''
 ) {
   return (
-    <section id={id} className="rounded-2xl border border-[#e8dccf] bg-white p-4">
+    <section id={id} className="rounded-2xl border border-cms-rule bg-white p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">{title}</p>
       {subtitle ? <p className="mt-1 text-xs text-slate-500">{subtitle}</p> : null}
       <div className="mt-3 flex flex-col gap-3">
@@ -885,7 +688,7 @@ function renderSidebarSection(
               documentHydrationKey={documentHydrationKey}
             />
           )
-          const boxClass = 'block rounded-xl border border-[#f1e7dc] bg-[#fffaf5] p-3 text-sm font-medium text-slate-800'
+          const boxClass = 'block rounded-xl border border-cms-rule bg-cms-soft p-3 text-sm font-medium text-slate-800'
           if (field.type === 'multi_reference') {
             return (
               <div key={field.name} className={boxClass}>
@@ -960,7 +763,7 @@ function CmsSidebar({
   const userName = sessionDisplayName(session)
   const userEmail = session.kind === 'user' ? session.user.email : null
   return (
-          <aside className="flex min-h-0 flex-col rounded-2xl border border-[#e8dccf] bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
+          <aside className="flex min-h-0 flex-col rounded-2xl border border-cms-rule bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
             <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-brand-primary">Finanshels CMS</p>
       <Link
         href={
@@ -985,7 +788,7 @@ function CmsSidebar({
                   className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
                         item.key === definition.key
                           ? 'border-brand-primary/40 bg-brand-primary/10 text-slate-900'
-                          : 'border-transparent text-slate-700 hover:border-[#eadfce] hover:bg-[#fff8f1]'
+                          : 'border-transparent text-slate-700 hover:border-cms-rule hover:bg-cms-soft'
                   }`}
                 >
                   <span className="min-w-0 flex-1 truncate font-semibold">{item.label}</span>
@@ -997,46 +800,46 @@ function CmsSidebar({
         </ul>
       </div>
 
-      <div className="mt-5 border-t border-[#eee2d3] pt-4">
+      <div className="mt-5 border-t border-cms-rule pt-4">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Marketing</p>
         <Link
           href="/admin/cms/landing-pages"
-          className="flex items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#eadfce] hover:bg-[#fff8f1]"
+          className="flex items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-cms-rule hover:bg-cms-soft"
         >
           <span>Landing pages</span>
           <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Ad-only</span>
         </Link>
         <Link
           href="/admin/cms/landing-page-leads"
-          className="mt-1 flex items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm text-slate-700 transition hover:border-[#eadfce] hover:bg-[#fff8f1]"
+          className="mt-1 flex items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm text-slate-700 transition hover:border-cms-rule hover:bg-cms-soft"
         >
           <span>Lead inbox</span>
         </Link>
       </div>
 
-      <div className="mt-5 space-y-1 border-t border-[#eee2d3] pt-4 text-sm text-slate-700">
+      <div className="mt-5 space-y-1 border-t border-cms-rule pt-4 text-sm text-slate-700">
         {canManageUsers ? (
           <Link
             href="/admin/settings/users"
-            className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-[#fff8f1]"
+            className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-cms-soft"
           >
             <span>Settings</span>
             <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400">Users</span>
           </Link>
         ) : (
-          <Link href="/admin/settings/profile" className="block rounded-lg px-2 py-1.5 hover:bg-[#fff8f1]">
+          <Link href="/admin/settings/profile" className="block rounded-lg px-2 py-1.5 hover:bg-cms-soft">
             Settings
           </Link>
         )}
-        <Link href="/blog" className="block rounded-lg px-2 py-1.5 hover:bg-[#fff8f1]">
+        <Link href="/blog" className="block rounded-lg px-2 py-1.5 hover:bg-cms-soft">
           View Blog
         </Link>
-        <Link href="/" className="block rounded-lg px-2 py-1.5 hover:bg-[#fff8f1]">
+        <Link href="/" className="block rounded-lg px-2 py-1.5 hover:bg-cms-soft">
           View Site
         </Link>
       </div>
 
-      <div className="mt-4 rounded-xl border border-[#eee2d3] bg-[#fffaf3] p-3">
+      <div className="mt-4 rounded-xl border border-cms-rule bg-cms-soft p-3">
         <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">Signed in as</p>
         <p className="mt-1 truncate text-sm font-medium text-slate-900">{userName}</p>
         {userEmail ? <p className="truncate text-xs text-slate-500">{userEmail}</p> : null}
@@ -1145,11 +948,11 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     const canDelete = ROLE_RANK[role] >= ROLE_RANK['admin']
 
     return (
-      <section className="min-h-screen bg-[#f7f3ee] text-slate-900">
+      <section className="min-h-screen bg-cms-canvas text-slate-900">
         <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
           <div className="grid gap-3 xl:min-h-[calc(100vh-1.5rem)] xl:grid-cols-[minmax(260px,320px)_1fr]">
             <CmsSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
-            <div className="space-y-4 rounded-2xl border border-[#e8dccf] bg-white p-4 xl:overflow-y-auto shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+            <div className="space-y-4 rounded-2xl border border-cms-rule bg-white p-4 xl:overflow-y-auto shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
               {saved ? (
                 <p className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">
                   Changes saved. Content cache revalidated and routes refreshed.
@@ -1193,11 +996,11 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
 
   if (params.slug && !selectedDocument) {
     return (
-      <section className="min-h-screen bg-[#f7f3ee] text-slate-900">
+      <section className="min-h-screen bg-cms-canvas text-slate-900">
         <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
           <div className="grid gap-3 xl:grid-cols-[minmax(260px,320px)_1fr]">
             <CmsSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
-            <div className="rounded-2xl border border-[#e8dccf] bg-white p-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+            <div className="rounded-2xl border border-cms-rule bg-white p-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
               <p className="text-lg font-medium text-slate-900">Item not found</p>
               <p className="mt-2 text-sm text-slate-400">
                 No document with id <span className="font-mono text-slate-700">{params.slug}</span> in {definition.label}.
@@ -1289,7 +1092,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
   )
 
   return (
-    <section className="h-dvh overflow-hidden bg-[#f7f3ee] text-slate-900">
+    <section className="h-dvh overflow-hidden bg-cms-canvas text-slate-900">
       <div className="mx-auto h-full max-w-[1900px] px-3 py-3 sm:px-5">
         <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(260px,320px)_minmax(0,60fr)_minmax(0,25fr)] lg:overflow-hidden lg:items-stretch">
           <CmsSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
@@ -1306,13 +1109,13 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
             {params.slug ? <input type="hidden" name="id" value={params.slug} /> : null}
             <input type="hidden" name="cmsCurrentStatus" value={currentStatus} />
 
-            <div className="flex min-h-0 flex-col space-y-0 overflow-hidden rounded-2xl border border-[#e8dccf] bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
+            <div className="flex min-h-0 flex-col space-y-0 overflow-hidden rounded-2xl border border-cms-rule bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
               {/* Sticky editor header — Webflow style */}
-              <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-[#e8dccf] bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+              <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-cms-rule bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/85">
                 <Link
                   href={`/admin/cms?collection=${definition.key}`}
                   aria-label={`Back to ${definition.label}`}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#e8dccf] bg-white text-slate-600 hover:bg-[#fff3e8] hover:text-slate-900"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cms-rule bg-white text-slate-600 hover:bg-cms-hover hover:text-slate-900"
                 >
                   <span aria-hidden className="text-base leading-none">←</span>
                 </Link>
@@ -1361,7 +1164,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       href={definition.routePattern.replace('[slug]', publicSlug)}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-[#fff3e8]"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-cms-rule bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-cms-hover"
                     >
                       <span aria-hidden>↗</span> View
                     </a>
@@ -1491,7 +1294,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
               </div>
             </div>
 
-            <aside className="group/cms-aside flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#e8dccf] bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
+            <aside className="group/cms-aside flex min-h-0 flex-col overflow-hidden rounded-2xl border border-cms-rule bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
               {/*
                 Tab visibility: Tailwind `peer-checked` only works for *following siblings* of `.peer`.
                 Panels lived inside a wrapper div, so they were never siblings of the radios and every
@@ -1499,9 +1302,9 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 Tab labels: each radio must sit immediately before its label as a sibling so
                 `peer-checked/*` styles apply to the active tab chip.
               */}
-              <div className="sticky top-0 z-20 border-b border-[#e8dccf] bg-[#fcfaf7]/95 px-3 py-3 backdrop-blur supports-[backdrop-filter]:bg-[#fcfaf7]/80">
-                <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-[#e8dccf] bg-white text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  <div className="min-w-0 border-r border-[#e8dccf]">
+              <div className="sticky top-0 z-20 border-b border-cms-rule bg-[#fcfaf7]/95 px-3 py-3 backdrop-blur supports-[backdrop-filter]:bg-[#fcfaf7]/80">
+                <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-cms-rule bg-white text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <div className="min-w-0 border-r border-cms-rule">
                     <input
                       id="cms-tab-publish"
                       type="radio"
@@ -1511,25 +1314,25 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     />
                     <label
                       htmlFor="cms-tab-publish"
-                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-publish:bg-brand-primary/10 peer-checked/tab-publish:text-brand-primary"
+                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-publish:bg-brand-primary/10 peer-checked/tab-publish:text-brand-primary"
                     >
                       Publish
                     </label>
                   </div>
-                  <div className="min-w-0 border-r border-[#e8dccf]">
+                  <div className="min-w-0 border-r border-cms-rule">
                     <input id="cms-tab-seo" type="radio" name="cms-settings-tab" className="peer/tab-seo sr-only" />
                     <label
                       htmlFor="cms-tab-seo"
-                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-seo:bg-brand-primary/10 peer-checked/tab-seo:text-brand-primary"
+                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-seo:bg-brand-primary/10 peer-checked/tab-seo:text-brand-primary"
                     >
                       SEO
                     </label>
                   </div>
-                  <div className="min-w-0 border-r border-[#e8dccf]">
+                  <div className="min-w-0 border-r border-cms-rule">
                     <input id="cms-tab-aeo" type="radio" name="cms-settings-tab" className="peer/tab-aeo sr-only" />
                     <label
                       htmlFor="cms-tab-aeo"
-                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-aeo:bg-brand-primary/10 peer-checked/tab-aeo:text-brand-primary"
+                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-aeo:bg-brand-primary/10 peer-checked/tab-aeo:text-brand-primary"
                     >
                       AEO
                     </label>
@@ -1538,7 +1341,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     <input id="cms-tab-geo" type="radio" name="cms-settings-tab" className="peer/tab-geo sr-only" />
                     <label
                       htmlFor="cms-tab-geo"
-                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-[#fff8f1] peer-checked/tab-geo:bg-brand-primary/10 peer-checked/tab-geo:text-brand-primary"
+                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-geo:bg-brand-primary/10 peer-checked/tab-geo:text-brand-primary"
                     >
                       GEO
                     </label>
@@ -1547,7 +1350,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
               </div>
 
               <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-publish:checked]/cms-aside:block">
-                <div className="rounded-2xl border border-[#e8dccf] bg-white p-4">
+                <div className="rounded-2xl border border-cms-rule bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Stage for publish</p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <button
@@ -1562,7 +1365,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       type="submit"
                       name="requestedStatus"
                       value="draft"
-                      className="rounded-lg border border-[#e8dccf] bg-[#fffaf5] px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#fff3e8]"
+                      className="rounded-lg border border-cms-rule bg-cms-soft px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-cms-hover"
                     >
                       Save as Draft
                     </button>
@@ -1570,7 +1373,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       type="submit"
                       name="requestedStatus"
                       value="in_review"
-                      className="rounded-lg border border-[#e8dccf] bg-[#fffaf5] px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#fff3e8]"
+                      className="rounded-lg border border-cms-rule bg-cms-soft px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-cms-hover"
                     >
                       Send for Review
                     </button>
@@ -1580,7 +1383,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       value="approved"
                       disabled={ROLE_RANK[role] < ROLE_RANK['admin']}
                       title={ROLE_RANK[role] < ROLE_RANK['admin'] ? 'Only admins and owners can approve' : 'Mark approved (ready to publish)'}
-                      className="rounded-lg border border-[#e8dccf] bg-[#fffaf5] px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#fff3e8] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-lg border border-cms-rule bg-cms-soft px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-cms-hover disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Approve
                     </button>
@@ -1588,7 +1391,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       type="submit"
                       name="requestedStatus"
                       value="scheduled"
-                      className="rounded-lg border border-[#e8dccf] bg-[#fffaf5] px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#fff3e8]"
+                      className="rounded-lg border border-cms-rule bg-cms-soft px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-cms-hover"
                     >
                       Save as Scheduled
                     </button>
@@ -1599,7 +1402,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       type="datetime-local"
                       name="scheduledAt"
                       defaultValue={typeof formValues.scheduledAt === 'string' ? formValues.scheduledAt : ''}
-                      className="mt-1.5 w-full rounded-lg border border-[#e8dccf] bg-[#fffaf5] px-2.5 py-2 text-xs text-slate-700"
+                      className="mt-1.5 w-full rounded-lg border border-cms-rule bg-cms-soft px-2.5 py-2 text-xs text-slate-700"
                     />
                   </label>
                   <label className="mt-3 block text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
@@ -1607,7 +1410,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     <select
                       name="locale"
                       defaultValue={typeof formValues.locale === 'string' ? formValues.locale : 'en'}
-                      className="mt-1.5 w-full rounded-lg border border-[#e8dccf] bg-[#fffaf5] px-2.5 py-2 text-xs text-slate-700"
+                      className="mt-1.5 w-full rounded-lg border border-cms-rule bg-cms-soft px-2.5 py-2 text-xs text-slate-700"
                     >
                       <option value="en">English (en)</option>
                       <option value="ar">Arabic (ar)</option>
@@ -1620,7 +1423,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       name="localeGroupId"
                       defaultValue={typeof formValues.localeGroupId === 'string' ? formValues.localeGroupId : ''}
                       placeholder="Shared group id for localized variants"
-                      className="mt-1.5 w-full rounded-lg border border-[#e8dccf] bg-[#fffaf5] px-2.5 py-2 text-xs text-slate-700"
+                      className="mt-1.5 w-full rounded-lg border border-cms-rule bg-cms-soft px-2.5 py-2 text-xs text-slate-700"
                     />
                   </label>
                   <p className="mt-3 text-xs text-slate-500">
@@ -1653,14 +1456,14 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 ) : null}
 
                 {params.slug ? (
-                  <section className="rounded-2xl border border-[#e8dccf] bg-white p-4">
+                  <section className="rounded-2xl border border-cms-rule bg-white p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Revision History</p>
                     <div className="mt-3 space-y-2">
                       {revisions.length === 0 ? (
                         <p className="text-xs text-slate-500">No revisions yet.</p>
                       ) : (
                         revisions.map((rev) => (
-                          <div key={rev.id} className="rounded-lg border border-[#efe4d8] bg-[#fffaf5] p-2.5">
+                          <div key={rev.id} className="rounded-lg border border-[#efe4d8] bg-cms-soft p-2.5">
                             <p className="text-xs text-slate-700">
                               {rev.status} · {rev.createdAt ? rev.createdAt.toLocaleString() : 'unknown time'}
                             </p>
@@ -1684,7 +1487,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
               </div>
 
               <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-seo:checked]/cms-aside:block">
-                <section className="rounded-2xl border border-[#e8dccf] bg-white p-4">
+                <section className="rounded-2xl border border-cms-rule bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">SEO Score</p>
                   <div className="mt-3 flex items-center justify-between">
                     <p className="text-3xl font-semibold text-emerald-700">{seoScore}</p>
@@ -1694,7 +1497,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     Keyword density target: 1.5%-2.5% | Meta description: {seoDescription.length}/160
                   </p>
                 </section>
-                <section className="rounded-2xl border border-[#e8dccf] bg-white p-4">
+                <section className="rounded-2xl border border-cms-rule bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Google SERP Preview</p>
                   <p className="mt-3 text-xs text-emerald-700">{readText(formValues.canonical_url ?? formValues.canonicalUrl) || 'https://www.finanshels.com/...'}</p>
                   <p className="mt-1 text-base font-semibold text-slate-900">{seoTitle || 'Your SEO title appears here'}</p>
@@ -1724,7 +1527,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     <li>- Add 3+ FAQ items for rich-result eligibility</li>
                   </ul>
                 </section>
-                <section className="rounded-2xl border border-[#e8dccf] bg-white p-4">
+                <section className="rounded-2xl border border-cms-rule bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">AEO Score</p>
                   <div className="mt-3 flex items-center justify-between">
                     <p className="text-3xl font-semibold text-violet-700">{aeoScore}</p>
@@ -1754,7 +1557,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     <li>- Tag related entities to improve AI context understanding</li>
                   </ul>
                 </section>
-                <section className="rounded-2xl border border-[#e8dccf] bg-white p-4">
+                <section className="rounded-2xl border border-cms-rule bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">GEO Score</p>
                   <div className="mt-3 flex items-center justify-between">
                     <p className="text-3xl font-semibold text-cyan-700">{geoScore}</p>

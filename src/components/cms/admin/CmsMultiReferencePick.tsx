@@ -50,7 +50,7 @@ export function CmsMultiReferencePick({
   const visibleCount = mergedOptions.filter(match).length
 
   const inputCls =
-    'w-full rounded-xl border border-[#e8dccf] bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20'
+    'w-full rounded-xl border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20'
 
   return (
     <div className="mt-2 space-y-2">
@@ -66,7 +66,7 @@ export function CmsMultiReferencePick({
       <span aria-live="polite" className="sr-only">
         {q.trim() ? `${visibleCount} ${visibleCount === 1 ? 'result' : 'results'}` : ''}
       </span>
-      <fieldset className="max-h-56 space-y-0.5 overflow-y-auto rounded-xl border border-[#e8dccf] bg-white p-2">
+      <fieldset className="max-h-56 space-y-0.5 overflow-y-auto rounded-xl border border-cms-rule bg-white p-2">
         <legend className="sr-only">{label}</legend>
         {mergedOptions.length === 0 ? (
           <p className="px-2 py-3 text-xs text-slate-500">No items in this collection yet.</p>
@@ -76,7 +76,7 @@ export function CmsMultiReferencePick({
               key={opt.id}
               className={
                 match(opt)
-                  ? 'flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-[#fff3e8]'
+                  ? 'flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-cms-hover'
                   : 'hidden'
               }
             >

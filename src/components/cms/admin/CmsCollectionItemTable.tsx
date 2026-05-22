@@ -255,7 +255,7 @@ export function CmsCollectionItemTable({
           <button
             type="button"
             onClick={() => exportCsv(visible, collectionKey)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#e8dccf] bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-[#fffaf5]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-cms-soft"
             title="Export visible rows to CSV"
           >
             <Download className="h-4 w-4" />
@@ -285,7 +285,7 @@ export function CmsCollectionItemTable({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={`Search ${label.toLowerCase()}…`}
-          className="w-full rounded-lg border border-[#e8dccf] bg-white pl-9 pr-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+          className="w-full rounded-lg border border-cms-rule bg-white pl-9 pr-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
           aria-label="Filter items"
         />
         {/* FIX-018: announce filter result count to screen readers. */}
@@ -295,7 +295,7 @@ export function CmsCollectionItemTable({
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-[#eee2d3] text-sm">
+      <div className="flex flex-wrap items-center gap-1 border-b border-cms-rule text-sm">
         {TAB_DEFS.map((t) => {
           const active = tab === t.key
           const n = counts[t.key] ?? 0
@@ -319,7 +319,7 @@ export function CmsCollectionItemTable({
 
       {/* Bulk-action bar */}
       {selectionCount > 0 ? (
-        <div className="sticky top-2 z-10 flex flex-col gap-2 rounded-xl border border-brand-primary/35 bg-[#fffaf5] px-3 py-2 shadow-[0_10px_28px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between">
+        <div className="sticky top-2 z-10 flex flex-col gap-2 rounded-xl border border-brand-primary/35 bg-cms-soft px-3 py-2 shadow-[0_10px_28px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm">
             <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-primary/15 px-2 text-xs font-semibold text-brand-primary">
               {selectionCount}
@@ -341,13 +341,13 @@ export function CmsCollectionItemTable({
                 <ChevronDown className="h-3.5 w-3.5" />
               </button>
               {updateOpen ? (
-                <div className="absolute right-0 z-20 mt-1.5 w-56 overflow-hidden rounded-xl border border-[#e8dccf] bg-white py-1 text-sm shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
-                  <button type="button" onClick={() => submitBulkStatus('in_review')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-[#fff8f1]">
+                <div className="absolute right-0 z-20 mt-1.5 w-56 overflow-hidden rounded-xl border border-cms-rule bg-white py-1 text-sm shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+                  <button type="button" onClick={() => submitBulkStatus('in_review')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
                     Stage for review
                   </button>
                   {canPublish ? (
                     <>
-                      <button type="button" onClick={() => submitBulkStatus('approved')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-[#fff8f1]">
+                      <button type="button" onClick={() => submitBulkStatus('approved')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
                         Approve
                       </button>
                       <button type="button" onClick={() => submitBulkStatus('published')} className="block w-full px-4 py-2 text-left font-semibold text-emerald-700 hover:bg-emerald-50">
@@ -355,16 +355,16 @@ export function CmsCollectionItemTable({
                       </button>
                     </>
                   ) : null}
-                  <button type="button" onClick={() => submitBulkStatus('draft')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-[#fff8f1]">
+                  <button type="button" onClick={() => submitBulkStatus('draft')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
                     Save as draft
                   </button>
                   {canPublish ? (
                     <>
-                      <div className="my-1 border-t border-[#eee2d3]" />
-                      <button type="button" onClick={() => submitBulkStatus('draft')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-[#fff8f1]">
+                      <div className="my-1 border-t border-cms-rule" />
+                      <button type="button" onClick={() => submitBulkStatus('draft')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
                         Unpublish
                       </button>
-                      <button type="button" onClick={() => submitBulkStatus('archived')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-[#fff8f1]">
+                      <button type="button" onClick={() => submitBulkStatus('archived')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
                         Archive
                       </button>
                     </>
@@ -389,7 +389,7 @@ export function CmsCollectionItemTable({
 
       {/* Table */}
       {visible.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[#e8dccf] bg-[#fffaf5] px-6 py-16 text-center">
+        <div className="rounded-2xl border border-dashed border-cms-rule bg-cms-soft px-6 py-16 text-center">
           <p className="text-sm text-slate-600">
             {items.length === 0 ? (
               <>
@@ -411,9 +411,9 @@ export function CmsCollectionItemTable({
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-[#e8dccf] bg-white">
+        <div className="overflow-hidden rounded-xl border border-cms-rule bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-[#eee2d3] bg-[#fffaf5] text-xs">
+            <thead className="border-b border-cms-rule bg-cms-soft text-xs">
               <tr>
                 <th className="w-9 px-3 py-3">
                   <input
@@ -434,13 +434,20 @@ export function CmsCollectionItemTable({
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#f0e6db]">
+            <tbody className="divide-y divide-cms-rule">
               {visible.map((row) => {
                 const st = getStatusStyle(row.status)
                 const isChecked = selected.has(row.id)
                 const liveUrl = routePattern && row.slug ? routePattern.replace('[slug]', row.slug) : null
                 return (
-                  <tr key={row.id} className={`group transition ${isChecked ? 'bg-brand-primary/8' : 'hover:bg-[#fff8f1]'}`}>
+                  <tr
+                    key={row.id}
+                    className={`group transition ${
+                      isChecked
+                        ? 'bg-brand-primary/15 ring-1 ring-inset ring-brand-primary/30'
+                        : 'hover:bg-cms-hover'
+                    }`}
+                  >
                     <td className="w-9 px-3 py-3 align-middle">
                       <input
                         type="checkbox"
@@ -475,7 +482,7 @@ export function CmsCollectionItemTable({
                             target="_blank"
                             rel="noreferrer"
                             title="View live"
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-[#fff3e8] hover:text-slate-800"
+                            className="rounded-md p-1.5 text-slate-400 hover:bg-cms-hover hover:text-slate-800"
                           >
                             <Eye className="h-4 w-4" />
                           </a>
@@ -483,7 +490,7 @@ export function CmsCollectionItemTable({
                         <Link
                           href={`/admin/cms?collection=${collectionKey}&slug=${encodeURIComponent(row.id)}`}
                           title="Edit"
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-[#fff3e8] hover:text-slate-800"
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-cms-hover hover:text-slate-800"
                         >
                           <Pencil className="h-4 w-4" />
                         </Link>
@@ -492,7 +499,7 @@ export function CmsCollectionItemTable({
                           onClick={() => submitDuplicate(row.id)}
                           disabled={pending}
                           title="Duplicate"
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-[#fff3e8] hover:text-slate-800 disabled:opacity-50"
+                          className="rounded-md p-1.5 text-slate-400 hover:bg-cms-hover hover:text-slate-800 disabled:opacity-50"
                         >
                           <Copy className="h-4 w-4" />
                         </button>

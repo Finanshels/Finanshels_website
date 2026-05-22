@@ -68,7 +68,7 @@ export function CmsTitleSlugFields({
           defaultValue={initialTitle}
           placeholder={titlePlaceholder}
           onInput={onTitleInput}
-          className="mt-2 w-full rounded-xl border border-[#e8dccf] bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+          className="mt-2 w-full rounded-xl border border-cms-rule bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
         {autoSyncSlug ? (
           <p className="mt-1 text-xs text-slate-500">The slug below updates from the title until you edit the slug.</p>
@@ -91,7 +91,7 @@ export function CmsTitleSlugFields({
           defaultValue={initialSlug}
           placeholder={slugPlaceholder}
           onInput={onSlugInput}
-          className="mt-2 w-full rounded-xl border border-[#e8dccf] bg-white px-3 py-2.5 font-mono text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+          className="mt-2 w-full rounded-xl border border-cms-rule bg-white px-3 py-2.5 font-mono text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
         />
       </label>
     </>
