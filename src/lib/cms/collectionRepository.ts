@@ -4,14 +4,17 @@ import { normalizeFirestoreTimestamps } from './normalizeDoc'
 import {
   CMS_COLLECTION_DEFINITIONS,
   CMS_COLLECTION_DEFINITION_MAP,
-  CMS_INCOMING_REFERENCES,
   resolveDocumentTitle,
   type CmsCollectionDefinition,
   type CmsCollectionKey,
 } from './collectionDefinitions'
 import { slugifyForCms } from './slugify'
 
-export type CmsDocumentStatus = 'draft' | 'in_review' | 'approved' | 'scheduled' | 'published' | 'archived'
+// FIX-047: status enum collapsed from 6 values to 3. Legacy `scheduled` /
+// `approved` / `archived` values from older docs are coerced via readStatus()
+// so the runtime never sees them. The migration script
+// `scripts/cms-collapse-status.mjs` permanently rewrites them in Firestore.
+export type CmsDocumentStatus = 'draft' | 'in_review' | 'published'
 export type CmsMediaAssetType = 'image' | 'video' | 'document' | 'other'
 
 export type CmsDocumentListItem = {
@@ -22,7 +25,6 @@ export type CmsDocumentListItem = {
   updatedAt?: Date
   createdAt?: Date
   publishedAt?: Date
-  scheduledAt?: Date
 }
 
 export type CmsRevision = {
@@ -34,10 +36,9 @@ export type CmsRevision = {
 
 function readStatus(value: unknown): CmsDocumentStatus {
   if (value === 'published') return 'published'
-  if (value === 'scheduled') return 'scheduled'
-  if (value === 'approved') return 'approved'
   if (value === 'in_review') return 'in_review'
-  if (value === 'archived') return 'archived'
+  // Legacy 6-state enum values get coerced to the closest new value.
+  if (value === 'scheduled' || value === 'approved') return 'in_review'
   return 'draft'
 }
 
@@ -167,7 +168,6 @@ export async function listCmsDocuments(
       updatedAt: normalized.updatedAt instanceof Date ? normalized.updatedAt : undefined,
       createdAt: normalized.createdAt instanceof Date ? normalized.createdAt : undefined,
       publishedAt: normalized.publishedAt instanceof Date ? normalized.publishedAt : undefined,
-      scheduledAt: normalized.scheduledAt instanceof Date ? normalized.scheduledAt : undefined,
     }
   })
 }
@@ -403,16 +403,30 @@ export async function upsertCmsDocument(
   }
 
   const now = Timestamp.now()
-  const allowedStatuses = new Set(['draft', 'in_review', 'approved', 'scheduled', 'published'])
+  // FIX-047: collapsed 6-state enum to 3.
+  const allowedStatuses = new Set(['draft', 'in_review', 'published'])
   const incomingStatus = String(payload.status ?? 'draft')
   const status = allowedStatuses.has(incomingStatus) ? incomingStatus : 'draft'
-  const scheduledAtValue = typeof payload.scheduledAt === 'string' ? new Date(payload.scheduledAt) : payload.scheduledAt
-  const scheduledAt =
-    scheduledAtValue instanceof Date && Number.isFinite(scheduledAtValue.getTime())
-      ? Timestamp.fromDate(scheduledAtValue)
-      : null
 
   const isNew = !previous.exists
+  // FIX-042: preserve existing locale/localeGroupId on partial updates. Earlier
+  // behavior always wrote `locale: payload.locale || 'en'`, silently resetting an
+  // existing 'ar' doc to 'en' on any save that didn't include locale in the form
+  // — destructive after the Publish-tab UI dropped the Locale select in favor of
+  // the global `language` field. Now: write only on new docs (defaults) or when
+  // the caller explicitly provides the value.
+  const localeUpdate =
+    typeof payload.locale === 'string' && payload.locale
+      ? { locale: payload.locale }
+      : isNew
+      ? { locale: 'en' }
+      : {}
+  const localeGroupIdUpdate =
+    typeof payload.localeGroupId === 'string'
+      ? { localeGroupId: payload.localeGroupId }
+      : isNew
+      ? { localeGroupId: null }
+      : {}
   await db
     .collection(collection)
     .doc(id)
@@ -421,9 +435,11 @@ export async function upsertCmsDocument(
         ...payload,
         status,
         updatedAt: now,
-        scheduledAt,
-        locale: typeof payload.locale === 'string' && payload.locale ? payload.locale : 'en',
-        localeGroupId: typeof payload.localeGroupId === 'string' ? payload.localeGroupId : null,
+        // FIX-047: scheduled publishing dropped. Always null so any pre-existing
+        // value in the doc is cleared on the next save.
+        scheduledAt: null,
+        ...localeUpdate,
+        ...localeGroupIdUpdate,
         publishedAt: status === 'published' ? (payload.publishedAt instanceof Date ? Timestamp.fromDate(payload.publishedAt) : now) : null,
         ...(isNew ? { createdAt: now, createdBy: updatedBy ?? null } : {}),
       },
@@ -490,68 +506,3 @@ export async function listReferenceOptions(
   })
 }
 
-export type CmsReverseReferenceGroup = {
-  source: CmsCollectionKey
-  field: string
-  label: string
-  multi: boolean
-  items: Array<{ id: string; title: string; status: CmsDocumentStatus }>
-}
-
-/**
- * Find every CMS document that references the given (collection, id). Drives
- * the "where this is used" panel in the admin editor. Cheap: each query is a
- * single equality filter — bounded by `limit` per relationship.
- */
-export async function listReverseReferences(
-  targetCollection: CmsCollectionKey,
-  targetId: string,
-  limit = 25
-): Promise<CmsReverseReferenceGroup[]> {
-  const db = getDb()
-  if (!db) return []
-  const incoming = CMS_INCOMING_REFERENCES[targetCollection] ?? []
-  if (incoming.length === 0) return []
-
-  const groups = await Promise.all(
-    incoming.map(async (spec) => {
-      const def = CMS_COLLECTION_DEFINITION_MAP[spec.source]
-      if (!def) {
-        return {
-          source: spec.source,
-          field: spec.field,
-          label: spec.label,
-          multi: spec.multi,
-          items: [] as Array<{ id: string; title: string; status: CmsDocumentStatus }>,
-        }
-      }
-      try {
-        const op = spec.multi ? 'array-contains' : '=='
-        const snap = await db
-          .collection(spec.source)
-          .where(spec.field, op as FirebaseFirestore.WhereFilterOp, targetId)
-          .limit(limit)
-          .get()
-        const items = snap.docs.map((doc) => {
-          const data = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
-          return {
-            id: doc.id,
-            title: resolveDocumentTitle(def, data),
-            status: readStatus(data.status),
-          }
-        })
-        return { source: spec.source, field: spec.field, label: spec.label, multi: spec.multi, items }
-      } catch {
-        return {
-          source: spec.source,
-          field: spec.field,
-          label: spec.label,
-          multi: spec.multi,
-          items: [] as Array<{ id: string; title: string; status: CmsDocumentStatus }>,
-        }
-      }
-    })
-  )
-
-  return groups
-}

@@ -6,15 +6,16 @@ import { useRouter } from 'next/navigation'
 import { Copy, Pencil, Trash2, Eye, Search, Download, Plus, ChevronDown, X } from 'lucide-react'
 import { getStatusStyle } from './statusStyle'
 
+// FIX-047: status union collapsed from 6 to 3. `scheduledAtIso` dropped along
+// with the scheduled-publishing workflow.
 export type CmsListRow = {
   id: string
   slug: string
   title: string
-  status: 'draft' | 'in_review' | 'approved' | 'scheduled' | 'published' | 'archived'
+  status: 'draft' | 'in_review' | 'published'
   updatedAtIso?: string
   createdAtIso?: string
   publishedAtIso?: string
-  scheduledAtIso?: string
 }
 
 type SortKey = 'title' | 'status' | 'createdAt' | 'updatedAt'
@@ -59,11 +60,11 @@ function csvEscape(value: string): string {
 }
 
 function exportCsv(rows: CmsListRow[], collectionKey: string): void {
-  const headers = ['id', 'slug', 'title', 'status', 'createdAt', 'updatedAt', 'publishedAt', 'scheduledAt']
+  const headers = ['id', 'slug', 'title', 'status', 'createdAt', 'updatedAt', 'publishedAt']
   const lines = [headers.join(',')]
   for (const r of rows) {
     lines.push(
-      [r.id, r.slug, r.title, r.status, r.createdAtIso ?? '', r.updatedAtIso ?? '', r.publishedAtIso ?? '', r.scheduledAtIso ?? '']
+      [r.id, r.slug, r.title, r.status, r.createdAtIso ?? '', r.updatedAtIso ?? '', r.publishedAtIso ?? '']
         .map((v) => csvEscape(String(v ?? '')))
         .join(',')
     )
@@ -79,13 +80,12 @@ function exportCsv(rows: CmsListRow[], collectionKey: string): void {
   URL.revokeObjectURL(url)
 }
 
+// FIX-047: filter tabs match the new 3-state enum.
 const TAB_DEFS: Array<{ key: 'all' | CmsListRow['status']; label: string }> = [
   { key: 'all', label: 'All' },
   { key: 'published', label: 'Published' },
-  { key: 'draft', label: 'Draft' },
   { key: 'in_review', label: 'In Review' },
-  { key: 'scheduled', label: 'Scheduled' },
-  { key: 'archived', label: 'Archived' },
+  { key: 'draft', label: 'Draft' },
 ]
 
 export function CmsCollectionItemTable({
@@ -341,33 +341,19 @@ export function CmsCollectionItemTable({
                 <ChevronDown className="h-3.5 w-3.5" />
               </button>
               {updateOpen ? (
+                // FIX-047: bulk menu narrowed to the 3-state enum. Approve and
+                // Archive are gone — the workflow is draft → in_review → published.
                 <div className="absolute right-0 z-20 mt-1.5 w-56 overflow-hidden rounded-xl border border-cms-rule bg-white py-1 text-sm shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
-                  <button type="button" onClick={() => submitBulkStatus('in_review')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
-                    Stage for review
-                  </button>
-                  {canPublish ? (
-                    <>
-                      <button type="button" onClick={() => submitBulkStatus('approved')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
-                        Approve
-                      </button>
-                      <button type="button" onClick={() => submitBulkStatus('published')} className="block w-full px-4 py-2 text-left font-semibold text-emerald-700 hover:bg-emerald-50">
-                        Publish
-                      </button>
-                    </>
-                  ) : null}
                   <button type="button" onClick={() => submitBulkStatus('draft')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
-                    Save as draft
+                    Move to draft
+                  </button>
+                  <button type="button" onClick={() => submitBulkStatus('in_review')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
+                    Send for review
                   </button>
                   {canPublish ? (
-                    <>
-                      <div className="my-1 border-t border-cms-rule" />
-                      <button type="button" onClick={() => submitBulkStatus('draft')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
-                        Unpublish
-                      </button>
-                      <button type="button" onClick={() => submitBulkStatus('archived')} className="block w-full px-4 py-2 text-left text-slate-700 hover:bg-cms-soft">
-                        Archive
-                      </button>
-                    </>
+                    <button type="button" onClick={() => submitBulkStatus('published')} className="block w-full px-4 py-2 text-left font-semibold text-emerald-700 hover:bg-emerald-50">
+                      Publish
+                    </button>
                   ) : null}
                 </div>
               ) : null}

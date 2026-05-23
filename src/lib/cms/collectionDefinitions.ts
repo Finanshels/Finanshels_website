@@ -1,13 +1,10 @@
 export type CmsCollectionKey =
   | 'media_assets'
-  | 'videos'
   | 'our_customers'
   | 'tools'
-  | 'review_sources'
   | 'customer_reviews'
   | 'podcasts'
-  | 'faq_questions'
-  | 'faq_topics'
+  | 'faqs'
   | 'customer_stories'
   | 'ebooks'
   | 'webinars'
@@ -92,10 +89,6 @@ export type CmsCollectionDefinition = {
 export type { CmsBlockField, CmsBlockType } from "./definitions/blocks"
 export { CMS_BLOCK_TYPES, CMS_BLOCK_TYPE_MAP } from "./definitions/blocks"
 
-// FIX-033: incoming references extracted to definitions/incomingReferences.ts.
-export type { IncomingReferenceSpec } from "./definitions/incomingReferences"
-export { CMS_INCOMING_REFERENCES } from "./definitions/incomingReferences"
-
 /**
  * FIX-025: `commonSeoFields()` deleted. The six camelCase duplicates
  * (`seoTitle`, `seoDescription`, `ogTitle`, `ogDescription`, `ogImageUrl`,
@@ -115,7 +108,9 @@ function globalCoreFields(): CmsFieldDefinition[] {
       name: 'status',
       label: 'Status',
       type: 'select',
-      options: ['draft', 'scheduled', 'published', 'archived', 'in_review', 'approved'],
+      // FIX-047: collapsed from 6 values to 3. Per-collection status overrides
+      // have been removed — every collection inherits this single set.
+      options: ['draft', 'in_review', 'published'],
       required: true,
     },
     { name: 'language', label: 'Language', type: 'select', options: ['en', 'ar'], required: true },
@@ -186,8 +181,9 @@ function globalSeoFields(): CmsFieldDefinition[] {
         'Book',
       ],
     },
-    { name: 'indexable', label: 'Indexable', type: 'boolean', required: true },
-    { name: 'noindex', label: 'Noindex', type: 'boolean', required: true },
+    // FIX-047: `indexable` + `noindex` booleans removed — they contradicted each
+    // other (both ON → noindex silently won) and duplicated `robots_meta` above.
+    // `robots_meta` is now the single control for index/follow directives.
     { name: 'faq_schema_enabled', label: 'FAQ schema enabled', type: 'boolean' },
     { name: 'breadcrumbs_title', label: 'Breadcrumbs title', type: 'text' },
   ]
@@ -546,23 +542,14 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
      */
     multiReferences: [
       { name: 'relatedGlossaryRefs', label: 'Related glossary terms', target: 'glossary_terms' },
-      { name: 'relatedFaqRefs', label: 'Related FAQ questions', target: 'faq_questions' },
+      { name: 'relatedFaqRefs', label: 'Related FAQs', target: 'faqs' },
     ],
   },
   glossary_terms: {
     multiReferences: [
       { name: 'relatedTermRefs', label: 'Related glossary terms', target: 'glossary_terms' },
-      { name: 'relatedFaqRefs', label: 'Related FAQ questions', target: 'faq_questions' },
+      { name: 'relatedFaqRefs', label: 'Related FAQs', target: 'faqs' },
       { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
-      { name: 'relatedToolRefs', label: 'Related tools', target: 'tools' },
-      { name: 'relatedVideoRefs', label: 'Related videos', target: 'videos' },
-    ],
-  },
-  videos: {
-    multiReferences: [
-      { name: 'speakerRefs', label: 'Speakers / hosts', target: 'team_members' },
-      { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
-      { name: 'relatedVideoRefs', label: 'Related videos', target: 'videos' },
       { name: 'relatedToolRefs', label: 'Related tools', target: 'tools' },
     ],
   },
@@ -583,9 +570,6 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
     ],
   },
   webinars: {
-    references: [
-      { name: 'recordingRef', label: 'Recording', target: 'videos' },
-    ],
     multiReferences: [
       { name: 'speakerRefs', label: 'Speakers', target: 'team_members' },
       { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
@@ -599,18 +583,9 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
       { name: 'relatedToolRefs', label: 'Related tools', target: 'tools' },
     ],
   },
-  faq_topics: {
+  faqs: {
     multiReferences: [
-      { name: 'featuredQuestionRefs', label: 'Featured questions', target: 'faq_questions' },
-      { name: 'relatedTopicRefs', label: 'Related topics', target: 'faq_topics' },
-    ],
-  },
-  faq_questions: {
-    references: [
-      { name: 'topicRef', label: 'Topic', target: 'faq_topics' },
-    ],
-    multiReferences: [
-      { name: 'relatedQuestionRefs', label: 'Related questions', target: 'faq_questions' },
+      { name: 'relatedFaqRefs', label: 'Related FAQs', target: 'faqs' },
       { name: 'relatedGlossaryRefs', label: 'Related glossary terms', target: 'glossary_terms' },
       { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
     ],
@@ -618,7 +593,6 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
   customer_reviews: {
     references: [
       { name: 'customerRef', label: 'Customer', target: 'our_customers' },
-      { name: 'sourceRef', label: 'Source', target: 'review_sources' },
     ],
     multiReferences: [
       { name: 'relatedStoryRefs', label: 'Related customer stories', target: 'customer_stories' },
@@ -641,15 +615,9 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
       { name: 'reviewRefs', label: 'Customer reviews', target: 'customer_reviews' },
     ],
   },
-  review_sources: {
-    multiReferences: [
-      { name: 'reviewRefs', label: 'Reviews surfaced from this source', target: 'customer_reviews' },
-    ],
-  },
   team_members: {
     multiReferences: [
       { name: 'authoredBlogRefs', label: 'Authored blog posts', target: 'blog_posts' },
-      { name: 'speakingVideoRefs', label: 'Speaking videos', target: 'videos' },
     ],
   },
   media_assets: {},
@@ -672,7 +640,6 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     sections: {
       publish: [
         { name: 'slug', label: 'Asset slug', type: 'text', required: true, placeholder: 'founder-decision-framework-cover' },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'title', label: 'Title', type: 'text', required: true },
         { name: 'assetType', label: 'Asset type', type: 'select', options: ['image', 'video', 'document', 'other'], required: true },
         {
@@ -707,7 +674,6 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true, placeholder: '10-percent-decision-framework' },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'excerpt', label: 'Excerpt', type: 'textarea', required: true },
         { name: 'body', label: 'Body', type: 'textarea', required: true },
         { name: 'author', label: 'Author', type: 'reference', referenceCollection: 'team_members', required: true },
@@ -774,9 +740,8 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
         { name: 'lead_magnet_label', label: 'Lead magnet label', type: 'text', placeholder: 'Download the founder tax checklist' },
         { name: 'lead_magnet_url', label: 'Lead magnet URL', type: 'url', placeholder: 'https://...' },
         { name: 'lead_magnet_form_id', label: 'Lead magnet form ID', type: 'text', placeholder: 'hubspot-form-uuid' },
-        // CMO-redesign: noindex/indexable promoted from SEO so every post has one obvious place to gate visibility.
-        { name: 'indexable', label: 'Indexable (allow search engines)', type: 'boolean' },
-        { name: 'noindex', label: 'Noindex (force exclude)', type: 'boolean' },
+        // FIX-047: removed `indexable` + `noindex` per-post booleans — use the
+        // `robots_meta` select in the SEO tab (single source of truth).
         // CMO-redesign: the three detail-page knobs worth keeping per-post.
         { name: 'detail_lead_capture_form_id', label: 'Lead-capture form ID (detail page)', type: 'text', placeholder: 'hubspot-form-uuid' },
         { name: 'detail_sticky_side_cta_label', label: 'Sticky side CTA label', type: 'text' },
@@ -800,7 +765,6 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true, placeholder: 'corporate-tax' },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'term', label: 'Term', type: 'text', required: true },
         { name: 'definition_short', label: 'Definition short', type: 'textarea', required: true },
         { name: 'definition_full', label: 'Definition full', type: 'textarea', required: true },
@@ -808,40 +772,10 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
         { name: 'alphabet_letter', label: 'Alphabet letter', type: 'text', required: true, placeholder: 'A' },
         { name: 'synonyms', label: 'Synonyms', type: 'tags' },
         { name: 'related_terms', label: 'Related terms', type: 'multi_reference', referenceCollection: 'glossary_terms' },
-        { name: 'faq_items', label: 'Related FAQs', type: 'multi_reference', referenceCollection: 'faq_questions' },
+        { name: 'faq_items', label: 'Related FAQs', type: 'multi_reference', referenceCollection: 'faqs' },
         { name: 'example_usage', label: 'Example usage', type: 'textarea' },
         { name: 'applicability_region', label: 'Applicability region', type: 'tags' },
         { name: 'featured', label: 'Featured', type: 'boolean' },
-      ],
-    },
-  },
-  {
-    key: 'videos',
-    label: 'Videos',
-    singularLabel: 'Video',
-    description: 'Video library content for landing pages and hubs.',
-    template: 'Video card + detail template',
-    routePattern: '/videos/[slug]',
-    listingRoute: '/videos',
-    titleField: 'title',
-    slugField: 'slug',
-    defaultSchemaType: 'VideoObject',
-    sections: {
-      publish: [
-        { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
-        { name: 'video_platform', label: 'Video platform', type: 'select', options: ['youtube', 'vimeo', 'wistia', 'self_hosted'], required: true },
-        { name: 'video_url', label: 'Video URL', type: 'url', required: true },
-        { name: 'embed_code', label: 'Embed code', type: 'textarea' },
-        { name: 'thumbnail_image', label: 'Thumbnail image', type: 'image', required: true },
-        { name: 'duration', label: 'Duration', type: 'text' },
-        { name: 'video_category', label: 'Video category', type: 'text', required: true },
-        { name: 'speaker', label: 'Speaker', type: 'reference', referenceCollection: 'team_members' },
-        { name: 'transcript', label: 'Transcript', type: 'textarea' },
-        { name: 'summary', label: 'Summary', type: 'textarea' },
-        { name: 'key_takeaways', label: 'Key takeaways', type: 'json', placeholder: '["..."]' },
-        { name: 'related_resources', label: 'Related resources', type: 'multi_reference', referenceCollection: 'blog_posts' },
-        { name: 'cta_link', label: 'CTA link', type: 'url' },
       ],
     },
   },
@@ -851,15 +785,15 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     singularLabel: 'Customer Profile',
     description: 'Company profiles and logos for trust sections.',
     template: 'Customer logo + profile template',
-    routePattern: '/customers/[slug]',
-    listingRoute: '/customers',
+    // FIX-048: dedicated `/customers/[slug]` route does not exist; collection
+    // is blocklisted from the generic /content/ route. No public detail
+    // surface — kept admin-editable for embedding via blocks/references.
     titleField: 'company_name',
     slugField: 'slug',
     defaultSchemaType: 'Organization',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'company_name', label: 'Company name', type: 'text', required: true },
         { name: 'logo', label: 'Logo', type: 'image', required: true },
         { name: 'cover_image', label: 'Cover image', type: 'image' },
@@ -883,15 +817,15 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     singularLabel: 'Tool',
     description: 'Interactive tools, calculators, and checkers.',
     template: 'Tool landing + CTA template',
-    routePattern: '/tools/[slug]',
-    listingRoute: '/tools',
+    // FIX-048: dedicated `/tools/[slug]` route does not exist and the generic
+    // /content/ route would dump raw Firestore JSON (no renderTemplate
+    // branch); collection is now blocklisted. Admin-editable only.
     titleField: 'tool_name',
     slugField: 'slug',
     defaultSchemaType: 'SoftwareApplication',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'tool_name', label: 'Tool name', type: 'text', required: true },
         { name: 'tool_type', label: 'Tool type', type: 'select', options: ['calculator', 'checker', 'estimator', 'generator', 'quiz'], required: true },
         { name: 'short_description', label: 'Short description', type: 'textarea', required: true },
@@ -904,38 +838,10 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
         { name: 'primary_inputs', label: 'Primary inputs', type: 'json', placeholder: '[{...}]' },
         { name: 'output_description', label: 'Output description', type: 'textarea' },
         { name: 'benefits', label: 'Benefits', type: 'json', placeholder: '["..."]' },
-        { name: 'faq_items', label: 'FAQ items', type: 'multi_reference', referenceCollection: 'faq_questions' },
+        { name: 'faq_items', label: 'FAQ items', type: 'multi_reference', referenceCollection: 'faqs' },
         { name: 'related_services', label: 'Related services', type: 'tags' },
         { name: 'gated', label: 'Gated', type: 'boolean' },
         { name: 'lead_capture_enabled', label: 'Lead capture enabled', type: 'boolean' },
-      ],
-    },
-  },
-  {
-    key: 'review_sources',
-    label: 'Reviews Sources',
-    singularLabel: 'Review Source',
-    description: 'Sources where public customer reviews are collected.',
-    template: 'Review source list template',
-    routePattern: '/reviews/sources/[slug]',
-    listingRoute: '/reviews/sources',
-    titleField: 'source_name',
-    slugField: 'slug',
-    defaultSchemaType: 'Organization',
-    sections: {
-      publish: [
-        { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
-        { name: 'source_name', label: 'Source name', type: 'text', required: true },
-        { name: 'source_logo', label: 'Source logo', type: 'image' },
-        { name: 'source_url', label: 'Source URL', type: 'url', required: true },
-        { name: 'source_type', label: 'Source type', type: 'select', options: ['google', 'clutch', 'trustpilot', 'g2', 'facebook', 'manual'], required: true },
-        { name: 'average_rating', label: 'Average rating', type: 'number' },
-        { name: 'review_count', label: 'Review count', type: 'number' },
-        { name: 'rating_scale', label: 'Rating scale', type: 'number' },
-        { name: 'display_label', label: 'Display label', type: 'text' },
-        { name: 'is_featured', label: 'Is featured', type: 'boolean' },
-        { name: 'last_synced_at', label: 'Last synced at', type: 'datetime' },
       ],
     },
   },
@@ -945,20 +851,19 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     singularLabel: 'Customer Review',
     description: 'Testimonials and social proof snippets.',
     template: 'Review quote template',
-    routePattern: '/reviews/[slug]',
-    listingRoute: '/reviews',
+    // FIX-048: dedicated `/reviews/[slug]` route does not exist. Doc is
+    // renderable via the generic `/content/customer_reviews/[slug]` route;
+    // canonical resolves to that URL via `resolveCanonical` fallback.
     titleField: 'review_title',
     slugField: 'slug',
     defaultSchemaType: 'Review',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'review_title', label: 'Review title', type: 'text' },
         { name: 'customer_name', label: 'Customer name', type: 'text', required: true },
         { name: 'customer_designation', label: 'Customer designation', type: 'text' },
         { name: 'company', label: 'Company', type: 'reference', referenceCollection: 'our_customers' },
-        { name: 'review_source', label: 'Review source', type: 'reference', referenceCollection: 'review_sources' },
         { name: 'rating', label: 'Rating (1-5)', type: 'number' },
         { name: 'review_text', label: 'Review text', type: 'textarea', required: true },
         { name: 'video_review_url', label: 'Video review URL', type: 'url' },
@@ -979,15 +884,14 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     singularLabel: 'Podcast Episode',
     description: 'Podcast episodes with streaming links.',
     template: 'Podcast episode template',
-    routePattern: '/podcasts/[slug]',
-    listingRoute: '/podcasts',
+    // FIX-048: dedicated `/podcasts/[slug]` route does not exist. Doc is
+    // renderable via the generic `/content/podcasts/[slug]` route.
     titleField: 'episode_title',
     slugField: 'slug',
     defaultSchemaType: 'PodcastEpisode',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'episode_title', label: 'Episode title', type: 'text', required: true },
         { name: 'episode_number', label: 'Episode number', type: 'number' },
         { name: 'podcast_name', label: 'Podcast name', type: 'text', required: true },
@@ -1007,23 +911,25 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     },
   },
   {
-    key: 'faq_questions',
-    label: 'FAQ Questions',
-    singularLabel: 'FAQ Question',
-    description: 'Question/answer entries linked to FAQ topics.',
+    key: 'faqs',
+    label: 'FAQs',
+    singularLabel: 'FAQ',
+    description: 'Question/answer entries grouped by topic.',
     template: 'FAQ accordion item template',
-    routePattern: '/faq/[topic]/[slug]',
-    listingRoute: '/faq',
+    // FIX-048: dedicated `/faq/[slug]` route does not exist. Doc is renderable
+    // via the generic `/content/faqs/[slug]` route; FAQs are typically
+    // embedded as accordion blocks on other pages rather than as standalone
+    // detail pages.
     titleField: 'question',
     slugField: 'slug',
     defaultSchemaType: 'Question',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'question', label: 'Question', type: 'text', required: true },
         { name: 'answer', label: 'Answer', type: 'textarea', required: true },
-        { name: 'faq_topic', label: 'FAQ topic', type: 'reference', referenceCollection: 'faq_topics', required: true },
+        { name: 'topic', label: 'Topic', type: 'text', placeholder: 'Corporate Tax' },
+        { name: 'topic_slug', label: 'Topic slug', type: 'text', placeholder: 'corporate-tax' },
         { name: 'related_service', label: 'Related service', type: 'tags' },
         { name: 'related_blog_posts', label: 'Related blog posts', type: 'multi_reference', referenceCollection: 'blog_posts' },
         { name: 'related_tools', label: 'Related tools', type: 'multi_reference', referenceCollection: 'tools' },
@@ -1034,44 +940,19 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     },
   },
   {
-    key: 'faq_topics',
-    label: 'FAQ Topics',
-    singularLabel: 'FAQ Topic',
-    description: 'Topic groups for FAQ pages and internal linking.',
-    template: 'FAQ topic template',
-    routePattern: '/faq/[slug]',
-    listingRoute: '/faq',
-    titleField: 'topic_name',
-    slugField: 'slug',
-    defaultSchemaType: 'CollectionPage',
-    sections: {
-      publish: [
-        { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
-        { name: 'topic_name', label: 'Topic name', type: 'text', required: true },
-        { name: 'topic_description', label: 'Topic description', type: 'textarea' },
-        { name: 'icon', label: 'Icon', type: 'icon' },
-        { name: 'sort_order', label: 'Sort order', type: 'number' },
-        { name: 'featured', label: 'Featured', type: 'boolean' },
-        { name: 'related_services', label: 'Related services', type: 'tags' },
-      ],
-    },
-  },
-  {
     key: 'customer_stories',
     label: 'Customer Stories',
     singularLabel: 'Customer Story',
     description: 'Detailed case studies and customer outcomes.',
     template: 'Story/case-study template',
-    routePattern: '/stories/[slug]',
-    listingRoute: '/stories',
+    // FIX-048: dedicated `/stories/[slug]` route does not exist. Doc is
+    // renderable via the generic `/content/customer_stories/[slug]` route.
     titleField: 'story_title',
     slugField: 'slug',
     defaultSchemaType: 'Article',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'story_title', label: 'Story title', type: 'text', required: true },
         { name: 'customer', label: 'Customer', type: 'reference', referenceCollection: 'our_customers', required: true },
         { name: 'industry', label: 'Industry', type: 'tags', required: true },
@@ -1095,15 +976,15 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     singularLabel: 'Ebook',
     description: 'Downloadable long-form guides and lead magnets.',
     template: 'Ebook listing + download template',
-    routePattern: '/ebooks/[slug]',
-    listingRoute: '/ebooks',
+    // FIX-048: dedicated `/ebooks/[slug]` route does not exist; collection
+    // is blocklisted from the generic /content/ route to avoid leaking
+    // download URLs. Admin-editable only.
     titleField: 'ebook_title',
     slugField: 'slug',
     defaultSchemaType: 'Book',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
         { name: 'ebook_title', label: 'Ebook title', type: 'text', required: true },
         { name: 'cover_image', label: 'Cover image', type: 'image', required: true },
         { name: 'short_description', label: 'Short description', type: 'textarea', required: true },
@@ -1128,15 +1009,16 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     singularLabel: 'Webinar',
     description: 'Live and on-demand webinar sessions.',
     template: 'Webinar listing template',
-    routePattern: '/webinars/[slug]',
-    listingRoute: '/webinars',
+    // FIX-048: dedicated `/webinars/[slug]` route does not exist. Doc is
+    // renderable via the generic `/content/webinars/[slug]` route.
     titleField: 'webinar_title',
     slugField: 'slug',
     defaultSchemaType: 'Event',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'scheduled', 'published', 'archived'], required: true },
+        // FIX-047: removed status override. Inherits the global 3-state set
+        // (draft / in_review / published) from globalCoreFields().
         { name: 'webinar_status', label: 'Webinar status', type: 'select', options: ['upcoming', 'live', 'completed'], required: true },
         { name: 'webinar_title', label: 'Webinar title', type: 'text', required: true },
         { name: 'banner_image', label: 'Banner image', type: 'image' },
@@ -1162,15 +1044,16 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     singularLabel: 'Team Member',
     description: 'People profiles for leadership and team pages.',
     template: 'Team card/profile template',
-    routePattern: '/team/[slug]',
-    listingRoute: '/team',
+    // FIX-048: dedicated `/team/[slug]` route does not exist; collection is
+    // blocklisted from the generic /content/ route to avoid leaking
+    // contact PII. Admin-editable only.
     titleField: 'full_name',
     slugField: 'slug',
     defaultSchemaType: 'Person',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published'], required: true },
+        // FIX-047: removed status override. Inherits the global 3-state set.
         { name: 'full_name', label: 'Full name', type: 'text', required: true },
         { name: 'photo', label: 'Photo', type: 'image', required: true },
         { name: 'job_title', label: 'Job title', type: 'text', required: true },
@@ -1220,7 +1103,7 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
       // FIX-036: canonical relation is `relatedPostRefs` (relations); `related_posts` in publish is stripped.
       // NOTE: we keep the new blog_posts `related_posts` in publish (which is the canonical
       // editor-facing field) — the strip removes the *global-core* `related_content` only.
-      // SEO trim: twitter handle is org-wide; noindex/indexable promoted to publish.
+      // SEO trim: twitter handle is org-wide.
       'twitter_creator_handle',
       // AEO trim: keep only directAnswer + faqItems for blog_posts.
       'answerSnippet',
@@ -1259,19 +1142,14 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
     strip: ['related_terms', 'body'],
   },
   // FIX-028 strip lists below come from the per-collection findings (STORY-003, TOOL-005, etc.).
-  videos: {
-    legacyAliases: ['videoUrl', 'thumbnailUrl', 'durationMinutes'],
-    strip: ['title', 'excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link'],
-  },
   our_customers: { legacyAliases: ['companyName', 'logoUrl'], strip: ['title', 'excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content'] },
   tools: {
     legacyAliases: ['name', 'description', 'toolUrl', 'iconUrl'],
     strip: ['title', 'excerpt', 'thumbnail_image', 'author', 'published_at', 'sort_order', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link'],
   },
-  review_sources: { legacyAliases: ['sourceName', 'sourceUrl', 'rating'], strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link'] },
   customer_reviews: { legacyAliases: ['title', 'quote', 'reviewerName', 'reviewerRole', 'companyName'], strip: ['excerpt', 'short_description', 'thumbnail_image', 'icon', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link'] },
   podcasts: { legacyAliases: ['title', 'summary', 'audioUrl', 'platformUrls'], strip: ['excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'categories', 'related_content', 'cta_label', 'cta_link'] },
-  faq_topics: { legacyAliases: ['name', 'description'], strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'sort_order', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link'] },
+  faqs: { legacyAliases: [], strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link'] },
   customer_stories: {
     legacyAliases: ['title', 'companyName', 'challenge', 'solution', 'results'],
     // From STORY-003: keeps story_title / challenge_summary / full_story_body / publish_date / hero_image instead of the global duplicates.
@@ -1422,14 +1300,15 @@ export function getAllFields(definition: CmsCollectionDefinition): CmsFieldDefin
 
 /**
  * Default values to seed when creating a new document. Lets editors land on a
- * sensible starting state (schema_type, indexable, listing layout, etc.).
+ * sensible starting state (schema_type, robots_meta, listing layout, etc.).
  */
 export function buildDefaultDocumentValues(definition: CmsCollectionDefinition): Record<string, unknown> {
   return {
     status: 'draft',
     language: 'en',
-    indexable: true,
-    noindex: false,
+    // FIX-047: was `indexable: true, noindex: false` — collapsed into the
+    // single `robots_meta` select. Default permits indexing + link following.
+    robots_meta: 'index,follow',
     listing_search_enabled: true,
     listing_default_sort: 'newest',
     listing_layout: 'grid',

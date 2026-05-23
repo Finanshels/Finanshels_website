@@ -92,12 +92,10 @@ export const CMS_BLOCK_TYPES: CmsBlockType[] = [
         type: 'json',
         placeholder: '[{"question":"...","answer":"..."}]',
       },
-      {
-        name: 'questionRefs',
-        label: 'Linked FAQ questions',
-        type: 'multi_reference',
-        referenceCollection: 'faq_questions',
-      },
+      // FIX-048: `questionRefs` (multi_reference → faqs) was defined here but
+      // never resolved by FaqAccordionBlock — editors who populated it got
+      // no output. Removed to avoid the confusion. Re-add together with a
+      // renderer branch that fetches the referenced docs.
     ],
   },
   {
@@ -128,12 +126,8 @@ export const CMS_BLOCK_TYPES: CmsBlockType[] = [
         type: 'json',
         placeholder: '[{"src":"https://...","alt":"Acme"}]',
       },
-      {
-        name: 'customerRefs',
-        label: 'Linked customers',
-        type: 'multi_reference',
-        referenceCollection: 'our_customers',
-      },
+      // FIX-048: `customerRefs` (multi_reference → our_customers) was defined
+      // here but never resolved by LogoWallBlock — same reason as above.
     ],
   },
   {
@@ -144,7 +138,6 @@ export const CMS_BLOCK_TYPES: CmsBlockType[] = [
     fields: [
       { name: 'videoUrl', label: 'Video URL', type: 'url', required: true },
       { name: 'caption', label: 'Caption', type: 'text' },
-      { name: 'videoRef', label: 'Linked video record', type: 'reference', referenceCollection: 'videos' },
     ],
   },
   {
@@ -219,7 +212,9 @@ export const CMS_BLOCK_TYPES: CmsBlockType[] = [
         name: 'sourceCollections',
         label: 'Auto source collections',
         type: 'tags',
-        placeholder: 'blog_posts, ebooks, videos',
+        // FIX-048: placeholder previously suggested `videos` which has been
+        // removed from CmsCollectionKey.
+        placeholder: 'blog_posts, glossary_terms, ebooks',
       },
       {
         name: 'manualRefs',

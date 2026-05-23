@@ -5,7 +5,6 @@ import CardPreview from '@/components/cms/admin/CardPreview'
 import { CmsTitleSlugFields } from '@/components/cms/admin/CmsTitleSlugFields'
 // FIX-039: FieldRenderer extracted to a shared FieldEditor reused by the create flow.
 import { FieldEditor as FieldRenderer } from '@/components/cms/admin/FieldEditor'
-import { ReverseReferencesPanel } from '@/components/cms/admin/ReverseReferencesPanel'
 import { getStatusStyle } from '@/components/cms/admin/statusStyle'
 import { CmsCollectionItemTable } from '@/components/cms/admin/CmsCollectionItemTable'
 import { CmsMediaLibrary } from '@/components/cms/admin/CmsMediaLibrary'
@@ -41,12 +40,10 @@ import {
   listCmsRevisions,
   listReferenceOptions,
   listCmsDocuments,
-  listReverseReferences,
   listCmsMediaLibraryItems,
   rollbackCmsDocumentToRevision,
   upsertCmsDocument,
   type CmsDocumentStatus,
-  type CmsReverseReferenceGroup,
 } from '@/lib/cms/collectionRepository'
 import { isCmsConfigured } from '@/lib/cms/config'
 import { decodeFieldValue, encodeFieldValue, InvalidFieldValueError } from '@/lib/cms/fieldCodec'
@@ -85,8 +82,7 @@ const BLOCKS_REFERENCED_COLLECTIONS: CmsCollectionKey[] = [
   'team_members',
   'customer_reviews',
   'our_customers',
-  'faq_questions',
-  'videos',
+  'faqs',
   'tools',
 ]
 
@@ -201,6 +197,10 @@ function buildRevalidatePathTargets(collection: CmsCollectionKey, slug: string):
   const def = CMS_COLLECTION_DEFINITION_MAP[collection]
   const targets = new Set<string>([`/content/${collection}/${slug}`])
   if (def?.routePattern) targets.add(def.routePattern.replace('[slug]', slug))
+  // FIX-048: also bust the collection's listing route so newly published
+  // docs appear without waiting for time-based ISR (previously up to
+  // 5–10 min stale on /blog, /glossary, etc.).
+  if (def?.listingRoute) targets.add(def.listingRoute)
   return [...targets]
 }
 
@@ -351,7 +351,8 @@ async function saveCmsDocumentAction(formData: FormData) {
   // (formStatus) is no longer in the chain — it was a phantom input that let any
   // API caller set any status. Editors must change status via the explicit
   // status-action buttons.
-  const ALLOWED_STATUSES = new Set(['published', 'draft', 'in_review', 'approved', 'scheduled'])
+  // FIX-047: collapsed status enum from 6 values to 3.
+  const ALLOWED_STATUSES = new Set(['draft', 'in_review', 'published'])
   const requestedStatus = String(formData.get('requestedStatus') ?? '').trim()
   const currentDocStatus = String(formData.get('cmsCurrentStatus') ?? '').trim()
   const resolvedStatus = ALLOWED_STATUSES.has(requestedStatus)
@@ -361,33 +362,11 @@ async function saveCmsDocumentAction(formData: FormData) {
     : 'draft'
   payload.status = resolvedStatus
 
-  // Editors cannot directly publish or approve — bump to in_review.
-  if (role === 'editor' && (payload.status === 'published' || payload.status === 'approved')) {
+  // Editors cannot directly publish — submission is bumped to in_review.
+  if (role === 'editor' && payload.status === 'published') {
     payload.status = 'in_review'
   }
 
-  // FIX-017: validate scheduledAt. Reject malformed dates, and reject
-  // status:scheduled without a valid future scheduledAt.
-  const scheduledAtRaw = String(formData.get('scheduledAt') ?? '').trim()
-  let scheduledAtParsed: Date | null = null
-  if (scheduledAtRaw) {
-    const d = new Date(scheduledAtRaw)
-    if (!Number.isFinite(d.getTime())) {
-      redirect(`${isCreate ? editorBaseCreate : editorBaseEdit(slug)}&error=invalid-scheduledAt`)
-    }
-    scheduledAtParsed = d
-    payload.scheduledAt = scheduledAtRaw
-  }
-  if (payload.status === 'scheduled') {
-    if (!scheduledAtParsed || scheduledAtParsed.getTime() <= Date.now()) {
-      redirect(`${isCreate ? editorBaseCreate : editorBaseEdit(slug)}&error=invalid-scheduledAt`)
-    }
-  }
-
-  const locale = String(formData.get('locale') ?? '').trim()
-  if (locale) payload.locale = locale
-  const localeGroupId = String(formData.get('localeGroupId') ?? '').trim()
-  if (localeGroupId) payload.localeGroupId = localeGroupId
   if (typeof payload.status !== 'string') payload.status = 'draft'
 
   try {
@@ -429,13 +408,14 @@ async function bulkUpdateStatusAction(formData: FormData) {
   const definition = getCmsCollectionDefinition(collectionRaw)
   if (!definition) redirect('/admin/cms?error=invalid-collection')
 
-  const ALLOWED: CmsDocumentStatus[] = ['draft', 'in_review', 'approved', 'scheduled', 'published', 'archived']
+  // FIX-047: collapsed 6-state enum to 3.
+  const ALLOWED: CmsDocumentStatus[] = ['draft', 'in_review', 'published']
   const requested = String(formData.get('status') ?? '') as CmsDocumentStatus
   if (!ALLOWED.includes(requested)) redirect(`/admin/cms?collection=${definition.key}&error=invalid-status`)
 
-  // Editors cannot directly publish/approve in bulk.
+  // Editors cannot directly publish in bulk — bumped to in_review.
   let effective: CmsDocumentStatus = requested
-  if (role === 'editor' && (effective === 'published' || effective === 'approved')) {
+  if (role === 'editor' && effective === 'published') {
     effective = 'in_review'
   }
 
@@ -866,10 +846,14 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
   const role = sessionRole(session)
   const params = await searchParams
 
-  const requestedCollection = params.collection ?? 'blog_posts'
+  // FIX-048: default to the first collection in the registry rather than
+  // hardcoding `'blog_posts'` — if blog_posts is ever removed or renamed,
+  // hardcoded lookup throws at runtime and 500s the whole CMS dashboard.
+  const fallbackCollection = CMS_COLLECTION_DEFINITIONS[0]?.key ?? 'blog_posts'
+  const requestedCollection = params.collection ?? fallbackCollection
   const activeCollection = (CMS_COLLECTION_DEFINITION_MAP[requestedCollection as CmsCollectionKey]
     ? requestedCollection
-    : 'blog_posts') as CmsCollectionKey
+    : fallbackCollection) as CmsCollectionKey
   const definition = CMS_COLLECTION_DEFINITION_MAP[activeCollection]
 
   const isEditorView = Boolean(params.slug)
@@ -885,7 +869,6 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     mediaAssets,
     referenceOptionResults,
     revisions,
-    reverseRefs,
     mediaLibraryItems,
   ] = await Promise.all([
     isEditorView
@@ -898,9 +881,6 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     isEditorView ? listCmsDocuments('media_assets', 'title', 'slug') : Promise.resolve([]),
     Promise.all(allReferencedCollections.map((key) => listReferenceOptions(key).then((options) => [key, options] as const))),
     isEditorView && params.slug ? listCmsRevisions(definition.key, params.slug) : Promise.resolve([]),
-    isEditorView && params.slug
-      ? listReverseReferences(definition.key, params.slug)
-      : Promise.resolve([] as CmsReverseReferenceGroup[]),
     !isEditorView && activeCollection === 'media_assets' ? listCmsMediaLibraryItems() : Promise.resolve([]),
   ])
   const referenceOptionsBase = Object.fromEntries(referenceOptionResults) as Record<string, Array<{ id: string; label: string }>>
@@ -924,7 +904,9 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     ),
   ]
 
-  const saved = params.saved === '1'
+  // FIX-048: createCmsDraft redirects with `?saved=created`; the existing
+  // edit-save flow uses `?saved=1`. Both should trigger the success banner.
+  const saved = params.saved === '1' || params.saved === 'created'
   const errorRaw = params.error
   const error =
     typeof errorRaw === 'string'
@@ -942,7 +924,6 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
       updatedAtIso: d.updatedAt?.toISOString(),
       createdAtIso: d.createdAt?.toISOString(),
       publishedAtIso: d.publishedAt?.toISOString(),
-      scheduledAtIso: d.scheduledAt?.toISOString(),
     }))
     const canPublish = ROLE_RANK[role] >= ROLE_RANK['admin']
     const canDelete = ROLE_RANK[role] >= ROLE_RANK['admin']
@@ -1094,14 +1075,14 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
   return (
     <section className="h-dvh overflow-hidden bg-cms-canvas text-slate-900">
       <div className="mx-auto h-full max-w-[1900px] px-3 py-3 sm:px-5">
-        <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(260px,320px)_minmax(0,60fr)_minmax(0,25fr)] lg:overflow-hidden lg:items-stretch">
+        <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(260px,320px)_minmax(0,60fr)_minmax(0,25fr)] lg:auto-rows-fr lg:overflow-hidden lg:items-stretch">
           <CmsSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
 
           <form
             action={saveCmsDocumentAction}
             id="cms-editor-form"
             data-cms-editor=""
-            className="grid min-h-0 gap-3 lg:col-span-2 lg:h-full lg:grid-cols-[minmax(0,60fr)_minmax(0,25fr)] lg:overflow-hidden"
+            className="grid min-h-0 gap-3 lg:col-span-2 lg:h-full lg:auto-rows-fr lg:grid-cols-[minmax(0,60fr)_minmax(0,25fr)] lg:overflow-hidden"
           >
             <input type="hidden" name="collection" value={definition.key} />
             <input type="hidden" name="cmsIntent" value={params.slug ? 'edit' : 'create'} />
@@ -1169,14 +1150,69 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       <span aria-hidden>↗</span> View
                     </a>
                   ) : null}
+                  {/*
+                    FIX-047: status workflow collapsed to 3 states. The segmented
+                    control below is the ONLY way to change status — each segment
+                    is a submit button that saves the form with that status in
+                    one click. The trailing Save Changes button preserves the
+                    current status faithfully (previously it silently coerced to
+                    'draft' whenever the doc wasn't 'published', producing the
+                    "I clicked Save but it's still a draft" bug).
+                  */}
+                  <div className="inline-flex overflow-hidden rounded-lg border border-cms-rule bg-white text-[11px] font-semibold uppercase tracking-wide">
+                    <button
+                      type="submit"
+                      name="requestedStatus"
+                      value="draft"
+                      title="Save as draft"
+                      className={`px-2.5 py-2 transition ${
+                        currentStatus === 'draft'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'text-slate-600 hover:bg-cms-soft'
+                      }`}
+                    >
+                      Draft
+                    </button>
+                    <button
+                      type="submit"
+                      name="requestedStatus"
+                      value="in_review"
+                      title="Send for review"
+                      className={`border-l border-cms-rule px-2.5 py-2 transition ${
+                        currentStatus === 'in_review'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'text-slate-600 hover:bg-cms-soft'
+                      }`}
+                    >
+                      In Review
+                    </button>
+                    <button
+                      type="submit"
+                      name="requestedStatus"
+                      value="published"
+                      disabled={ROLE_RANK[role] < ROLE_RANK['admin']}
+                      title={
+                        ROLE_RANK[role] < ROLE_RANK['admin']
+                          ? 'Owner / admin only'
+                          : 'Publish now'
+                      }
+                      className={`border-l border-cms-rule px-2.5 py-2 transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                        currentStatus === 'published'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'text-slate-600 hover:bg-cms-soft'
+                      }`}
+                    >
+                      Published
+                    </button>
+                  </div>
                   <button
                     type="submit"
                     name="requestedStatus"
-                    value={currentStatus === 'published' ? 'published' : 'draft'}
-                    title="Save changes (keeps current status)"
+                    value={currentStatus}
+                    title="Save field changes, keep current status"
                     className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-[0_6px_18px_rgba(15,23,42,0.18)] hover:bg-slate-800"
                   >
-                    <span aria-hidden>💾</span> Save
+                    <span aria-hidden>💾</span> Save changes
                   </button>
                 </div>
               </div>
@@ -1282,14 +1318,9 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                         formValues,
                         referenceOptions,
                         allMediaUrls,
-                        {
-                          defaultOpen: true,
-                          extra: <ReverseReferencesPanel groups={reverseRefs} />,
-                        }
+                        { defaultOpen: true }
                       )
-                    : (
-                        <ReverseReferencesPanel groups={reverseRefs} />
-                      )}
+                    : null}
                 </div>
               </div>
             </div>
@@ -1350,87 +1381,39 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
               </div>
 
               <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-publish:checked]/cms-aside:block">
+                {/*
+                  FIX-047: the multi-button "Stage for publish" panel was the
+                  source of every "I clicked publish but it stayed draft" bug.
+                  Publish actions now live in the single segmented control in
+                  the editor header. This card is just a status indicator.
+                */}
                 <div className="rounded-2xl border border-cms-rule bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Stage for publish</p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button
-                      type="submit"
-                      name="requestedStatus"
-                      value="published"
-                      className="col-span-2 rounded-lg bg-gradient-brand px-3 py-2.5 text-sm font-semibold text-brand-dark shadow-[0_8px_20px_rgba(241,102,16,0.25)] transition hover:brightness-110"
-                    >
-                      Publish Now
-                    </button>
-                    <button
-                      type="submit"
-                      name="requestedStatus"
-                      value="draft"
-                      className="rounded-lg border border-cms-rule bg-cms-soft px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-cms-hover"
-                    >
-                      Save as Draft
-                    </button>
-                    <button
-                      type="submit"
-                      name="requestedStatus"
-                      value="in_review"
-                      className="rounded-lg border border-cms-rule bg-cms-soft px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-cms-hover"
-                    >
-                      Send for Review
-                    </button>
-                    <button
-                      type="submit"
-                      name="requestedStatus"
-                      value="approved"
-                      disabled={ROLE_RANK[role] < ROLE_RANK['admin']}
-                      title={ROLE_RANK[role] < ROLE_RANK['admin'] ? 'Only admins and owners can approve' : 'Mark approved (ready to publish)'}
-                      className="rounded-lg border border-cms-rule bg-cms-soft px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-cms-hover disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="submit"
-                      name="requestedStatus"
-                      value="scheduled"
-                      className="rounded-lg border border-cms-rule bg-cms-soft px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-cms-hover"
-                    >
-                      Save as Scheduled
-                    </button>
-                  </div>
-                  <label className="mt-3 block text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                    Schedule At
-                    <input
-                      type="datetime-local"
-                      name="scheduledAt"
-                      defaultValue={typeof formValues.scheduledAt === 'string' ? formValues.scheduledAt : ''}
-                      className="mt-1.5 w-full rounded-lg border border-cms-rule bg-cms-soft px-2.5 py-2 text-xs text-slate-700"
-                    />
-                  </label>
-                  <label className="mt-3 block text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                    Locale
-                    <select
-                      name="locale"
-                      defaultValue={typeof formValues.locale === 'string' ? formValues.locale : 'en'}
-                      className="mt-1.5 w-full rounded-lg border border-cms-rule bg-cms-soft px-2.5 py-2 text-xs text-slate-700"
-                    >
-                      <option value="en">English (en)</option>
-                      <option value="ar">Arabic (ar)</option>
-                    </select>
-                  </label>
-                  <label className="mt-3 block text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                    Locale Group ID
-                    <input
-                      type="text"
-                      name="localeGroupId"
-                      defaultValue={typeof formValues.localeGroupId === 'string' ? formValues.localeGroupId : ''}
-                      placeholder="Shared group id for localized variants"
-                      className="mt-1.5 w-full rounded-lg border border-cms-rule bg-cms-soft px-2.5 py-2 text-xs text-slate-700"
-                    />
-                  </label>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Workflow</p>
+                  <p className="mt-2 text-xs text-slate-600">
+                    Change status with the{' '}
+                    <span className="font-semibold text-slate-900">Draft / In Review / Published</span>{' '}
+                    control in the editor header. Each click saves and changes status in one step.
+                  </p>
                   <p className="mt-3 text-xs text-slate-500">
                     Current status:{' '}
-                    <span className={currentStatus === 'published' ? 'text-emerald-700' : 'text-amber-700'}>{currentStatus}</span>
+                    <span
+                      className={
+                        currentStatus === 'published'
+                          ? 'font-semibold text-emerald-700'
+                          : currentStatus === 'in_review'
+                          ? 'font-semibold text-blue-700'
+                          : 'font-semibold text-amber-700'
+                      }
+                    >
+                      {currentStatus.replace(/_/g, ' ')}
+                    </span>
                   </p>
                   <p className="mt-1 text-xs text-slate-500">Role: {role}</p>
+                  {role === 'editor' ? (
+                    <p className="mt-2 text-[11px] text-slate-500">
+                      Editors can save as draft or send for review. Only owner / admin can publish.
+                    </p>
+                  ) : null}
                 </div>
 
                 {sidePublishFields.length > 0

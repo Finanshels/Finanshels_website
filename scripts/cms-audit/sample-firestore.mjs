@@ -67,14 +67,11 @@ function getDb() {
 // stored keys empirically and the audit doc cross-references the source file.
 const COLLECTIONS = [
   'media_assets',
-  'videos',
   'our_customers',
   'tools',
-  'review_sources',
   'customer_reviews',
   'podcasts',
-  'faq_questions',
-  'faq_topics',
+  'faqs',
   'customer_stories',
   'ebooks',
   'webinars',

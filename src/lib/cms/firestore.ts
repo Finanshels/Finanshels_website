@@ -105,14 +105,11 @@ export function getDb(): Firestore | null {
 
 export const COLLECTIONS = {
   mediaAssets: 'media_assets',
-  videos: 'videos',
   ourCustomers: 'our_customers',
   tools: 'tools',
-  reviewSources: 'review_sources',
   customerReviews: 'customer_reviews',
   podcasts: 'podcasts',
-  faqQuestions: 'faq_questions',
-  faqTopics: 'faq_topics',
+  faqs: 'faqs',
   customerStories: 'customer_stories',
   ebooks: 'ebooks',
   webinars: 'webinars',

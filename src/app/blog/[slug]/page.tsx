@@ -30,7 +30,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ogDescription = post.og_description || description
   const ogImage = pickOgImage(post)
   const url = post.canonical_url || `${getSiteUrl()}/blog/${post.slug}`
-  const noindex = post.noindex === true || post.indexable === false
+  // FIX-047: `robots_meta` is the canonical control. Legacy `noindex` /
+  // `indexable` booleans are honoured for pre-FIX-047 Firestore docs only.
+  const robotsMeta = (post.robots_meta ?? '').toLowerCase()
+  const noindex =
+    robotsMeta.includes('noindex') ||
+    post.noindex === true ||
+    post.indexable === false
 
   return {
     title,
@@ -123,7 +129,10 @@ export default async function BlogArticlePage({ params }: Props) {
             <div className="relative aspect-[21/9] overflow-hidden rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-slate-900/30">
               <Image
                 src={String(post.featured_image ?? post.heroImageUrl)}
-                alt=""
+                // FIX-048: use editor-supplied alt text; fall back to the post
+                // title (always populated) instead of an empty string so
+                // screen readers and image search both get something useful.
+                alt={post.featured_image_alt?.trim() || post.title}
                 fill
                 sizes="(min-width: 1024px) 896px, 100vw"
                 className="object-cover"

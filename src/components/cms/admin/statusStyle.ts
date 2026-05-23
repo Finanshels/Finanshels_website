@@ -2,7 +2,10 @@
 // Every admin surface that paints a status pill / dot reads from here so adding
 // a new status (or recoloring an existing one) is exactly one edit.
 
-export type CmsStatusKey = 'published' | 'scheduled' | 'approved' | 'in_review' | 'archived' | 'draft'
+// FIX-047: collapsed from 6 to 3. STATUS_STYLES keeps the 3 supported keys;
+// getStatusStyle() falls back to the draft style for any unrecognized value
+// (defensive for stray legacy values that survive the readStatus() coercion).
+export type CmsStatusKey = 'published' | 'in_review' | 'draft'
 
 export type CmsStatusStyle = {
   /** Tailwind classes for the status dot (background swatch). */
@@ -22,29 +25,11 @@ const STATUS_STYLES: Record<string, CmsStatusStyle> = {
     box: 'border-emerald-300 bg-emerald-50 text-emerald-700',
     label: 'PUBLISHED',
   },
-  scheduled: {
-    dot: 'bg-sky-500',
-    dotText: 'text-sky-600',
-    box: 'border-sky-300 bg-sky-50 text-sky-700',
-    label: 'SCHEDULED',
-  },
-  approved: {
-    dot: 'bg-violet-500',
-    dotText: 'text-violet-600',
-    box: 'border-violet-300 bg-violet-50 text-violet-700',
-    label: 'APPROVED',
-  },
   in_review: {
     dot: 'bg-blue-500',
     dotText: 'text-blue-600',
     box: 'border-blue-300 bg-blue-50 text-blue-700',
     label: 'IN REVIEW',
-  },
-  archived: {
-    dot: 'bg-slate-400',
-    dotText: 'text-slate-400',
-    box: 'border-slate-300 bg-slate-100 text-slate-600',
-    label: 'ARCHIVED',
   },
   draft: {
     dot: 'bg-amber-500',

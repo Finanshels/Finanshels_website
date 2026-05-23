@@ -110,12 +110,15 @@ function cleanEnvValue(value?: string): string {
   return value?.trim().replace(/^['"]|['"]$/g, '') ?? ''
 }
 
+// FIX-041: Firebase projects created after Oct 2024 use `<project>.firebasestorage.app`
+// as the canonical bucket id with no `.appspot.com` alias. Don't rewrite the suffix —
+// pass through whatever the admin/owner configured, just strip URL noise.
 function normalizeBucketId(bucket: string): string {
-  const normalized = bucket.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '')
-  if (normalized.endsWith('.firebasestorage.app')) {
-    return `${normalized.slice(0, -'.firebasestorage.app'.length)}.appspot.com`
-  }
-  return normalized
+  return bucket
+    .trim()
+    .replace(/^gs:\/\//, '')
+    .replace(/^https?:\/\//, '')
+    .replace(/\/+$/, '')
 }
 
 function inferExtension(filename: string, mime: string): string {
@@ -214,8 +217,12 @@ export async function uploadCmsMediaBytes(params: {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     if (message.toLowerCase().includes('specified bucket does not exist')) {
+      const projectHint = cleanEnvValue(process.env.FIREBASE_ADMIN_PROJECT_ID) || 'your-project'
+      // FIX-048: Firebase projects created after Oct 2024 use the new
+      // `<project>.firebasestorage.app` suffix instead of `.appspot.com`.
+      // Mention both so the operator knows which one applies to them.
       throw new Error(
-        `Firebase Storage bucket "${bucketName}" does not exist. Set FIREBASE_STORAGE_BUCKET to the real bucket id (usually "${cleanEnvValue(process.env.FIREBASE_ADMIN_PROJECT_ID) || 'your-project'}.appspot.com") or create the bucket in Firebase console.`
+        `Firebase Storage bucket "${bucketName}" does not exist. Set FIREBASE_STORAGE_BUCKET to the real bucket id — pre-Oct-2024 projects use "${projectHint}.appspot.com", projects created after Oct 2024 use "${projectHint}.firebasestorage.app". Or create the bucket in the Firebase console.`
       )
     }
     throw error

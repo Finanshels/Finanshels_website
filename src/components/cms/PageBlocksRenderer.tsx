@@ -44,6 +44,11 @@ function HeroBlock({ block }: { block: Block }) {
   const imageUrl = readString(block.imageUrl)
   const ctaLabel = readString(block.ctaLabel)
   const ctaUrl = readString(block.ctaUrl)
+  // FIX-048: secondary CTA was defined in the block schema but never rendered.
+  const secondaryCtaLabel = readString(block.secondaryCtaLabel)
+  const secondaryCtaUrl = readString(block.secondaryCtaUrl)
+  const hasPrimary = ctaLabel && ctaUrl
+  const hasSecondary = secondaryCtaLabel && secondaryCtaUrl
   return (
     <section className="bg-gradient-to-b from-slate-950 to-slate-900 text-white">
       <div className="mx-auto max-w-5xl px-6 py-16 sm:px-10">
@@ -61,10 +66,22 @@ function HeroBlock({ block }: { block: Block }) {
             className="mt-8 w-full rounded-2xl object-cover"
           />
         ) : null}
-        {ctaLabel && ctaUrl ? (
-          <a href={ctaUrl} className="mt-8 inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark">
-            {ctaLabel}
-          </a>
+        {hasPrimary || hasSecondary ? (
+          <div className="mt-8 flex flex-wrap gap-3">
+            {hasPrimary ? (
+              <a href={ctaUrl} className="inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark">
+                {ctaLabel}
+              </a>
+            ) : null}
+            {hasSecondary ? (
+              <a
+                href={secondaryCtaUrl}
+                className="inline-flex rounded-xl border border-white/30 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                {secondaryCtaLabel}
+              </a>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </section>
@@ -76,18 +93,51 @@ function CtaBlock({ block }: { block: Block }) {
   const subheading = readString(block.subheading)
   const primaryLabel = readString(block.primaryLabel)
   const primaryUrl = readString(block.primaryUrl)
+  // FIX-048: secondary button + tone were defined in the block schema but
+  // never rendered. `tone` maps to a background colour; default keeps the
+  // existing brand-soft cream so legacy blocks render unchanged.
+  const secondaryLabel = readString(block.secondaryLabel)
+  const secondaryUrl = readString(block.secondaryUrl)
+  const tone = readString(block.tone)
+  const sectionTone =
+    tone === 'brand'
+      ? 'bg-brand-primary text-brand-dark'
+      : tone === 'dark'
+        ? 'bg-slate-950 text-white'
+        : tone === 'minimal'
+          ? 'bg-white border-y border-slate-200 text-slate-900'
+          : 'bg-[#fff8f1] text-slate-900'
+  const subheadingTone = tone === 'dark' ? 'text-white/70' : 'text-slate-600'
+  const secondaryButtonTone =
+    tone === 'dark'
+      ? 'border-white/30 text-white hover:bg-white/10'
+      : 'border-slate-300 text-slate-900 hover:bg-slate-100'
+  const hasPrimary = primaryLabel && primaryUrl
+  const hasSecondary = secondaryLabel && secondaryUrl
   return (
-    <section className="bg-[#fff8f1] py-12">
+    <section className={`${sectionTone} py-12`}>
       <div className="mx-auto max-w-3xl px-6 text-center">
-        {heading ? <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
-        {subheading ? <p className="mt-3 text-base text-slate-600">{subheading}</p> : null}
-        {primaryLabel && primaryUrl ? (
-          <a
-            href={primaryUrl}
-            className="mt-6 inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark hover:brightness-110"
-          >
-            {primaryLabel}
-          </a>
+        {heading ? <h2 className="text-3xl font-semibold tracking-tight">{heading}</h2> : null}
+        {subheading ? <p className={`mt-3 text-base ${subheadingTone}`}>{subheading}</p> : null}
+        {hasPrimary || hasSecondary ? (
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            {hasPrimary ? (
+              <a
+                href={primaryUrl}
+                className="inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark hover:brightness-110"
+              >
+                {primaryLabel}
+              </a>
+            ) : null}
+            {hasSecondary ? (
+              <a
+                href={secondaryUrl}
+                className={`inline-flex rounded-xl border px-5 py-3 text-sm font-semibold ${secondaryButtonTone}`}
+              >
+                {secondaryLabel}
+              </a>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </section>

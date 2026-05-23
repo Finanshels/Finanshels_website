@@ -10,6 +10,26 @@ import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
 
 export const revalidate = 600
 
+// FIX-048: decode the handful of HTML entities most likely to survive
+// `replace(/<[^>]+>/g, '')` on a glossary `definition` blob. Server-side
+// helper — Node has no built-in entity decoder.
+const ENTITY_MAP: Record<string, string> = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&apos;': "'",
+  '&nbsp;': ' ',
+}
+
+function decodeEntities(input: string): string {
+  return input
+    .replace(/&(?:amp|lt|gt|quot|apos|nbsp);|&#39;/g, (m) => ENTITY_MAP[m] ?? m)
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+}
+
 type Props = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -17,9 +37,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const term = await getGlossaryTermBySlug(slug)
   if (!term) return { title: 'Glossary' }
 
-  const description = term.definition.replace(/<[^>]+>/g, '').slice(0, 160)
+  // FIX-048: also decode common HTML entities so meta description doesn't
+  // ship `&amp;` / `&#39;` to crawlers and SERP previews.
+  const description = decodeEntities(term.definition.replace(/<[^>]+>/g, '')).slice(0, 160)
   const url = term.canonical_url || `${getSiteUrl()}/glossary/${term.slug}`
-  const noindex = term.noindex === true || term.indexable === false
+  // FIX-047: `robots_meta` is the canonical control. Legacy `noindex` /
+  // `indexable` booleans are honoured for pre-FIX-047 Firestore docs only.
+  const robotsMeta = (term.robots_meta ?? '').toLowerCase()
+  const noindex =
+    robotsMeta.includes('noindex') ||
+    term.noindex === true ||
+    term.indexable === false
 
   return {
     title: term.term,
