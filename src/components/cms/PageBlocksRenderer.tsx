@@ -37,6 +37,8 @@ function detailHref(collection: CmsCollectionKey, slug: string): string | null {
   return pattern.replace('[slug]', encodeURIComponent(slug))
 }
 
+// FIX-049: hero variant field was defined in block schema but the renderer
+// always used the dark gradient style. Now respects all five options.
 function HeroBlock({ block }: { block: Block }) {
   const heading = readString(block.heading)
   const subheading = readString(block.subheading)
@@ -44,27 +46,68 @@ function HeroBlock({ block }: { block: Block }) {
   const imageUrl = readString(block.imageUrl)
   const ctaLabel = readString(block.ctaLabel)
   const ctaUrl = readString(block.ctaUrl)
+  const secondaryCtaLabel = readString(block.secondaryCtaLabel)
+  const secondaryCtaUrl = readString(block.secondaryCtaUrl)
+  const variant = readString(block.variant) || 'default'
+  const hasPrimary = ctaLabel && ctaUrl
+  const hasSecondary = secondaryCtaLabel && secondaryCtaUrl
+
+  const isDark = variant === 'default' || variant === 'video-bg'
+  const sectionClass =
+    variant === 'minimal'
+      ? 'bg-white text-slate-900'
+      : variant === 'gradient'
+        ? 'bg-gradient-to-br from-brand-primary/10 via-white to-brand-primary/5 text-slate-900'
+        : variant === 'split'
+          ? 'bg-slate-50 text-slate-900'
+          : 'bg-gradient-to-b from-slate-950 to-slate-900 text-white'
+  const eyebrowClass = isDark ? 'text-white/50' : 'text-brand-primary'
+  const subheadingClass = isDark ? 'text-white/70' : 'text-slate-600'
+  const secondaryBtnClass = isDark
+    ? 'border-white/30 text-white hover:bg-white/10'
+    : 'border-slate-300 text-slate-900 hover:bg-slate-100'
+
+  const textContent = (
+    <>
+      {eyebrow ? (
+        <p className={`text-xs font-semibold uppercase tracking-[0.32em] ${eyebrowClass}`}>{eyebrow}</p>
+      ) : null}
+      {heading ? <h2 className="mt-3 text-4xl font-semibold tracking-tight">{heading}</h2> : null}
+      {subheading ? <p className={`mt-4 max-w-2xl text-lg ${subheadingClass}`}>{subheading}</p> : null}
+      {hasPrimary || hasSecondary ? (
+        <div className="mt-8 flex flex-wrap gap-3">
+          {hasPrimary ? (
+            <a href={ctaUrl} className="inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark">
+              {ctaLabel}
+            </a>
+          ) : null}
+          {hasSecondary ? (
+            <a href={secondaryCtaUrl} className={`inline-flex rounded-xl border px-5 py-3 text-sm font-semibold ${secondaryBtnClass}`}>
+              {secondaryCtaLabel}
+            </a>
+          ) : null}
+        </div>
+      ) : null}
+    </>
+  )
+
+  if (variant === 'split' && imageUrl) {
+    return (
+      <section className={sectionClass}>
+        <div className="mx-auto grid max-w-5xl gap-8 px-6 py-16 sm:px-10 md:grid-cols-2 md:items-center">
+          <div>{textContent}</div>
+          <Image src={imageUrl} alt={readString(block.imageAlt)} width={600} height={400} className="w-full rounded-2xl object-cover" />
+        </div>
+      </section>
+    )
+  }
+
   return (
-    <section className="bg-gradient-to-b from-slate-950 to-slate-900 text-white">
+    <section className={sectionClass}>
       <div className="mx-auto max-w-5xl px-6 py-16 sm:px-10">
-        {eyebrow ? (
-          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-white/50">{eyebrow}</p>
-        ) : null}
-        {heading ? <h2 className="mt-3 text-4xl font-semibold tracking-tight">{heading}</h2> : null}
-        {subheading ? <p className="mt-4 max-w-2xl text-lg text-white/70">{subheading}</p> : null}
+        {textContent}
         {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={readString(block.imageAlt)}
-            width={1200}
-            height={630}
-            className="mt-8 w-full rounded-2xl object-cover"
-          />
-        ) : null}
-        {ctaLabel && ctaUrl ? (
-          <a href={ctaUrl} className="mt-8 inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark">
-            {ctaLabel}
-          </a>
+          <Image src={imageUrl} alt={readString(block.imageAlt)} width={1200} height={630} className="mt-8 w-full rounded-2xl object-cover" />
         ) : null}
       </div>
     </section>
@@ -76,26 +119,61 @@ function CtaBlock({ block }: { block: Block }) {
   const subheading = readString(block.subheading)
   const primaryLabel = readString(block.primaryLabel)
   const primaryUrl = readString(block.primaryUrl)
+  // FIX-048: secondary button + tone were defined in the block schema but
+  // never rendered. `tone` maps to a background colour; default keeps the
+  // existing brand-soft cream so legacy blocks render unchanged.
+  const secondaryLabel = readString(block.secondaryLabel)
+  const secondaryUrl = readString(block.secondaryUrl)
+  const tone = readString(block.tone)
+  const sectionTone =
+    tone === 'brand'
+      ? 'bg-brand-primary text-brand-dark'
+      : tone === 'dark'
+        ? 'bg-slate-950 text-white'
+        : tone === 'minimal'
+          ? 'bg-white border-y border-slate-200 text-slate-900'
+          : 'bg-[#fff8f1] text-slate-900'
+  const subheadingTone = tone === 'dark' ? 'text-white/70' : 'text-slate-600'
+  const secondaryButtonTone =
+    tone === 'dark'
+      ? 'border-white/30 text-white hover:bg-white/10'
+      : 'border-slate-300 text-slate-900 hover:bg-slate-100'
+  const hasPrimary = primaryLabel && primaryUrl
+  const hasSecondary = secondaryLabel && secondaryUrl
   return (
-    <section className="bg-[#fff8f1] py-12">
+    <section className={`${sectionTone} py-12`}>
       <div className="mx-auto max-w-3xl px-6 text-center">
-        {heading ? <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
-        {subheading ? <p className="mt-3 text-base text-slate-600">{subheading}</p> : null}
-        {primaryLabel && primaryUrl ? (
-          <a
-            href={primaryUrl}
-            className="mt-6 inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark hover:brightness-110"
-          >
-            {primaryLabel}
-          </a>
+        {heading ? <h2 className="text-3xl font-semibold tracking-tight">{heading}</h2> : null}
+        {subheading ? <p className={`mt-3 text-base ${subheadingTone}`}>{subheading}</p> : null}
+        {hasPrimary || hasSecondary ? (
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            {hasPrimary ? (
+              <a
+                href={primaryUrl}
+                className="inline-flex rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-brand-dark hover:brightness-110"
+              >
+                {primaryLabel}
+              </a>
+            ) : null}
+            {hasSecondary ? (
+              <a
+                href={secondaryUrl}
+                className={`inline-flex rounded-xl border px-5 py-3 text-sm font-semibold ${secondaryButtonTone}`}
+              >
+                {secondaryLabel}
+              </a>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </section>
   )
 }
 
+// FIX-049: subheading field was defined in block schema but never rendered.
 function FaqAccordionBlock({ block }: { block: Block }) {
   const heading = readString(block.heading)
+  const subheading = readString(block.subheading)
   const items = readArray(block.items).filter(
     (item): item is { question: string; answer: string } =>
       Boolean(item) &&
@@ -107,6 +185,7 @@ function FaqAccordionBlock({ block }: { block: Block }) {
     <section className="bg-white py-12">
       <div className="mx-auto max-w-3xl px-6">
         {heading ? <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {subheading ? <p className="mt-2 text-base text-slate-600">{subheading}</p> : null}
         <dl className="mt-6 space-y-3">
           {items.map((item, idx) => (
             <details key={idx} className="rounded-xl border border-slate-200 bg-slate-50 p-4 open:bg-white">
@@ -167,11 +246,14 @@ function VideoEmbedBlock({ block }: { block: Block }) {
   )
 }
 
+// FIX-049: gated and formId were defined in block schema but never rendered.
 function DownloadBlock({ block }: { block: Block }) {
   const heading = readString(block.heading)
   const description = readString(block.description)
   const fileUrl = readString(block.fileUrl)
   const cover = readString(block.coverImageUrl)
+  const gated = block.gated === true || block.gated === 'true'
+  const formId = readString(block.formId)
   return (
     <section className="bg-white py-12">
       <div className="mx-auto grid max-w-5xl gap-6 px-6 sm:grid-cols-[160px,1fr]">
@@ -187,7 +269,14 @@ function DownloadBlock({ block }: { block: Block }) {
         <div>
           {heading ? <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
           {description ? <p className="mt-2 text-slate-700">{description}</p> : null}
-          {fileUrl ? (
+          {gated && formId ? (
+            <p className="mt-4 text-sm text-slate-500">
+              Fill out the form to access this resource.{' '}
+              <a href={"/contact?form=" + encodeURIComponent(formId)} className="font-semibold text-brand-primary underline">
+                Request access
+              </a>
+            </p>
+          ) : fileUrl ? (
             <a
               href={fileUrl}
               className="mt-4 inline-flex rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-brand-dark hover:brightness-110"
@@ -201,16 +290,32 @@ function DownloadBlock({ block }: { block: Block }) {
   )
 }
 
+// FIX-049: authorImageUrl and logoUrl were defined in block schema but never rendered.
 function TestimonialBlock({ block }: { block: Block }) {
   const quote = readString(block.quote)
+  const authorName = readString(block.authorName)
+  const authorRole = readString(block.authorRole)
+  const companyName = readString(block.companyName)
+  const authorImageUrl = readString(block.authorImageUrl)
+  const logoUrl = readString(block.logoUrl)
   return (
     <section className="bg-[#fff8f1] py-12">
       <figure className="mx-auto max-w-3xl px-6 text-center">
-        <blockquote className="text-2xl font-semibold tracking-tight text-slate-900">“{quote}”</blockquote>
-        <figcaption className="mt-4 text-sm text-slate-600">
-          {readString(block.authorName)}
-          {readString(block.authorRole) ? `, ${readString(block.authorRole)}` : null}
-          {readString(block.companyName) ? ` · ${readString(block.companyName)}` : null}
+        <blockquote className="text-2xl font-semibold tracking-tight text-slate-900">&ldquo;{quote}&rdquo;</blockquote>
+        <figcaption className="mt-4 flex flex-col items-center gap-3">
+          <div className="flex items-center gap-3">
+            {authorImageUrl ? (
+              <Image src={authorImageUrl} alt={authorName} width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
+            ) : null}
+            <span className="text-sm text-slate-600">
+              {authorName}
+              {authorRole ? `, ${authorRole}` : null}
+              {companyName ? ` · ${companyName}` : null}
+            </span>
+          </div>
+          {logoUrl ? (
+            <Image src={logoUrl} alt={companyName || 'Company logo'} width={120} height={32} className="mt-1 h-6 w-auto object-contain opacity-70" />
+          ) : null}
         </figcaption>
       </figure>
     </section>
@@ -255,7 +360,7 @@ function TableBlock({ block }: { block: Block }) {
         {readString(block.heading) ? (
           <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{readString(block.heading)}</h2>
         ) : null}
-        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+        <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-left text-sm">
             {data.headers ? (
               <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">

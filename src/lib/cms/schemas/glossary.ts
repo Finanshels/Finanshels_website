@@ -14,6 +14,9 @@ export const glossaryTermSchema = z.object({
   updatedAt: z.coerce.date().optional(),
   // FIX-035: surface SEO/index controls + AEO FAQ items so the canonical
   // glossary route can emit JSON-LD and honour noindex.
+  // FIX-047: `robots_meta` is the new single source of truth; `noindex` /
+  // `indexable` retained as optional for pre-FIX-047 docs only.
+  robots_meta: z.string().optional(),
   noindex: z.boolean().optional(),
   indexable: z.boolean().optional(),
   canonical_url: z.string().optional(),
@@ -25,7 +28,11 @@ export const glossaryTermSchema = z.object({
       })
     )
     .optional(),
-  status: z.enum(['draft', 'published']).default('published'),
+  // FIX-048: include `in_review` so the parser does not silently drop docs
+  // mid-workflow. Public routes still gate on `status === 'published'`
+  // separately. Default stays `'published'` for backward-compat with
+  // pre-status legacy docs (see schemas/blog.ts for rationale).
+  status: z.enum(['draft', 'in_review', 'published']).default('published'),
 })
 
 export type GlossaryTerm = z.infer<typeof glossaryTermSchema>

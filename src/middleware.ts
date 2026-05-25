@@ -3,7 +3,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 const SESSION_COOKIE_NAME = 'finanshels_admin_v2'
 const LEGACY_COOKIE_NAME = 'finanshels_admin'
 const LOGIN_PATH = '/admin/login'
-const PUBLIC_ADMIN_PREFIXES = ['/admin/login', '/admin/logout', '/admin/forgot', '/admin/reset']
+// FIX-048: `/admin/accept-invite` is the unauthenticated invitation-acceptance
+// page — invitees must reach it without a session cookie. Previously
+// middleware redirected them to login, breaking the invite flow entirely.
+// `/admin/forgot` and `/admin/reset` were removed: no backing page exists
+// under src/app/admin/ and there is no self-serve password-reset flow yet
+// (admins reset other users' passwords from /admin/settings/users).
+const PUBLIC_ADMIN_PREFIXES = ['/admin/login', '/admin/logout', '/admin/accept-invite']
 
 // FIX-012: defense-in-depth admin auth guard. Routes under /admin/* require a
 // session cookie. Per-page `requireAdminAuth()` still performs the full

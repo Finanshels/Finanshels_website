@@ -13,6 +13,9 @@ export const blogPostSchema = z.object({
   author: z.string().optional(),
   authorName: z.string().optional(),
   featured_image: z.string().optional(),
+  // FIX-048: editors set `featured_image_alt` in admin (a11y/SEO); thread it
+  // through so the public blog page can render a descriptive alt text.
+  featured_image_alt: z.string().optional(),
   heroImageUrl: z.string().optional(),
   seo_title: z.string().optional(),
   seoTitle: z.string().optional(),
@@ -27,10 +30,21 @@ export const blogPostSchema = z.object({
   card_description: z.string().optional(),
   canonical_url: z.string().optional(),
   schema_type: z.string().optional(),
+  // FIX-047: `robots_meta` is the single SEO indexing control. The legacy
+  // `noindex`/`indexable` booleans remain in the schema as optional so
+  // pre-FIX-047 Firestore docs continue to parse; they are no longer editable.
+  robots_meta: z.string().optional(),
   noindex: z.boolean().optional(),
   indexable: z.boolean().optional(),
   page_blocks: z.array(z.record(z.unknown())).optional(),
-  status: z.enum(['draft', 'published']).default('published'),
+  // FIX-048: include `in_review` so the parser does not silently drop docs
+  // mid-workflow. Public routes still gate on `status === 'published'`
+  // separately. Default stays `'published'` so pre-status legacy docs
+  // imported from Webflow without a `status` field continue to render
+  // publicly (collectionRepository defaults to `'draft'` for new writes —
+  // the asymmetry is intentional: public-read fallback vs. admin-write
+  // safety).
+  status: z.enum(['draft', 'in_review', 'published']).default('published'),
 })
 
 export type BlogPost = z.infer<typeof blogPostSchema>

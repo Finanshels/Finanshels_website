@@ -11,6 +11,7 @@ import {
 import { getCmsDocument } from '@/lib/cms/collectionRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
+import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 
 type Props = {
   params: Promise<{ collection: string; slug: string }>
@@ -118,7 +119,7 @@ function renderTemplate(collection: CmsCollectionKey, doc: Record<string, unknow
     )
   }
 
-  if (collection === 'videos' || collection === 'podcasts' || collection === 'webinars') {
+  if (collection === 'podcasts' || collection === 'webinars') {
     return (
       <section className="mx-auto max-w-4xl px-6 py-16 sm:px-10">
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-500">{collection.replace('_', ' ')}</p>
@@ -135,20 +136,20 @@ function renderTemplate(collection: CmsCollectionKey, doc: Record<string, unknow
     )
   }
 
-  if (collection === 'faq_questions' || collection === 'faq_topics') {
+  if (collection === 'faqs') {
+    // FIX-048: title already shows the question (titleField=question on faqs).
+    // Previously the branch re-printed `doc.question` under a "Question"
+    // label, doubling the heading. The trailing topic_description /
+    // description blocks read fields that don't exist on the faqs schema —
+    // dead code, removed.
     return (
       <section className="mx-auto max-w-3xl px-6 py-16 sm:px-10">
         <h1 className="text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
-        {doc.question ? <p className="mt-4 text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Question</p> : null}
-        {doc.question ? <p className="mt-2 text-lg text-slate-800">{String(doc.question)}</p> : null}
         {doc.answer ? (
           <>
             <p className="mt-6 text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Answer</p>
             <p className="mt-2 whitespace-pre-wrap text-slate-700">{String(doc.answer)}</p>
           </>
-        ) : null}
-        {(doc.topic_description || doc.description) ? (
-          <p className="mt-6 whitespace-pre-wrap text-slate-700">{String(doc.topic_description ?? doc.description)}</p>
         ) : null}
       </section>
     )
@@ -200,9 +201,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     (typeof doc.robots_meta === 'string' && doc.robots_meta) ||
     (typeof doc.robotsMeta === 'string' && doc.robotsMeta) ||
     ''
+  // FIX-047: `robots_meta` is the canonical control. The legacy `noindex` /
+  // `indexable` booleans are kept in the OR for pre-FIX-047 Firestore docs only.
   const noindex =
-    doc.noindex === true ||
     (robotsMetaRaw && robotsMetaRaw.toLowerCase().includes('noindex')) ||
+    doc.noindex === true ||
     doc.indexable === false
   const ogImage =
     (typeof doc.og_image === 'string' && doc.og_image) ||
@@ -261,13 +264,11 @@ export default async function CmsCollectionContentPage({ params }: Props) {
 
   const doc = await getCmsDocument(definition.key, slug)
   if (!doc) notFound()
+  // FIX-047: collapsed 6-state enum to 3. Only `published` renders publicly.
+  // The `scheduled` time-windowed visibility branch is gone — scheduled
+  // publishing has been removed from the workflow.
   const status = String(doc.status ?? 'draft')
-  const scheduledAt = doc.scheduledAt instanceof Date ? doc.scheduledAt : null
-  const now = new Date()
-  const isVisible =
-    status === 'published' ||
-    (status === 'scheduled' && scheduledAt !== null && Number.isFinite(scheduledAt.getTime()) && scheduledAt <= now)
-  if (!isVisible) notFound()
+  if (status !== 'published') notFound()
 
   // FIX-003: customer_reviews require explicit signed consent before going
   // public. Without this gate, status=published alone bypasses approval —
@@ -286,8 +287,12 @@ export default async function CmsCollectionContentPage({ params }: Props) {
     'ebooks',
     'team_members',
     'our_customers',
-    'review_sources',
     'media_assets',
+    // FIX-048: `tools` has no `renderTemplate` branch and no dedicated
+    // `/tools/[slug]` route. Without this entry the generic content page
+    // falls through to `<pre>JSON.stringify(doc)</pre>` and leaks the
+    // entire Firestore document (including `tool_embed_code`).
+    'tools',
   ])
   if (SENSITIVE_GENERIC_ROUTE_BLOCKLIST.has(collection)) {
     notFound()
@@ -365,9 +370,9 @@ export default async function CmsCollectionContentPage({ params }: Props) {
     <>
       {renderTemplate(definition.key, doc)}
       {blocks.length > 0 ? <PageBlocksRenderer blocks={blocks} /> : null}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(baseSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-      {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} /> : null}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(baseSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }} />
+      {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }} /> : null}
     </>
   )
 }

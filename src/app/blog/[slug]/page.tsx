@@ -8,6 +8,7 @@ import { getSiteUrl } from '@/lib/cms/config'
 import { getBlogPostBySlug } from '@/lib/cms/blogRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
+import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 
 export const revalidate = 300
 
@@ -30,7 +31,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ogDescription = post.og_description || description
   const ogImage = pickOgImage(post)
   const url = post.canonical_url || `${getSiteUrl()}/blog/${post.slug}`
-  const noindex = post.noindex === true || post.indexable === false
+  // FIX-047: `robots_meta` is the canonical control. Legacy `noindex` /
+  // `indexable` booleans are honoured for pre-FIX-047 Firestore docs only.
+  const robotsMeta = (post.robots_meta ?? '').toLowerCase()
+  const noindex =
+    robotsMeta.includes('noindex') ||
+    post.noindex === true ||
+    post.indexable === false
 
   return {
     title,
@@ -92,12 +99,12 @@ export default async function BlogArticlePage({ params }: Props) {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger -- emitting JSON-LD for crawlers
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger -- emitting JSON-LD for crawlers
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
       />
       <article>
         <header className="border-b border-slate-100 bg-gradient-to-b from-slate-950 to-slate-900 text-white">
@@ -123,7 +130,10 @@ export default async function BlogArticlePage({ params }: Props) {
             <div className="relative aspect-[21/9] overflow-hidden rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-slate-900/30">
               <Image
                 src={String(post.featured_image ?? post.heroImageUrl)}
-                alt=""
+                // FIX-048: use editor-supplied alt text; fall back to the post
+                // title (always populated) instead of an empty string so
+                // screen readers and image search both get something useful.
+                alt={post.featured_image_alt?.trim() || post.title}
                 fill
                 sizes="(min-width: 1024px) 896px, 100vw"
                 className="object-cover"

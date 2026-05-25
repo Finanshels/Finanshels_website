@@ -442,9 +442,13 @@ function UserRow({
             <form action={resetPasswordAction} className="flex items-center gap-2">
               <input type="hidden" name="userId" value={user.id} />
               <input
-                type="text"
+                // FIX-048: was `type="text"` — exposed the new password in
+                // plaintext on screen while the admin typed it. `type="password"`
+                // masks input the standard way.
+                type="password"
                 name="newPassword"
                 placeholder="New password (≥ 8 chars)"
+                autoComplete="new-password"
                 className="w-44 rounded-lg border border-cms-rule bg-white px-2 py-1 text-xs text-slate-700 placeholder:text-slate-400"
               />
               <button

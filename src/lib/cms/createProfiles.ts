@@ -44,12 +44,6 @@ const PROFILES: Record<CmsCollectionKey, CmsCreateProfile> = {
       },
     ],
   },
-  videos: {
-    collection: 'videos',
-    heading: 'New video',
-    tagline: 'Paste the URL and the platform — the rest happens on the full editor.',
-    fields: ['title', 'video_platform', 'video_url', 'thumbnail_image', 'video_category'],
-  },
   podcasts: {
     collection: 'podcasts',
     heading: 'New podcast episode',
@@ -62,7 +56,6 @@ const PROFILES: Record<CmsCollectionKey, CmsCreateProfile> = {
     fields: [
       'customer_name',
       'rating',
-      'review_source',
       'review_text',
       'approved_for_publication',
     ],
@@ -104,11 +97,6 @@ const PROFILES: Record<CmsCollectionKey, CmsCreateProfile> = {
     heading: 'New tool',
     fields: ['tool_name', 'tool_type', 'short_description', 'tool_embed_type', 'tool_route_key'],
   },
-  review_sources: {
-    collection: 'review_sources',
-    heading: 'New review source',
-    fields: ['source_name', 'source_url', 'source_type', 'source_logo'],
-  },
   ebooks: {
     collection: 'ebooks',
     heading: 'New ebook',
@@ -126,15 +114,11 @@ const PROFILES: Record<CmsCollectionKey, CmsCreateProfile> = {
     heading: 'New glossary term',
     fields: ['term', 'definition_short', 'definition_full', 'term_category', 'alphabet_letter'],
   },
-  faq_questions: {
-    collection: 'faq_questions',
-    heading: 'New FAQ question',
-    fields: ['question', 'answer', 'faq_topic'],
-  },
-  faq_topics: {
-    collection: 'faq_topics',
-    heading: 'New FAQ topic',
-    fields: ['topic_name', 'topic_description', 'icon'],
+  faqs: {
+    collection: 'faqs',
+    heading: 'New FAQ',
+    tagline: 'Ask one question, give one answer. Group by topic later.',
+    fields: ['question', 'answer', 'topic'],
   },
   team_members: {
     collection: 'team_members',
