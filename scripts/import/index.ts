@@ -8,6 +8,8 @@ import { createReport } from './lib/report'
 
 import { importTeamMembers } from './team_members'
 import { importOurCustomers } from './our_customers'
+import { importGlossaryTerms } from './glossary_terms'
+import { importFaqs } from './faqs'
 
 interface CliFlags {
   collection: string | null
@@ -36,10 +38,11 @@ const TOPOLOGICAL_ORDER: ReadonlyArray<string> = [
   // Pass 1 — no cross-collection refs
   'team_members',
   'our_customers',
-  // Pass 2 (with refs, to be added):
-  // 'review_sources', 'faq_topics', 'glossary_terms',
-  // 'tools', 'ebooks', 'webinars', 'videos', 'podcasts',
-  // 'blog_posts', 'customer_stories', 'customer_reviews', 'faq_questions',
+  'glossary_terms',
+  'faqs',
+  // To be added:
+  // 'review_sources', 'tools', 'ebooks', 'webinars', 'videos', 'podcasts',
+  // 'blog_posts', 'customer_stories', 'customer_reviews',
 ]
 
 async function main(): Promise<void> {
@@ -125,6 +128,10 @@ async function main(): Promise<void> {
         await importTeamMembers({ webflow, assetMigrator, writer, referenceMap, report })
       } else if (collection === 'our_customers') {
         await importOurCustomers({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'glossary_terms') {
+        await importGlossaryTerms({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'faqs') {
+        await importFaqs({ webflow, assetMigrator, writer, referenceMap, report })
       } else {
         process.stderr.write(`Unknown collection: ${collection}\n`)
         process.exit(2)
