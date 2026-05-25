@@ -1,3 +1,4 @@
+import 'server-only'
 import type { Firestore, QueryDocumentSnapshot } from 'firebase-admin/firestore'
 import { COLLECTIONS, getDb } from './firestore'
 import { normalizeFirestoreTimestamps } from './normalizeDoc'

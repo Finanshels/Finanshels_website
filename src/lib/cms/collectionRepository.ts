@@ -1,3 +1,4 @@
+import 'server-only'
 import { Timestamp } from 'firebase-admin/firestore'
 import { getDb } from './firestore'
 import { normalizeFirestoreTimestamps } from './normalizeDoc'
@@ -232,6 +233,9 @@ export async function listCmsMediaLibraryItems(limit = 400): Promise<CmsMediaLib
   })
 }
 
+// FIX-049: added max-iteration guard to prevent unbounded loops.
+const MAX_SLUG_ATTEMPTS = 200
+
 /** Finds a Firestore-safe document id `{base}`, `{base}-2`, … that does not exist yet. */
 export async function reserveUnusedMediaSlug(originalBase: string): Promise<string> {
   const db = getDb()
@@ -240,12 +244,13 @@ export async function reserveUnusedMediaSlug(originalBase: string): Promise<stri
   if (!base || base === '-') base = 'asset'
   let candidate = base
   let suffix = 0
-  for (;;) {
+  for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt++) {
     const snap = await db.collection('media_assets').doc(candidate).get()
     if (!snap.exists) return candidate
     suffix += 1
     candidate = `${base}-${suffix + 1}`
   }
+  throw new Error(`Could not reserve a unique media slug after ${MAX_SLUG_ATTEMPTS} attempts (base: "${base}")`)
 }
 
 export async function bulkUpdateCmsDocumentStatus(

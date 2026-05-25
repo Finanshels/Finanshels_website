@@ -7,6 +7,7 @@ import { getSiteUrl } from '@/lib/cms/config'
 import { getGlossaryTermBySlug } from '@/lib/cms/glossaryRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
+import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 
 export const revalidate = 600
 
@@ -104,18 +105,18 @@ export default async function GlossaryTermPage({ params }: Props) {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger -- JSON-LD for crawlers
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(definedTermLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(definedTermLd) }}
       />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger -- JSON-LD for crawlers
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
       />
       {faqLd ? (
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger -- JSON-LD for crawlers
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(faqLd) }}
         />
       ) : null}
       <article className="border-b border-slate-100">

@@ -8,6 +8,7 @@ import { getSiteUrl } from '@/lib/cms/config'
 import { getBlogPostBySlug } from '@/lib/cms/blogRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
+import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 
 export const revalidate = 300
 
@@ -98,12 +99,12 @@ export default async function BlogArticlePage({ params }: Props) {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger -- emitting JSON-LD for crawlers
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger -- emitting JSON-LD for crawlers
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
       />
       <article>
         <header className="border-b border-slate-100 bg-gradient-to-b from-slate-950 to-slate-900 text-white">

@@ -21,14 +21,14 @@ Marketing site + CMS for [finanshels.com](https://finanshels.com). Next.js 15 Ap
 
 | Area | Entry point | Notes |
 |---|---|---|
-| CMS definitions (SoT) | [src/lib/cms/collectionDefinitions.ts](src/lib/cms/collectionDefinitions.ts) | 1447 LOC. 15 collections × 9 sections. Read [docs/cms-firestore.md](docs/cms-firestore.md) before editing. |
+| CMS definitions (SoT) | [src/lib/cms/collectionDefinitions.ts](src/lib/cms/collectionDefinitions.ts) | ~1300 LOC. 12 collections × 9 sections. Read [docs/cms-firestore.md](docs/cms-firestore.md) before editing. |
 | Field encode/decode (SoT) | [src/lib/cms/fieldCodec.ts](src/lib/cms/fieldCodec.ts) | Every `CmsFieldType` has exactly one codec. Decode throws `InvalidFieldValueError` on bad input. |
 | Firestore client | [src/lib/cms/firestore.ts](src/lib/cms/firestore.ts) | `normalizePrivateKey` handles 5 mangled env formats. |
 | Admin auth | [src/lib/cms/adminAuth.ts](src/lib/cms/adminAuth.ts) + [src/middleware.ts](src/middleware.ts) | Cookie HMAC, `tokenVersion` invalidation, PBKDF2-SHA256 200k. |
 | Revalidation | [src/app/api/revalidate/route.ts](src/app/api/revalidate/route.ts) | Bearer-auth POST, called from GCP Functions on Firestore write. |
 | Page-blocks renderer | [src/components/cms/PageBlocksRenderer.tsx](src/components/cms/PageBlocksRenderer.tsx) | One branch per block type in `CMS_BLOCK_TYPES`. |
 | Admin panel | [src/app/admin/cms/](src/app/admin/cms/) | Collection-driven editor; per-type create flow in `/admin/cms/new/`. |
-| Routed content | [src/app/content/](src/app/content/) | Generic detail page resolves all 15 collections. |
+| Routed content | [src/app/content/](src/app/content/) | Generic detail page resolves all 12 collections. |
 | Firestore rules | [firestore.rules](firestore.rules) | **Deny all client access.** Reads/writes via Admin SDK only. |
 
 ## Read these first when starting CMS work
@@ -52,7 +52,7 @@ Marketing site + CMS for [finanshels.com](https://finanshels.com). Next.js 15 Ap
 
 - **FIX-NNN comments** mark tracked fixes (e.g. `// FIX-031:`). When a recurring class of bug is fixed, add a FIX-NNN comment so future Claude doesn't regress it. Grep for existing numbers before assigning.
 - **Server Actions body limit is 32MB** (raised from default 1MB for media-adjacent forms). New large-form actions don't need extra config.
-- **Statuses**: `draft → in_review → approved → scheduled → published`. Only `published` renders publicly; `draft` is admin-preview-only.
+- **Statuses**: `draft → in_review → published`. Only `published` renders publicly; `draft` is admin-preview-only.
 - **Document ID = slug** for routed collections.
 - **JS files are .jsx** (legacy marketing pages); **TS files are .tsx/.ts** (CMS + new work). New code should be TypeScript.
 

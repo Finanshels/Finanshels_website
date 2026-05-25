@@ -1,3 +1,4 @@
+import 'server-only'
 import { reserveUnusedMediaSlug, type CmsMediaAssetType, upsertCmsDocument } from './collectionRepository'
 import { slugifyForCms } from './slugify'
 import { uploadCmsMediaBytes } from './storageUpload'

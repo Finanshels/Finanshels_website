@@ -3,6 +3,7 @@ import { Fraunces, Plus_Jakarta_Sans } from 'next/font/google'
 import '../index.css'
 import AppChrome from '../components/AppChrome'
 import CookieConsent from '../components/CookieConsent'
+import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 
 const fontSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -96,7 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans antialiased bg-white text-slate-900">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationSchema) }}
         />
         <AppChrome>{children}</AppChrome>
         <CookieConsent />

@@ -1,3 +1,4 @@
+import 'server-only'
 import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto'
 import { Timestamp } from 'firebase-admin/firestore'
 import { getDb } from './firestore'

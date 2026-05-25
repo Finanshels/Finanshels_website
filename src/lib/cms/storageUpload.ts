@@ -1,3 +1,4 @@
+import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { getStorage } from 'firebase-admin/storage'
 import { getAdminApp } from './firestore'
