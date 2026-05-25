@@ -7,6 +7,7 @@ import { createWriter, type CmsDocStatus, type UpsertFn } from './lib/writer'
 import { createReport } from './lib/report'
 
 import { importTeamMembers } from './team_members'
+import { importOurCustomers } from './our_customers'
 
 interface CliFlags {
   collection: string | null
@@ -32,9 +33,13 @@ function parseFlags(argv: string[]): CliFlags {
 }
 
 const TOPOLOGICAL_ORDER: ReadonlyArray<string> = [
-  // Pass 1 — no refs (only team_members implemented in Plan 1)
+  // Pass 1 — no cross-collection refs
   'team_members',
-  // Pass 2 deferred to Plan 2.
+  'our_customers',
+  // Pass 2 (with refs, to be added):
+  // 'review_sources', 'faq_topics', 'glossary_terms',
+  // 'tools', 'ebooks', 'webinars', 'videos', 'podcasts',
+  // 'blog_posts', 'customer_stories', 'customer_reviews', 'faq_questions',
 ]
 
 async function main(): Promise<void> {
@@ -118,6 +123,8 @@ async function main(): Promise<void> {
     try {
       if (collection === 'team_members') {
         await importTeamMembers({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'our_customers') {
+        await importOurCustomers({ webflow, assetMigrator, writer, referenceMap, report })
       } else {
         process.stderr.write(`Unknown collection: ${collection}\n`)
         process.exit(2)
