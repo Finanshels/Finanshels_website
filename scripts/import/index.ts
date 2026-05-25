@@ -64,9 +64,18 @@ async function main(): Promise<void> {
       slug: storageSlug,
       contentType,
     })
+    // Extract the actual object path (with extension) from the Firebase Storage
+    // download URL: https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<encoded-path>?...
+    let storagePath = `cms-media/${storageSlug}`
+    try {
+      const afterO = new URL(result.url).pathname.split('/o/')[1]
+      if (afterO) storagePath = decodeURIComponent(afterO)
+    } catch {
+      // Fall back to extensionless path if URL parsing fails.
+    }
     return {
       url: result.url,
-      storagePath: `cms-media/${storageSlug}`,
+      storagePath,
       size: result.byteSize,
     }
   }
