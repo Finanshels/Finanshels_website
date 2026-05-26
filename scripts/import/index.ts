@@ -10,6 +10,7 @@ import { importTeamMembers } from './team_members'
 import { importOurCustomers } from './our_customers'
 import { importGlossaryTerms } from './glossary_terms'
 import { importFaqs } from './faqs'
+import { importBlogPosts } from './blog_posts'
 
 interface CliFlags {
   collection: string | null
@@ -40,9 +41,11 @@ const TOPOLOGICAL_ORDER: ReadonlyArray<string> = [
   'our_customers',
   'glossary_terms',
   'faqs',
+  // Pass 2 — depend on Pass 1 collections
+  'blog_posts',
   // To be added:
   // 'review_sources', 'tools', 'ebooks', 'webinars', 'videos', 'podcasts',
-  // 'blog_posts', 'customer_stories', 'customer_reviews',
+  // 'customer_stories', 'customer_reviews',
 ]
 
 async function main(): Promise<void> {
@@ -132,6 +135,8 @@ async function main(): Promise<void> {
         await importGlossaryTerms({ webflow, assetMigrator, writer, referenceMap, report })
       } else if (collection === 'faqs') {
         await importFaqs({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'blog_posts') {
+        await importBlogPosts({ webflow, assetMigrator, writer, referenceMap, report })
       } else {
         process.stderr.write(`Unknown collection: ${collection}\n`)
         process.exit(2)
