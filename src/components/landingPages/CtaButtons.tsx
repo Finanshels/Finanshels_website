@@ -59,7 +59,7 @@ export function WhatsappButton({ cta, label = 'WhatsApp', tone = 'light', classN
 export function FormScrollButton({ cta, label = 'Get a free quote', tone = 'light', className }: { cta: CtaConfig; label?: string; tone?: 'light' | 'dark'; className?: string }) {
   const base = 'inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition'
   const styles = tone === 'dark'
-    ? 'bg-amber-400 text-slate-900 hover:bg-amber-300'
+    ? 'bg-amber-400 text-slate-900 hover:bg-amber-300 [.lp-themed_&]:bg-[var(--lp-accent)] [.lp-themed_&]:text-[var(--lp-accent-contrast)] [.lp-themed_&]:hover:brightness-110'
     : 'bg-slate-900 text-white hover:bg-slate-800'
   return (
     <a href={`#${cta.formAnchor.replace(/^#/, '')}`} className={`${base} ${styles} ${className ?? ''}`}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SECTION_CATALOG, getSectionCatalogEntry, type SectionCatalogEntry, type SectionFieldDef } from '@/lib/landingPages/sectionCatalog'
 import { SERVICE_INTERESTS } from '@/lib/landingPages/serviceInterests'
 import type {
@@ -9,6 +9,16 @@ import type {
   LandingPageSection,
   LandingPageStatus,
 } from '@/lib/landingPages/types'
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+}
 
 type Tab = 'content' | 'settings' | 'seo'
 
@@ -108,7 +118,49 @@ export default function LandingPageEditor({
 }) {
   const [tab, setTab] = useState<Tab>('content')
   const [state, setState] = useState<EditorState>(() => pageToState(page))
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(() => slugify(page.internal_name) !== page.slug)
   const payload = useMemo(() => JSON.stringify(stateToPayload(state)), [state])
+  const initialPayloadRef = useRef<string>(payload)
+  const formRef = useRef<HTMLFormElement | null>(null)
+  const isDirty = payload !== initialPayloadRef.current
+
+  // Slug auto-suggest: when internal_name changes and slug hasn't been manually edited yet,
+  // recompute slug from internal_name.
+  useEffect(() => {
+    if (slugManuallyEdited) return
+    const suggested = slugify(state.internal_name)
+    if (suggested && suggested !== state.slug) {
+      setState((s) => ({ ...s, slug: suggested }))
+    }
+  }, [state.internal_name, state.slug, slugManuallyEdited])
+
+  // Cmd/Ctrl+S to save
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const isSave = (e.metaKey || e.ctrlKey) && e.key === 's'
+      if (!isSave) return
+      e.preventDefault()
+      if (formRef.current && isDirty) formRef.current.requestSubmit()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isDirty])
+
+  // Warn on unload if dirty
+  useEffect(() => {
+    if (!isDirty) return
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [isDirty])
+
+  const setSlug = useCallback((v: string) => {
+    setSlugManuallyEdited(true)
+    setState((s) => ({ ...s, slug: v }))
+  }, [])
 
   return (
     <div className="grid lg:grid-cols-[1fr_360px] gap-6">
@@ -133,15 +185,28 @@ export default function LandingPageEditor({
         {tab === 'content' ? (
           <ContentTab state={state} setState={setState} />
         ) : tab === 'settings' ? (
-          <SettingsTab state={state} setState={setState} />
+          <SettingsTab state={state} setState={setState} setSlug={setSlug} />
         ) : (
           <SeoTab state={state} setState={setState} />
         )}
       </div>
 
       <aside className="bg-white rounded-xl border border-slate-200 p-4 h-fit sticky top-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Save & publish</h3>
-        <form action={saveAction} className="space-y-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3 flex items-center justify-between">
+          <span>Save &amp; publish</span>
+          {isDirty ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-semibold px-2 py-0.5">
+              <span className="size-1.5 rounded-full bg-amber-500" />
+              Unsaved
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.5">
+              <span className="size-1.5 rounded-full bg-emerald-500" />
+              Saved
+            </span>
+          )}
+        </h3>
+        <form ref={formRef} action={saveAction} className="space-y-3">
           <input type="hidden" name="id" value={page.id} />
           <input type="hidden" name="payload" value={payload} />
 
@@ -158,13 +223,18 @@ export default function LandingPageEditor({
             </select>
           </label>
 
-          <button className="w-full inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
-            Save changes
+          <button
+            disabled={!isDirty}
+            className="w-full inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Cmd/Ctrl+S"
+          >
+            {isDirty ? 'Save changes' : 'No changes'}
           </button>
 
           <div className="text-[11px] text-slate-500 leading-relaxed pt-2 border-t border-slate-100">
             <p>Default: <strong>noindex, nofollow</strong>. Pages are excluded from sitemap.</p>
             <p className="mt-1.5">Service interest sent to Zoho: <code className="bg-slate-100 rounded px-1">{state.service_interest || '—'}</code></p>
+            <p className="mt-1.5">Tip: <kbd className="bg-slate-100 rounded px-1">⌘/Ctrl + S</kbd> to save.</p>
           </div>
         </form>
       </aside>
@@ -175,6 +245,9 @@ export default function LandingPageEditor({
 // ---------------- Content tab ----------------
 
 function ContentTab({ state, setState }: { state: EditorState; setState: React.Dispatch<React.SetStateAction<EditorState>> }) {
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [overIndex, setOverIndex] = useState<number | null>(null)
+
   function addSection(type: string) {
     const entry = getSectionCatalogEntry(type)
     if (!entry) return
@@ -211,6 +284,35 @@ function ContentTab({ state, setState }: { state: EditorState; setState: React.D
     setState((s) => ({ ...s, sections: s.sections.filter((sec) => sec.id !== id) }))
   }
 
+  function duplicateSection(id: string) {
+    setState((s) => {
+      const idx = s.sections.findIndex((sec) => sec.id === id)
+      if (idx === -1) return s
+      const original = s.sections[idx]
+      if (!original) return s
+      const clone: LandingPageSection = {
+        ...original,
+        id: genId(),
+        props: JSON.parse(JSON.stringify(original.props ?? {})),
+      }
+      const next = s.sections.slice()
+      next.splice(idx + 1, 0, clone)
+      return { ...s, sections: next }
+    })
+  }
+
+  function reorder(from: number, to: number) {
+    setState((s) => {
+      if (from === to || from < 0 || from >= s.sections.length) return s
+      const next = s.sections.slice()
+      const [item] = next.splice(from, 1)
+      // adjust `to` if removing earlier index shifts target
+      const target = Math.min(Math.max(to > from ? to - 1 : to, 0), next.length)
+      next.splice(target, 0, item)
+      return { ...s, sections: next }
+    })
+  }
+
   return (
     <div className="grid md:grid-cols-[260px_1fr] gap-5">
       {/* Catalog (left) */}
@@ -243,17 +345,48 @@ function ContentTab({ state, setState }: { state: EditorState; setState: React.D
         ) : null}
         {state.sections.map((sec, i) => {
           const entry = getSectionCatalogEntry(sec.type)
+          const isOver = overIndex === i && dragIndex !== null && dragIndex !== i
           return (
-            <SectionRow
+            <div
               key={sec.id}
-              section={sec}
-              entry={entry}
-              isFirst={i === 0}
-              isLast={i === state.sections.length - 1}
-              onUpdate={(patch) => updateSection(sec.id, patch)}
-              onMove={(dir) => moveSection(sec.id, dir)}
-              onRemove={() => removeSection(sec.id)}
-            />
+              draggable
+              onDragStart={(e) => {
+                setDragIndex(i)
+                e.dataTransfer.effectAllowed = 'move'
+                try { e.dataTransfer.setData('text/plain', sec.id) } catch { /* some browsers reject */ }
+              }}
+              onDragOver={(e) => {
+                if (dragIndex === null) return
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'move'
+                if (overIndex !== i) setOverIndex(i)
+              }}
+              onDragLeave={() => {
+                if (overIndex === i) setOverIndex(null)
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                if (dragIndex !== null && dragIndex !== i) reorder(dragIndex, i)
+                setDragIndex(null)
+                setOverIndex(null)
+              }}
+              onDragEnd={() => {
+                setDragIndex(null)
+                setOverIndex(null)
+              }}
+              className={isOver ? 'ring-2 ring-blue-300 rounded-xl' : undefined}
+            >
+              <SectionRow
+                section={sec}
+                entry={entry}
+                isFirst={i === 0}
+                isLast={i === state.sections.length - 1}
+                onUpdate={(patch) => updateSection(sec.id, patch)}
+                onMove={(dir) => moveSection(sec.id, dir)}
+                onRemove={() => removeSection(sec.id)}
+                onDuplicate={() => duplicateSection(sec.id)}
+              />
+            </div>
           )
         })}
       </div>
@@ -269,6 +402,7 @@ function SectionRow({
   onUpdate,
   onMove,
   onRemove,
+  onDuplicate,
 }: {
   section: LandingPageSection
   entry: SectionCatalogEntry | null
@@ -277,6 +411,7 @@ function SectionRow({
   onUpdate: (patch: Partial<LandingPageSection>) => void
   onMove: (dir: -1 | 1) => void
   onRemove: () => void
+  onDuplicate: () => void
 }) {
   const [open, setOpen] = useState(true)
 
@@ -287,9 +422,10 @@ function SectionRow({
   return (
     <div className={`bg-white rounded-xl border ${section.enabled ? 'border-slate-200' : 'border-slate-200 opacity-60'}`}>
       <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
+        <span className="text-slate-300 cursor-grab active:cursor-grabbing select-none text-xs leading-none" aria-hidden="true" title="Drag to reorder">⠿⠿</span>
         <div className="flex flex-col gap-0.5">
-          <button type="button" disabled={isFirst} onClick={() => onMove(-1)} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 text-xs">▲</button>
-          <button type="button" disabled={isLast} onClick={() => onMove(1)} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 text-xs">▼</button>
+          <button type="button" disabled={isFirst} onClick={() => onMove(-1)} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 text-xs" aria-label="Move up">▲</button>
+          <button type="button" disabled={isLast} onClick={() => onMove(1)} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 text-xs" aria-label="Move down">▼</button>
         </div>
         <button type="button" onClick={() => setOpen((v) => !v)} className="flex-1 text-left">
           <div className="text-sm font-semibold text-slate-900">{entry?.label ?? section.type}</div>
@@ -303,6 +439,7 @@ function SectionRow({
           />
           Enabled
         </label>
+        <button type="button" onClick={onDuplicate} className="text-xs px-2 py-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-50" title="Duplicate this section">Duplicate</button>
         <button type="button" onClick={onRemove} className="text-xs px-2 py-1 rounded border border-rose-200 text-rose-700 hover:bg-rose-50">Remove</button>
       </div>
       {open ? (
@@ -452,7 +589,11 @@ function JsonField({ field, value, onChange }: { field: SectionFieldDef; value: 
 
 // ---------------- Settings tab ----------------
 
-function SettingsTab({ state, setState }: { state: EditorState; setState: React.Dispatch<React.SetStateAction<EditorState>> }) {
+function SettingsTab({ state, setState, setSlug }: {
+  state: EditorState
+  setState: React.Dispatch<React.SetStateAction<EditorState>>
+  setSlug: (v: string) => void
+}) {
   function set<K extends keyof EditorState>(key: K, value: EditorState[K]) {
     setState((s) => ({ ...s, [key]: value }))
   }
@@ -467,7 +608,13 @@ function SettingsTab({ state, setState }: { state: EditorState; setState: React.
     <div className="grid lg:grid-cols-2 gap-5">
       <Card title="Identity">
         <Text label="Internal name" value={state.internal_name} onChange={(v) => set('internal_name', v)} required />
-        <Text label="URL slug" value={state.slug} onChange={(v) => set('slug', v)} required hint="Used in /landing-pages/[slug]" />
+        <Text
+          label="URL slug"
+          value={state.slug}
+          onChange={(v) => setSlug(slugify(v) || v.toLowerCase().replace(/\s+/g, '-'))}
+          required
+          hint="Used in /landing-pages/[slug] — auto-generated from internal name; edit to override"
+        />
         <Select
           label="Service interest"
           value={state.service_interest}

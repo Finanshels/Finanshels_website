@@ -26,6 +26,14 @@ import FloatingWhatsAppButton from './FloatingWhatsAppButton'
 import GtagScripts from './GtagScripts'
 import type { CtaConfig } from './CtaButtons'
 
+const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
+
+function normalizeAccent(input: unknown): string | null {
+  if (typeof input !== 'string') return null
+  const v = input.trim()
+  return HEX_COLOR.test(v) ? v : null
+}
+
 export default function LandingPageRenderer({
   page,
   isPreview = false,
@@ -52,17 +60,27 @@ export default function LandingPageRenderer({
   const sections = page.sections.filter((s) => s.enabled !== false)
   const hasHero = sections.some((s) => s.type === 'hero')
   const hasAnyForm = sections.some((s) => ['hero', 'inline-form', 'final-cta', 'lead-magnet'].includes(s.type))
+  const accent = normalizeAccent(page.theme.accent_color)
+  const rootStyle = accent
+    ? ({ '--lp-accent': accent, '--lp-accent-contrast': '#0f172a' } as React.CSSProperties)
+    : undefined
 
   return (
-    <>
+    <div style={rootStyle} className={accent ? 'lp-themed' : undefined}>
       {page.google_ads_conversion_id ? <GtagScripts conversionId={page.google_ads_conversion_id} /> : null}
       {isPreview ? (
         <div className="bg-amber-500 text-slate-900 text-center text-xs font-semibold py-1.5 px-4">
           PREVIEW · this landing page is unpublished
         </div>
       ) : null}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-slate-900 focus:text-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold"
+      >
+        Skip to content
+      </a>
       <LandingHeader badgeText={page.theme.badge_text} cta={cta} />
-      <main>
+      <main id="main">
         {!hasHero ? (
           // If editor forgot a hero, inject a minimal form-led intro so above-the-fold conversion still works
           <HeroSection
@@ -87,7 +105,7 @@ export default function LandingPageRenderer({
       <LandingFooter />
       {page.theme.show_sticky_mobile_cta_bar ? <StickyCtaBar cta={cta} /> : null}
       {page.theme.show_floating_whatsapp_button ? <FloatingWhatsAppButton cta={cta} /> : null}
-    </>
+    </div>
   )
 }
 

@@ -50,6 +50,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
+function buildJsonLd(page: { seo: { title: string; description: string; allow_indexing: boolean }; internal_name: string; slug: string }, baseUrl: string): string | null {
+  if (!page.seo.allow_indexing) return null
+  const json = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: page.seo.title || page.internal_name,
+    description: page.seo.description || undefined,
+    url: `${baseUrl}/landing-pages/${page.slug}`,
+    inLanguage: 'en',
+  }
+  return JSON.stringify(json)
+}
+
 export default async function LandingPagePublic({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const page = await getLandingPageBySlug(slug)
@@ -61,5 +74,19 @@ export default async function LandingPagePublic({ params }: { params: Promise<{ 
     return <LandingPageRenderer page={page} isPreview />
   }
 
-  return <LandingPageRenderer page={page} />
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? 'https://finanshels.com'
+  const jsonLd = buildJsonLd(page, baseUrl)
+
+  return (
+    <>
+      {jsonLd ? (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: jsonLd }}
+        />
+      ) : null}
+      <LandingPageRenderer page={page} />
+    </>
+  )
 }

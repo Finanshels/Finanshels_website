@@ -34,8 +34,19 @@ const leadSchema = z.object({
   landing_page_id: z.string().min(1).max(128),
   landing_page_slug: z.string().min(1).max(256),
   service_interest: z.string().min(1).max(64),
-  name: z.string().min(1).max(120),
-  phone: z.string().min(5).max(40),
+  name: z
+    .string()
+    .min(2, 'Name is too short')
+    .max(120)
+    .refine((v) => v.trim().length >= 2, 'Name is too short'),
+  phone: z
+    .string()
+    .min(5)
+    .max(40)
+    .refine((v) => {
+      const digits = v.replace(/[^0-9]/g, '')
+      return digits.length >= 7 && digits.length <= 15
+    }, 'Phone must have 7–15 digits'),
   email: z.string().email().max(180),
   company_name: z.string().max(180).optional(),
   attribution: attributionSchema,
