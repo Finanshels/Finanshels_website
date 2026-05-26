@@ -47,6 +47,39 @@
         { "fieldPath": "zohoStatus", "order": "ASCENDING" },
         { "fieldPath": "lastSeenAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "landing_pages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "landing_pages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "service_interest", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "landing_pages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "service_interest", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "landing_page_leads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "landing_page_id", "order": "ASCENDING" },
+        { "fieldPath": "submitted_at", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

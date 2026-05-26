@@ -7,6 +7,13 @@ import { createWriter, type CmsDocStatus, type UpsertFn } from './lib/writer'
 import { createReport } from './lib/report'
 
 import { importTeamMembers } from './team_members'
+import { importOurCustomers } from './our_customers'
+import { importGlossaryTerms } from './glossary_terms'
+import { importFaqs } from './faqs'
+import { importBlogPosts } from './blog_posts'
+import { importWebinars } from './webinars'
+import { importEbooks } from './ebooks'
+import { importPodcasts } from './podcasts'
 
 interface CliFlags {
   collection: string | null
@@ -32,9 +39,19 @@ function parseFlags(argv: string[]): CliFlags {
 }
 
 const TOPOLOGICAL_ORDER: ReadonlyArray<string> = [
-  // Pass 1 — no refs (only team_members implemented in Plan 1)
+  // Pass 1 — no cross-collection refs
   'team_members',
-  // Pass 2 deferred to Plan 2.
+  'our_customers',
+  'glossary_terms',
+  'faqs',
+  'webinars',
+  'ebooks',
+  'podcasts',
+  // Pass 2 — depend on Pass 1 collections
+  'blog_posts',
+  // To be added:
+  // 'review_sources', 'tools', 'videos',
+  // 'customer_stories', 'customer_reviews',
 ]
 
 async function main(): Promise<void> {
@@ -64,9 +81,18 @@ async function main(): Promise<void> {
       slug: storageSlug,
       contentType,
     })
+    // Extract the actual object path (with extension) from the Firebase Storage
+    // download URL: https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<encoded-path>?...
+    let storagePath = `cms-media/${storageSlug}`
+    try {
+      const afterO = new URL(result.url).pathname.split('/o/')[1]
+      if (afterO) storagePath = decodeURIComponent(afterO)
+    } catch {
+      // Fall back to extensionless path if URL parsing fails.
+    }
     return {
       url: result.url,
-      storagePath: `cms-media/${storageSlug}`,
+      storagePath,
       size: result.byteSize,
     }
   }
@@ -85,7 +111,10 @@ async function main(): Promise<void> {
     if (!CMS_COLLECTION_DEFINITION_MAP[collection as keyof typeof CMS_COLLECTION_DEFINITION_MAP]) {
       throw new Error(`Unknown CMS collection key: ${collection}`)
     }
-    const payload = status ? { ...data, status } : data
+    // Always include `slug` in the document payload alongside it being the doc id.
+    // The admin form reads the slug field from the document data; without this,
+    // the editor's Slug input renders empty even though the doc id is correct.
+    const payload = status ? { ...data, slug, status } : { ...data, slug }
     await upsertCmsDocument(
       collection as never, // CmsCollectionKey is checked above
       slug,
@@ -109,6 +138,20 @@ async function main(): Promise<void> {
     try {
       if (collection === 'team_members') {
         await importTeamMembers({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'our_customers') {
+        await importOurCustomers({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'glossary_terms') {
+        await importGlossaryTerms({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'faqs') {
+        await importFaqs({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'blog_posts') {
+        await importBlogPosts({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'webinars') {
+        await importWebinars({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'ebooks') {
+        await importEbooks({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'podcasts') {
+        await importPodcasts({ webflow, assetMigrator, writer, referenceMap, report })
       } else {
         process.stderr.write(`Unknown collection: ${collection}\n`)
         process.exit(2)
