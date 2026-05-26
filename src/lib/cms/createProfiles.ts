@@ -130,6 +130,16 @@ const PROFILES: Record<CmsCollectionKey, CmsCreateProfile> = {
     heading: 'New media asset',
     fields: ['title', 'assetType', 'assetUrl', 'altText'],
   },
+  videos: {
+    collection: 'videos',
+    heading: 'New video',
+    fields: ['video_title', 'video_url', 'description', 'thumbnail_image'],
+  },
+  review_sources: {
+    collection: 'review_sources',
+    heading: 'New review source',
+    fields: ['source_name', 'icon', 'source_url'],
+  },
 }
 
 export function getCreateProfile(collection: CmsCollectionKey): CmsCreateProfile {
