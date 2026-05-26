@@ -14,6 +14,11 @@ import { importBlogPosts } from './blog_posts'
 import { importWebinars } from './webinars'
 import { importEbooks } from './ebooks'
 import { importPodcasts } from './podcasts'
+import { importCustomerStories } from './customer_stories'
+import { importCustomerReviews } from './customer_reviews'
+import { importTools } from './tools'
+import { importVideos } from './videos'
+import { importReviewSources } from './review_sources'
 
 interface CliFlags {
   collection: string | null
@@ -47,11 +52,13 @@ const TOPOLOGICAL_ORDER: ReadonlyArray<string> = [
   'webinars',
   'ebooks',
   'podcasts',
+  'tools',
+  'customer_reviews',
+  'videos',
+  'review_sources',
   // Pass 2 — depend on Pass 1 collections
   'blog_posts',
-  // To be added:
-  // 'review_sources', 'tools', 'videos',
-  // 'customer_stories', 'customer_reviews',
+  'customer_stories',
 ]
 
 async function main(): Promise<void> {
@@ -152,6 +159,16 @@ async function main(): Promise<void> {
         await importEbooks({ webflow, assetMigrator, writer, referenceMap, report })
       } else if (collection === 'podcasts') {
         await importPodcasts({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'customer_stories') {
+        await importCustomerStories({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'customer_reviews') {
+        await importCustomerReviews({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'tools') {
+        await importTools({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'videos') {
+        await importVideos({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'review_sources') {
+        await importReviewSources({ webflow, assetMigrator, writer, referenceMap, report })
       } else {
         process.stderr.write(`Unknown collection: ${collection}\n`)
         process.exit(2)

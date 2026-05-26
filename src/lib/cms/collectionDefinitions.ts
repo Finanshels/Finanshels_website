@@ -11,6 +11,8 @@ export type CmsCollectionKey =
   | 'glossary_terms'
   | 'blog_posts'
   | 'team_members'
+  | 'videos'
+  | 'review_sources'
 
 export type CmsFieldType =
   | 'text'
@@ -621,6 +623,8 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
     ],
   },
   media_assets: {},
+  videos: {},
+  review_sources: {},
 }
 
 type BaseCollectionDefinition = Omit<CmsCollectionDefinition, 'sections'> & {
@@ -1070,6 +1074,44 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
         { name: 'display_on_team_page', label: 'Display on team page', type: 'boolean', required: true },
         { name: 'display_as_author', label: 'Display as author', type: 'boolean', required: true },
         { name: 'sort_order', label: 'Sort order', type: 'number' },
+      ],
+    },
+  },
+  {
+    key: 'videos',
+    label: 'Videos',
+    singularLabel: 'Video',
+    description: 'Embedded videos (YouTube, Vimeo, etc.) shown on resource pages.',
+    template: 'Video card/embed template',
+    titleField: 'video_title',
+    slugField: 'slug',
+    defaultSchemaType: 'VideoObject',
+    sections: {
+      publish: [
+        { name: 'slug', label: 'Slug', type: 'text', required: true },
+        { name: 'video_title', label: 'Title', type: 'text', required: true },
+        { name: 'video_url', label: 'Video URL', type: 'url', required: true, placeholder: 'https://youtu.be/...' },
+        { name: 'description', label: 'Description', type: 'textarea' },
+        { name: 'thumbnail_image', label: 'Thumbnail image', type: 'image' },
+        { name: 'featured', label: 'Featured', type: 'boolean' },
+      ],
+    },
+  },
+  {
+    key: 'review_sources',
+    label: 'Review Sources',
+    singularLabel: 'Review Source',
+    description: 'External review platforms (Google, Trustpilot, etc.) referenced by customer reviews.',
+    template: 'Review-source label template',
+    titleField: 'source_name',
+    slugField: 'slug',
+    defaultSchemaType: 'Organization',
+    sections: {
+      publish: [
+        { name: 'slug', label: 'Slug', type: 'text', required: true },
+        { name: 'source_name', label: 'Source name', type: 'text', required: true, placeholder: 'Google Reviews' },
+        { name: 'icon', label: 'Icon', type: 'image' },
+        { name: 'source_url', label: 'Source URL', type: 'url' },
       ],
     },
   },
