@@ -22,7 +22,8 @@
     "firebase:login": "firebase login",
     "firebase:use": "firebase use --add",
     "firebase:deploy": "firebase deploy --only firestore:rules,firestore:indexes",
-    "db:check": "node scripts/check-firestore.mjs"
+    "db:check": "node scripts/check-firestore.mjs",
+    "redirects:import": "node scripts/import-webflow-redirects.mjs"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.0",
