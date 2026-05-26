@@ -11,6 +11,9 @@ import { importOurCustomers } from './our_customers'
 import { importGlossaryTerms } from './glossary_terms'
 import { importFaqs } from './faqs'
 import { importBlogPosts } from './blog_posts'
+import { importWebinars } from './webinars'
+import { importEbooks } from './ebooks'
+import { importPodcasts } from './podcasts'
 
 interface CliFlags {
   collection: string | null
@@ -41,10 +44,13 @@ const TOPOLOGICAL_ORDER: ReadonlyArray<string> = [
   'our_customers',
   'glossary_terms',
   'faqs',
+  'webinars',
+  'ebooks',
+  'podcasts',
   // Pass 2 — depend on Pass 1 collections
   'blog_posts',
   // To be added:
-  // 'review_sources', 'tools', 'ebooks', 'webinars', 'videos', 'podcasts',
+  // 'review_sources', 'tools', 'videos',
   // 'customer_stories', 'customer_reviews',
 ]
 
@@ -105,7 +111,10 @@ async function main(): Promise<void> {
     if (!CMS_COLLECTION_DEFINITION_MAP[collection as keyof typeof CMS_COLLECTION_DEFINITION_MAP]) {
       throw new Error(`Unknown CMS collection key: ${collection}`)
     }
-    const payload = status ? { ...data, status } : data
+    // Always include `slug` in the document payload alongside it being the doc id.
+    // The admin form reads the slug field from the document data; without this,
+    // the editor's Slug input renders empty even though the doc id is correct.
+    const payload = status ? { ...data, slug, status } : { ...data, slug }
     await upsertCmsDocument(
       collection as never, // CmsCollectionKey is checked above
       slug,
@@ -137,6 +146,12 @@ async function main(): Promise<void> {
         await importFaqs({ webflow, assetMigrator, writer, referenceMap, report })
       } else if (collection === 'blog_posts') {
         await importBlogPosts({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'webinars') {
+        await importWebinars({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'ebooks') {
+        await importEbooks({ webflow, assetMigrator, writer, referenceMap, report })
+      } else if (collection === 'podcasts') {
+        await importPodcasts({ webflow, assetMigrator, writer, referenceMap, report })
       } else {
         process.stderr.write(`Unknown collection: ${collection}\n`)
         process.exit(2)
