@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import ConfirmDeleteForm from '@/components/cms/admin/landingPages/ConfirmDeleteForm'
 import { requireAdminAuth, sessionDisplayName } from '@/lib/cms/adminAuth'
 import {
   createLandingPage,
@@ -176,10 +177,13 @@ export default async function LandingPagesAdminList({
                     <Link href={`/admin/cms/landing-pages/${item.id}`} className="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-white">
                       Edit
                     </Link>
-                    <form action={deleteAction} onSubmit={(e) => { if (!confirm('Delete this landing page? This cannot be undone.')) e.preventDefault() }}>
-                      <input type="hidden" name="id" value={item.id} />
+                    <ConfirmDeleteForm
+                      action={deleteAction}
+                      id={item.id}
+                      confirmMessage="Delete this landing page? This cannot be undone."
+                    >
                       <button className="text-xs px-2 py-1 rounded border border-rose-200 text-rose-700 hover:bg-rose-50">Delete</button>
-                    </form>
+                    </ConfirmDeleteForm>
                   </div>
                 </td>
               </tr>
