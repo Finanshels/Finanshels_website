@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import CardPreview from '@/components/cms/admin/CardPreview'
 import { CmsTitleSlugFields } from '@/components/cms/admin/CmsTitleSlugFields'
@@ -192,6 +192,16 @@ function renderChecklistCard(
 // invalidateCmsCaches(); a bulk publish of N items triggers one tag
 // invalidation, not 3+N path invalidations.
 const CMS_CONTENT_CACHE_TAG = 'cms-content'
+
+// PERF: sidebar collection counts query .count() against 12 collections in parallel
+// on EVERY admin click. Wrap with unstable_cache + the existing cms-content tag so
+// writes invalidate it (line 213 fires revalidateTag(CMS_CONTENT_CACHE_TAG)).
+// TTL 5min is a safety net; tag invalidation is the primary signal.
+const getCachedCmsCollectionItemCounts = unstable_cache(
+  () => getCmsCollectionItemCounts(),
+  ['cms-collection-counts'],
+  { tags: [CMS_CONTENT_CACHE_TAG], revalidate: 300 }
+)
 
 function buildRevalidatePathTargets(collection: CmsCollectionKey, slug: string): string[] {
   const def = CMS_COLLECTION_DEFINITION_MAP[collection]
@@ -877,9 +887,13 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
       ? Promise.resolve([])
       : listCmsDocuments(definition.key, definition.titleField, definition.slugField),
     isEditorView && params.slug ? getCmsDocument(definition.key, params.slug) : Promise.resolve(null),
-    getCmsCollectionItemCounts(),
+    getCachedCmsCollectionItemCounts(),
     isEditorView ? listCmsDocuments('media_assets', 'title', 'slug') : Promise.resolve([]),
-    Promise.all(allReferencedCollections.map((key) => listReferenceOptions(key).then((options) => [key, options] as const))),
+    // PERF: reference options are only used by the editor form (reference/multi_reference fields).
+    // The list view never reads them, so don't fan out to every referenced collection on every click.
+    isEditorView
+      ? Promise.all(allReferencedCollections.map((key) => listReferenceOptions(key).then((options) => [key, options] as const)))
+      : Promise.resolve([] as Array<readonly [CmsCollectionKey, Array<{ id: string; label: string }>]>),
     isEditorView && params.slug ? listCmsRevisions(definition.key, params.slug) : Promise.resolve([]),
     !isEditorView && activeCollection === 'media_assets' ? listCmsMediaLibraryItems() : Promise.resolve([]),
   ])
