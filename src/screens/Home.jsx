@@ -21,16 +21,16 @@ import TestimonialCarousel from '../components/TestimonialCarousel'
 import { TESTIMONIALS } from '../data/team'
 
 const HERO_BULLETS = [
-  'Dedicated Finance controllers, tax, and CFO partners',
-  'Realtime dashboards, filings and variance reviews',
-  'MENA presence with on-ground finance experts',
+  'Accounting, Bookkeeping, VAT, Corporate Tax, AML & CFO — all in one place',
+  'FTA-registered. Books closed by Day 10, every month',
+  'Backed by MBRIF, in5 Tech, and Kube VC. Recognised by Gulf News',
 ]
 
 const HERO_STATS = [
-  { value: '6,000+', label: 'UAE clients' },
-  { value: '180+', label: 'finance experts' },
-  { value: '12', label: 'active markets' },
-  { value: '$1.2B', label: 'flows managed' },
+  { value: '6,000+', label: 'UAE businesses trust us' },
+  { value: 'AED 499', label: 'starting per month' },
+  { value: 'Day 10', label: 'books closed every month' },
+  { value: '4.9★', label: 'on Trustpilot · 280+ reviews' },
 ]
 
 const CUSTOMER_LOGOS = ['Hub71', 'YAP', 'Baraka', 'Letswork', 'Sarwa', 'Rain', 'Pyypl', 'Tabby', 'FOO', 'Lune']
@@ -40,54 +40,54 @@ const COMMAND_TILES = [
     key: 'pnl',
     span: 'md:col-span-2 md:row-span-2',
     accent: 'from-[#fff3e6] to-white',
-    badge: 'Realtime P&L',
-    title: 'See every dirham move, the moment it moves',
-    copy: 'Bank, PSP, and ERP feeds reconcile into a live profit-and-loss your team and board can actually read.',
+    badge: 'Accounting & Bookkeeping',
+    title: 'Every transaction recorded. Books always current, never catching up.',
+    copy: 'Every transaction recorded, categorised and reconciled weekly. Bank, PSP, and ERP feeds reconcile into a live P&L your team and board can actually read.',
     visual: 'pnl',
   },
   {
     key: 'runway',
     span: 'md:col-span-1 md:row-span-1',
     accent: 'from-[#eef2ff] to-white',
-    badge: 'Runway',
-    title: '18.4 months ahead',
-    copy: 'Cash burn, scenarios, and what-if levers in one tile.',
+    badge: 'CFO as a Service',
+    title: 'Senior financial strategy without the full-time cost',
+    copy: 'Cash flow modelling, investor reporting, and pricing strategy from seasoned CFOs.',
     visual: 'runway',
   },
   {
     key: 'tax',
     span: 'md:col-span-1 md:row-span-1',
     accent: 'from-[#fff7ed] to-white',
-    badge: 'Tax calendar',
-    title: 'CT, VAT, AML — every filing on track',
-    copy: 'Every UAE filing tracked, owned, never late.',
+    badge: 'VAT & Corporate Tax',
+    title: 'CT, VAT — every filing on track, penalty-free',
+    copy: 'Quarterly VAT returns prepared and filed. Annual CT returns with full working papers. Every UAE filing tracked and owned.',
     visual: 'tax',
   },
   {
     key: 'chat',
     span: 'md:col-span-1 md:row-span-1',
     accent: 'from-[#ecfdf5] to-white',
-    badge: 'WhatsApp pod',
-    title: 'Replies in minutes, not days',
-    copy: 'Controllers, CFO, tax — one thread, your numbers.',
+    badge: 'Dedicated account manager',
+    title: 'Not a helpdesk queue — your dedicated team',
+    copy: 'Controllers, CFO, tax lead — one WhatsApp thread, your numbers, replies in minutes.',
     visual: 'chat',
   },
   {
     key: 'board',
     span: 'md:col-span-1 md:row-span-1',
     accent: 'from-[#fef2f2] to-white',
-    badge: 'Board pack',
-    title: 'Investor-ready, every month',
-    copy: 'Narrative, variance, KPI deck — done for you.',
+    badge: 'Financial Controller (FCaaS)',
+    title: 'Clean P&L, balance sheet, cash flow — by Day 10',
+    copy: 'Full financial report every month by the 10th. In plain language, not accountant-speak.',
     visual: 'board',
   },
   {
     key: 'compliance',
     span: 'md:col-span-2 md:row-span-1',
     accent: 'from-[#f5f3ff] to-white',
-    badge: 'Audit, AML & liquidation',
+    badge: 'DDA Audit · AML · Liquidation',
     title: 'Audit-ready files, AML controls, clean wind-downs',
-    copy: 'External-audit prep, AML policies and reviews, and end-to-end liquidation. The same team that closes your books defends them at audit.',
+    copy: 'Statutory audits for UAE free zone renewals, AML compliance for DNFBPs including goAML registration, and end-to-end company liquidation. The same team that closes your books defends them at audit.',
     visual: 'compliance',
   },
 ]
@@ -95,31 +95,34 @@ const COMMAND_TILES = [
 const SOLUTION_PILLARS = [
   {
     icon: Building2,
-    title: 'Accounting & Reporting',
-    copy: 'Management reporting, AR/AP, audit prep, and policy design purpose-built for scale-ups.',
+    title: 'Finance Back Office',
+    copy: 'Monthly bookkeeping, Financial Controller service, AR/AP, and board-ready reporting — all delivered on one platform. Books closed by Day 10 every month.',
     accent: 'from-[#fff4ec] to-[#fff]',
     iconBg: 'bg-[#fff1e1] text-[#f16610]',
+    href: '/accounting-services-dubai',
   },
   {
     icon: ShieldCheck,
-    title: 'Tax, VAT & Compliance',
-    copy: 'Corporate tax, VAT, AML, audit prep, and liquidation support handled end-to-end.',
+    title: 'Compliance & Tax',
+    copy: 'Corporate tax registration and filing, VAT, AML compliance for DNFBPs, DDA audits, and company liquidation — handled by an FTA-accredited team.',
     accent: 'from-[#eef2ff] to-[#fff]',
     iconBg: 'bg-[#e9ecff] text-[#4f46e5]',
+    href: '/corporate-tax-filing-uae',
   },
   {
     icon: Sparkles,
-    title: 'Fractional CFO & Strategy',
-    copy: 'Runway planning, pricing strategy, investor updates, and operating cadences with seasoned CFOs.',
+    title: 'CFO as a Service',
+    copy: 'Senior financial strategy without the full-time cost. Cash flow modelling, investor reporting, pricing strategy, and fundraising support from seasoned CFOs.',
     accent: 'from-[#ecfdf5] to-[#fff]',
     iconBg: 'bg-[#dcfce7] text-[#059669]',
+    href: '/cfo-services-dubai',
   },
 ]
 
 const TIMELINE = [
-  { caption: 'Day 0 – 7', title: 'Digitize', copy: 'We ingest ledgers, banks, PSPs, and policies while building automations and approvals.', icon: Zap },
-  { caption: 'Day 8 – 21', title: 'Insight', copy: 'Clean books, compliance trackers, and dashboards go live. Leadership sees the first operating review.', icon: BarChart3 },
-  { caption: 'Day 22+', title: 'Command', copy: 'Monthly board-ready packs, scenario planning, and WhatsApp support keep every ritual on track.', icon: Sparkles },
+  { caption: 'Onboard in 48 hours', title: 'We set up fast', copy: 'Send us your trade licence and a few documents. We connect your bank feeds, set up your accounting platform, and start your books immediately. No waiting.', icon: Zap },
+  { caption: 'We handle everything monthly', title: 'Your dedicated team works', copy: 'Your dedicated accountant takes care of every transaction, every week. You\'ll hear from us when something needs your attention — not constantly, just when it matters.', icon: BarChart3 },
+  { caption: 'You get the full picture on Day 10', title: 'Complete report every month', copy: 'By the 10th of every month, you receive a complete financial report. What you made, what you spent, where your cash is, and anything that warrants a closer look.', icon: Sparkles },
 ]
 
 const PRODUCT_STRIP = [
@@ -132,10 +135,10 @@ const PRODUCT_STRIP = [
 ]
 
 const WHY_SWITCH = [
-  { icon: MessageSquare, tag: 'Support', title: 'WhatsApp-first access', copy: 'Dedicated pods respond within minutes and bring controllers, CFOs, and tax leads into every thread.' },
-  { icon: ShieldCheck, tag: 'Compliance', title: 'Zero-surprise filings', copy: 'Corporate tax, VAT, AML, and entity renewals tracked in one calendar so nothing slips.' },
-  { icon: BarChart3, tag: 'Insights', title: 'Board-ready narratives', copy: 'Monthly decks, rolling forecasts, and what-changed commentary ready for investors and leadership.' },
-  { icon: Globe2, tag: 'Tooling', title: 'Built for MENA', copy: 'Deadline checkers, client portals, and cash scorecards tuned for UAE/KSA regulations.' },
+  { icon: MessageSquare, tag: 'Dedicated support', title: 'Your account manager, not a helpdesk', copy: 'One dedicated account manager who knows your business. Respond via WhatsApp, get your controller, CFO, and tax lead in the same thread.' },
+  { icon: ShieldCheck, tag: 'FTA-accredited', title: 'Deep UAE regulatory knowledge', copy: 'FTA-accredited team with deep knowledge of UAE Corporate Tax, VAT, AML, and free zone compliance across DMCC, JAFZA, DIFC, ADGM, IFZA, and more.' },
+  { icon: BarChart3, tag: 'Real-time dashboards', title: 'Financial dashboards integrated with your tools', copy: 'Real-time financial dashboards integrated with your existing software. 20+ KPIs. Accrual-basis bookkeeping. Accurate financial statements every month.' },
+  { icon: Globe2, tag: 'Free migration', title: 'Free migration — we fix gaps too', copy: 'Switch from any accountant for free. We migrate your historical books, identify any gaps, and get you compliant from Day 1.' },
 ]
 
 const CTA_LINKS = [
@@ -423,16 +426,16 @@ export default function Home() {
               <Sparkles size={13} /> Finance operators for founders
             </span>
             <h1 className="mt-5 sm:mt-6 text-[2.25rem] sm:text-[clamp(2.5rem,5vw,4rem)] font-bold leading-[1.1] sm:leading-[1.05] tracking-tight">
-              Focus on growth.{' '}
-              <span className="sm:hidden">We take care of </span>
-              <span className="hidden sm:inline"><br />We take care of <br /></span>
+              Your UAE back office{' '}
+              <span className="sm:hidden">finance team, without </span>
+              <span className="hidden sm:inline"><br />finance team,{' '}</span>
               <span className="relative inline-block">
-                <span className="relative z-10 text-[#f16610]">your numbers.</span>
+                <span className="relative z-10 text-[#f16610]">without the headcount.</span>
                 <span className="absolute inset-x-0 bottom-1 h-3 bg-[#ffd19b] -z-0 -skew-x-6" />
               </span>
             </h1>
             <p className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed">
-              Accounting, tax, compliance, and CFO on autopilot — your finance command centre, trusted by 6,000+ UAE clients.
+              Accounting, Bookkeeping, DDA Audit, VAT, Corporate Tax, AML &amp; CFO support — handled by experts, delivered on one platform. Join 6,000+ UAE businesses that trust Finanshels with their books. From AED 499/mo. No lock-in.
             </p>
             <div className="mt-6 sm:mt-7 grid gap-2.5 max-w-lg">
               {HERO_BULLETS.map((bullet) => (
@@ -443,19 +446,19 @@ export default function Home() {
               ))}
             </div>
             <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row sm:flex-wrap gap-3">
-              <Link
-                href="/contact"
+              <a
+                href="https://contact-finanshels.zohobookings.com/#/customer/finanshels"
                 className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#f16610]/30 hover:shadow-xl hover:shadow-[#f16610]/40 hover:-translate-y-0.5 transition-all"
               >
-                Speak to our team
+                Book a Free Consultation
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
+              </a>
               <a
-                href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance."
+                href="https://wa.me/97145457841?text=Hi%20Team%20Finanshels%2C%20I%27d%20like%20to%20chat%20with%20an%20expert."
                 className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 bg-white px-6 py-3.5 font-semibold text-slate-900 hover:bg-slate-900 hover:text-white transition"
               >
                 <MessageSquare size={18} />
-                WhatsApp us
+                Chat with an Expert
               </a>
             </div>
             <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-y-3 gap-x-8 text-xs text-slate-500">
@@ -469,7 +472,7 @@ export default function Home() {
                     />
                   ))}
                 </div>
-                <span><strong className="text-slate-900">6,000+ UAE businesses</strong> trust us with their numbers</span>
+                <span><strong className="text-slate-900">6,000+ UAE businesses</strong> trust Finanshels with their books</span>
               </div>
               <div className="flex items-center gap-1 text-amber-500">
                 {'★★★★★'.split('').map((s, i) => <span key={i}>{s}</span>)}
@@ -513,6 +516,47 @@ export default function Home() {
         </AnimatedSection>
       </section>
 
+      {/* THE PROBLEM */}
+      <section className="px-6 sm:px-10 lg:px-16 py-16">
+        <AnimatedSection animation="fade-up">
+          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[32px] border border-slate-100 bg-white p-8 sm:p-12">
+            <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-[#f16610]/10 blur-3xl" />
+            <div className="relative z-10 grid lg:grid-cols-[1.1fr_1fr] gap-10 items-start">
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-red-600">
+                  The problem
+                </span>
+                <h2 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight leading-tight">
+                  Most UAE businesses are paying for financial problems they don&apos;t know they have.
+                </h2>
+                <p className="mt-4 text-slate-600 leading-relaxed">
+                  The FTA is increasingly sophisticated — cross-matching VAT returns against Corporate Tax filings, flagging anomalies in transaction data, and issuing penalties that start at AED 1,000 and scale from there.
+                </p>
+                <p className="mt-3 text-slate-600 leading-relaxed">
+                  Most accounting firms in the UAE hand you a login to a cloud platform and a junior bookkeeper, then disappear until year-end. Finanshels works differently.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {[
+                  'Late VAT submissions — penalties accumulating without warning',
+                  'CT returns filed without reconciling against VAT history',
+                  'Books untouched since the last audit, not the last month',
+                  'An FTA penalty letter arriving with no time to respond',
+                ].map((pain) => (
+                  <div key={pain} className="flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50/50 p-4 text-sm text-slate-700">
+                    <span className="flex-shrink-0 mt-0.5 h-5 w-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center font-bold text-xs">✕</span>
+                    <span>{pain}</span>
+                  </div>
+                ))}
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 font-medium">
+                  ✓ Finanshels: dedicated team, proactive compliance management, and financial reporting that tells you something useful every month.
+                </div>
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+      </section>
+
       {/* BENTO COMMAND CENTRE */}
       <section className="px-6 sm:px-10 lg:px-16 py-20 bg-white">
         <div className="max-w-6xl mx-auto space-y-12">
@@ -522,11 +566,11 @@ export default function Home() {
                 <Activity size={12} /> Inside the platform
               </span>
               <h2 className="text-4xl sm:text-5xl font-semibold max-w-3xl leading-tight tracking-tight">
-                Six finance superpowers,{' '}
-                <span className="bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">one subscription.</span>
+                Everything your UAE business needs,{' '}
+                <span className="bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">one platform.</span>
               </h2>
               <p className="text-slate-600 max-w-2xl text-lg">
-                We rebuilt the modern accounting playbook from the ground up for UAE compliance, MENA banking, and the WhatsApp-first way founders actually work.
+                Most accounting firms hand you a login and a junior bookkeeper, then disappear until year-end. Finanshels works differently — a dedicated team, proactive compliance management, and financial reporting that tells you something useful every month.
               </p>
             </div>
           </AnimatedSection>
@@ -565,11 +609,11 @@ export default function Home() {
                 <div>
                   <p className="text-[10px] sm:text-xs uppercase tracking-[0.32em] sm:tracking-[0.4em] text-[#ff8a3c] font-semibold">By the numbers</p>
                   <h2 className="mt-2.5 sm:mt-3 text-2xl sm:text-4xl font-semibold max-w-xl leading-tight">
-                    Compounding trust across the region.
+                    The UAE&apos;s most trusted finance back office.
                   </h2>
                 </div>
                 <p className="text-slate-300 max-w-md text-sm leading-relaxed">
-                  Every metric below is live. The same operators ship your books, file your taxes, and brief your board this month.
+                  Gulf News recognised. MBRIF-backed. FTA-accredited. The same team that closes your books also files your taxes, manages your AML, and briefs your board.
                 </p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
@@ -595,9 +639,9 @@ export default function Home() {
               <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-600">
                 How we plug in
               </span>
-              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">Pick the finance muscle you need</h2>
+              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">What Finanshels covers for you</h2>
               <p className="text-slate-600 max-w-2xl text-lg">
-                Three operating models. One bench of 180+ finance specialists. Scale up or down without re-hiring.
+                From routine bookkeeping to complex compliance — your full finance function covered by one dedicated team. Mainland DED companies, free zone entities across DMCC, JAFZA, DIFC, ADGM, IFZA, and beyond.
               </p>
             </div>
           </AnimatedSection>
@@ -610,13 +654,60 @@ export default function Home() {
                   </div>
                   <h3 className="text-2xl font-semibold mb-2 tracking-tight">{pillar.title}</h3>
                   <p className="text-slate-600 leading-relaxed">{pillar.copy}</p>
-                  <Link href="/solutions" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-900 group/link">
+                  <Link href={pillar.href || '/services'} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-900 group/link">
                     Explore services
                     <ArrowRight size={16} className="group-hover/link:translate-x-1 transition-transform" />
                   </Link>
                   <div className="absolute -bottom-12 -right-12 w-40 h-40 rounded-full bg-white/40 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </AnimatedSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* WHAT YOU'RE GETTING */}
+      <section className="px-6 sm:px-10 lg:px-16 py-16">
+        <div className="max-w-6xl mx-auto space-y-10">
+          <AnimatedSection animation="fade-up">
+            <div className="flex flex-col items-center text-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-600">
+                What you get
+              </span>
+              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">Everything included in your subscription</h2>
+              <p className="text-slate-600 max-w-2xl text-lg">
+                One platform. One dedicated team. Everything your finance function needs — from Day 1.
+              </p>
+            </div>
+          </AnimatedSection>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { badge: '10×', title: 'Faster monthly close', copy: 'Accrual-basis bookkeeping delivered by Day 10 every month — not whenever someone gets around to it.' },
+              { badge: '20+', title: 'Financial KPIs', copy: 'Real-time dashboards with the metrics that matter: revenue, burn, runway, margins, and cash position.' },
+              { badge: '100%', title: 'Cloud-based accounting', copy: 'Access your books, reports, and filings anywhere. Integrated with your bank, PSP, and ERP.' },
+              { badge: '0', title: 'Paperwork on your desk', copy: 'Paperless document storage, mobile app for invoice and expense upload, and digital approvals.' },
+            ].map((item, i) => (
+              <AnimatedSection key={item.title} animation="fade-up" delay={i * 80}>
+                <div className="h-full rounded-[28px] border border-slate-100 bg-white p-6 hover:border-[#f16610]/40 hover:shadow-[0_25px_50px_-20px_rgba(241,102,16,0.18)] hover:-translate-y-1 transition-all">
+                  <span className="inline-block text-3xl font-bold bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent mb-3">{item.badge}</span>
+                  <h3 className="text-lg font-semibold tracking-tight mb-2">{item.title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{item.copy}</p>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {[
+              'Accurate financial statements',
+              'Mobile app for invoicing',
+              'Expense upload & approvals',
+              'Dedicated finance team',
+              'FTA-registered accountants',
+              'One platform for all finance functions',
+            ].map((tag) => (
+              <span key={tag} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 font-medium hover:border-[#f16610]/40 transition-colors">
+                {tag}
+              </span>
             ))}
           </div>
         </div>
@@ -669,13 +760,13 @@ export default function Home() {
           <AnimatedSection animation="fade-up">
             <div className="grid md:grid-cols-[1fr_auto] gap-6 items-end">
               <div>
-                <span className="text-xs uppercase tracking-[0.4em] text-[#f16610] font-semibold">Why teams switch</span>
+                <span className="text-xs uppercase tracking-[0.4em] text-[#f16610] font-semibold">Why 6,000+ UAE businesses choose Finanshels</span>
                 <h2 className="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight max-w-2xl">
-                  Finance isn&apos;t bookkeeping. It&apos;s your unfair advantage.
+                  UAE-first. Founder-focused. Tech-powered.
                 </h2>
               </div>
               <p className="text-slate-600 max-w-sm">
-                Finanshels blends battle-tested runbooks with collaborative tooling so your numbers, filings, and narratives move at startup speed.
+                The FTA is increasingly sophisticated in identifying compliance gaps. Finanshels keeps you ahead — not catching up.
               </p>
             </div>
           </AnimatedSection>
@@ -696,6 +787,58 @@ export default function Home() {
         </div>
       </section>
 
+      {/* WHO WE WORK WITH */}
+      <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
+        <AnimatedSection animation="fade-up">
+          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[32px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-8 sm:p-12 text-white">
+            <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#f16610]/25 blur-[120px]" />
+            <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-[#7e8bff]/20 blur-[100px]" />
+            <div className="relative z-10 grid lg:grid-cols-[1fr_1.1fr] gap-10 items-start">
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white/90">
+                  Who we work with
+                </span>
+                <h2 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight leading-tight">
+                  UAE businesses at every stage — from first licence to AED 50M revenue.
+                </h2>
+                <p className="mt-4 text-slate-300 leading-relaxed">
+                  Sector-specific expertise across real estate, F&amp;B, e-commerce, healthcare, technology, manufacturing, trading, and professional services.
+                </p>
+                <p className="mt-3 text-slate-300 leading-relaxed">
+                  If you&apos;re operating in the UAE, we know your compliance landscape.
+                </p>
+              </div>
+              <div className="space-y-5">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.35em] text-[#ff8a3c] font-semibold mb-3">Entity types</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['Mainland DED companies', 'DMCC entities', 'JAFZA companies', 'DIFC firms', 'ADGM businesses', 'IFZA entities', 'Shams & SAIF Zone', 'Branches of foreign companies'].map((e) => (
+                      <span key={e} className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/80 font-medium">{e}</span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.35em] text-[#ff8a3c] font-semibold mb-3">Locations</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'KSA', 'GCC'].map((l) => (
+                      <span key={l} className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/80 font-medium">{l}</span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.35em] text-[#ff8a3c] font-semibold mb-3">Sectors</p>
+                  <div className="flex flex-wrap gap-2">
+                    {['Real Estate', 'F&B & Restaurants', 'E-commerce', 'Healthcare', 'Technology', 'Trading', 'Professional Services', 'VC & Funds'].map((s) => (
+                      <span key={s} className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/80 font-medium">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+      </section>
+
       {/* PRODUCT STRIP */}
       <section className="px-6 sm:px-10 lg:px-16 py-20 bg-gradient-to-b from-white to-[#fffaf3]">
         <div className="max-w-6xl mx-auto space-y-12">
@@ -704,9 +847,9 @@ export default function Home() {
               <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-600">
                 Free tools
               </span>
-              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">Purpose-built tools you can use today</h2>
+              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">Explore free powerful business tools</h2>
               <p className="text-slate-600 max-w-xl text-lg">
-                Try a Finanshels calculator before you talk to us. They&apos;re free, instant, and tuned for the UAE.
+                Try a Finanshels tool before you talk to us — free, instant, and designed to enhance your efficiency in the UAE.
               </p>
             </div>
           </AnimatedSection>
@@ -743,9 +886,9 @@ export default function Home() {
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-700">
                 ★★★★★  4.9 rating
               </span>
-              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">What founders and CFOs say</h2>
+              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">Client results from real Trustpilot reviews</h2>
               <p className="text-slate-600 max-w-2xl text-lg">
-                Trusted by leading businesses across the UAE — from pre-seed startups to enterprise.
+                Rated 4.9 stars. Hear from UAE businesses who trust Finanshels with their books, tax, and compliance.
               </p>
             </div>
           </AnimatedSection>
@@ -764,22 +907,22 @@ export default function Home() {
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:48px_48px]" />
             <div className="relative z-10 grid md:grid-cols-[1.4fr_1fr] gap-8 sm:gap-10 md:items-center">
               <div>
-                <p className="text-[10px] sm:text-xs uppercase tracking-[0.32em] sm:tracking-[0.4em] text-white/80 font-semibold">Let&apos;s build your finance command centre</p>
+                <p className="text-[10px] sm:text-xs uppercase tracking-[0.32em] sm:tracking-[0.4em] text-white/80 font-semibold">Your UAE back office finance team, without the headcount</p>
                 <h2 className="mt-2.5 sm:mt-3 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.15]">
-                  Plug Finanshels into your stack.{' '}
-                  <span className="text-amber-100 block sm:inline">Sleep through your next filing.</span>
+                  Onboarded in 48 hours.{' '}
+                  <span className="text-amber-100 block sm:inline">No lock-in. From AED 499/mo.</span>
                 </h2>
                 <p className="mt-4 sm:mt-5 text-white/85 text-base sm:text-lg max-w-xl leading-relaxed">
-                  Share your tooling, team, and deadlines. We respond within 48 hours with a tailored roadmap and pricing snapshot.
+                  Send us your trade licence and a few documents. We connect your bank feeds, set up your accounting platform, and start your books immediately.
                 </p>
                 <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-3">
-                  <Link
-                    href="/contact"
+                  <a
+                    href="https://contact-finanshels.zohobookings.com/#/customer/finanshels"
                     className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-[#f16610] shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
                   >
-                    Speak to our team
+                    Book a Free Consultation
                     <ArrowRight size={18} />
-                  </Link>
+                  </a>
                   <Link
                     href="/pricing"
                     className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"

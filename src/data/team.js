@@ -80,6 +80,34 @@ export const LEADERSHIP_TEAM = [
 
 export const TESTIMONIALS = [
   {
+    name: "Priya M Nair",
+    role: "Founder, ZWAG AI",
+    quote:
+      "Finanshels team is very professional. They have been handling ZWAG AI's accounts since 2022. From bookkeeping to Auditing and Corporate Tax filings, they made it simple and hassle free for me. Highly recommended.",
+    rating: 5
+  },
+  {
+    name: "Nassib Sawaya",
+    role: "Director, UAE Business",
+    quote:
+      "We are genuinely happy with the way Finanshels have been handling our accounts. From day one the team has been genuinely proactive and professional. They are always available to answer our questions. They have done a great job filing our Corporate Taxes and keeping our books sound.",
+    rating: 5
+  },
+  {
+    name: "Elie Ronin",
+    role: "Co-Founder, Scaling Startup",
+    quote:
+      "Working with Finanshels has been one of the best decisions we've made as a company. They've helped us streamline our entire backend from bookkeeping and tax filings to CFO-level reporting. The level of clarity and peace of mind they bring is unmatched.",
+    rating: 5
+  },
+  {
+    name: "Rohan Mehta",
+    role: "Managing Partner, Premier Realty Brokers",
+    quote:
+      "Finanshels got us live on goAML in 4 days. We passed our MOE inspection without a single observation. Worth every dirham.",
+    rating: 5
+  },
+  {
     name: "Ranya Al Suwaidi",
     role: "Founder, Bloom Cafe UAE",
     quote:
@@ -98,34 +126,6 @@ export const TESTIMONIALS = [
     role: "Co-founder, Atlas Clinics",
     quote:
       "Our investors demanded monthly packs and compliance proof. Finanshels gave us both—clean numbers, scenario planning, and a tax desk that understands UAE healthcare regulations.",
-    rating: 5
-  },
-  {
-    name: "Hussein Ali",
-    role: "Managing Partner, Khaleej Capital",
-    quote:
-      "Portfolio visibility jumped overnight. Finanshels runs bookkeeping and compliance for multiple SPVs and reports back with insights we can trust during board meetings.",
-    rating: 5
-  },
-  {
-    name: "Fatima Al Hashimi",
-    role: "CFO, TechVentures DMCC",
-    quote:
-      "The speed at which Finanshels onboarded us was incredible. Within days, they understood our complex multi-entity structure and started delivering actionable insights.",
-    rating: 5
-  },
-  {
-    name: "Omar Youssef",
-    role: "Founder, FitLife Studios",
-    quote:
-      "Managing 8 locations across Dubai was a nightmare until Finanshels stepped in. Their bookkeeping and tax compliance freed up my team to focus on what we do best—fitness.",
-    rating: 5
-  },
-  {
-    name: "Priya Sharma",
-    role: "Director, Nexus Consulting",
-    quote:
-      "Finanshels doesn't just do compliance—they think like business partners. Their fractional CFO helped us restructure our pricing and improve margins by 18%.",
     rating: 5
   },
   {

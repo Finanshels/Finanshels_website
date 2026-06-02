@@ -14,6 +14,13 @@ export const PRIMARY_STATIC_ROUTES = [
   '/accounting-services-dubai',
   '/accounting-services-abu-dhabi',
   '/accounting-services-sharjah',
+  '/corporate-tax-registration-uae',
+  '/corporate-tax-filing-uae',
+  '/vat-registration-uae',
+  '/vat-filing-uae',
+  '/aml-uae',
+  '/audit-services-dubai',
+  '/company-liquidation-dubai',
 ] as const
 
 export const LEGACY_STATIC_ROUTES = [

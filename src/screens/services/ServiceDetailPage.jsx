@@ -389,6 +389,40 @@ export default function ServiceDetailPage({ page }) {
         </div>
       </section>
 
+      {/* FAQ */}
+      {page.faqs && page.faqs.length > 0 && (
+        <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <AnimatedSection animation="fade-up">
+              <div className="flex flex-col items-center text-center gap-3 mb-10">
+                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-700">
+                  Frequently asked questions
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Common questions answered</h2>
+              </div>
+            </AnimatedSection>
+            <div className="max-w-3xl mx-auto space-y-3">
+              {page.faqs.map((faq, index) => (
+                <AnimatedSection key={faq.question} animation="fade-up" delay={index * 60}>
+                  <details className="group rounded-2xl border border-slate-100 bg-white overflow-hidden hover:border-[#f16610]/30 transition-colors">
+                    <summary className="flex items-center justify-between gap-4 cursor-pointer px-6 py-4 font-semibold text-slate-900 list-none select-none">
+                      <span>{faq.question}</span>
+                      <span className="flex-shrink-0 h-6 w-6 rounded-full bg-slate-100 group-open:bg-[#fff4ec] text-slate-600 group-open:text-[#f16610] flex items-center justify-center text-sm font-bold transition-colors">
+                        <span className="group-open:hidden">+</span>
+                        <span className="hidden group-open:inline">−</span>
+                      </span>
+                    </summary>
+                    <div className="px-6 pb-5 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4">
+                      {faq.answer}
+                    </div>
+                  </details>
+                </AnimatedSection>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* PRICING + LEAD FORM */}
       <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-6">

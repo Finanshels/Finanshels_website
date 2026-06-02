@@ -28,6 +28,13 @@ const EXISTING_APP_ROUTES = new Set<string>([
   '/accounting-services-dubai',
   '/accounting-services-abu-dhabi',
   '/accounting-services-sharjah',
+  '/corporate-tax-registration-uae',
+  '/corporate-tax-filing-uae',
+  '/vat-registration-uae',
+  '/vat-filing-uae',
+  '/aml-uae',
+  '/audit-services-dubai',
+  '/company-liquidation-dubai',
 ])
 
 const CATCH_ALL_STATIC_PATHS = NON_RESOURCE_STATIC_PAGE_PATHS.filter(
