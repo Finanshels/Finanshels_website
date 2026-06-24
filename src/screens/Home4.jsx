@@ -134,6 +134,161 @@ function FinnyOrb({ size = 96 }) {
   )
 }
 
+// Bespoke, fully original animated mascot — Finny the AI CFO. Blinks, waves,
+// antenna pulses, finance tokens orbit. Built from scratch (not a stock asset).
+function FinnyMascot({ className = '' }) {
+  return (
+    <svg viewBox="0 0 360 380" className={className} role="img" aria-label="Finny, your AI CFO">
+      <defs>
+        <linearGradient id="finnyHead" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ff9a4d" />
+          <stop offset="1" stopColor="#f16610" />
+        </linearGradient>
+        <linearGradient id="finnyArm" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffb27a" />
+          <stop offset="1" stopColor="#f16610" />
+        </linearGradient>
+      </defs>
+
+      {/* ground shadow */}
+      <ellipse cx="180" cy="362" rx="104" ry="13" fill="#0b1224" opacity="0.07" />
+
+      {/* orbiting finance tokens */}
+      <g className="finny-orbit1">
+        <circle cx="60" cy="98" r="27" fill="#fff" stroke="#f16610" strokeWidth="3" />
+        <text x="60" y="104" textAnchor="middle" fontSize="15" fontWeight="800" fill="#f16610" fontFamily="var(--font-display)">AED</text>
+      </g>
+      <g className="finny-orbit2">
+        <circle cx="302" cy="118" r="22" fill="#10b981" />
+        <path d="M292 118l7 7 14-15" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+      <g className="finny-twinkle"><path d="M312 58l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#ffd19b" /></g>
+      <g className="finny-twinkle" style={{ animationDelay: '0.9s' }}><path d="M38 184l2.6 7 7 2.6-7 2.6-2.6 7-2.6-7-7-2.6 7-2.6z" fill="#f16610" /></g>
+
+      {/* character */}
+      <g className="finny-bob">
+        {/* body / suit */}
+        <path d="M120 252c0-31 27-48 60-48s60 17 60 48v58a14 14 0 0 1-14 14H134a14 14 0 0 1-14-14z" fill="#27314d" />
+        {/* shirt + bowtie */}
+        <path d="M180 206l20 14-20 30-20-30z" fill="#fff" />
+        <path d="M180 224l-17-9v18zM180 224l17-9v18z" fill="#f16610" />
+        <circle cx="180" cy="224" r="4" fill="#c9490a" />
+
+        {/* waving left arm */}
+        <g className="finny-wave">
+          <rect x="107" y="228" width="22" height="64" rx="11" fill="url(#finnyArm)" />
+          <circle cx="118" cy="296" r="14" fill="#ff9a4d" />
+        </g>
+        {/* right arm + tablet */}
+        <rect x="231" y="234" width="22" height="58" rx="11" fill="url(#finnyArm)" />
+        <rect x="232" y="276" width="66" height="48" rx="9" fill="#fff" stroke="#27314d" strokeWidth="3" />
+        <rect x="240" y="302" width="9" height="14" rx="2" fill="#f16610" />
+        <rect x="253" y="296" width="9" height="20" rx="2" fill="#f16610" />
+        <rect x="266" y="290" width="9" height="26" rx="2" fill="#10b981" />
+        <rect x="279" y="300" width="9" height="16" rx="2" fill="#f16610" />
+
+        {/* head shell */}
+        <rect x="98" y="74" width="164" height="150" rx="46" fill="url(#finnyHead)" />
+        {/* headset */}
+        <path d="M106 152c0-56 31-90 74-90s74 34 74 90" fill="none" stroke="#27314d" strokeWidth="9" strokeLinecap="round" />
+        <rect x="86" y="140" width="22" height="42" rx="11" fill="#27314d" />
+        <rect x="252" y="140" width="22" height="42" rx="11" fill="#27314d" />
+        {/* antenna */}
+        <line x1="180" y1="74" x2="180" y2="50" stroke="#27314d" strokeWidth="5" strokeLinecap="round" />
+        <circle className="finny-pulse" cx="180" cy="46" r="7" fill="#10b981" />
+
+        {/* face plate */}
+        <rect x="116" y="96" width="128" height="104" rx="34" fill="#fff6ef" />
+        {/* glasses */}
+        <g fill="none" stroke="#27314d" strokeWidth="5">
+          <rect x="128" y="120" width="44" height="38" rx="14" />
+          <rect x="188" y="120" width="44" height="38" rx="14" />
+          <path d="M172 138h16" />
+        </g>
+        {/* eyes */}
+        <g className="finny-blink" fill="#27314d">
+          <circle cx="150" cy="139" r="8" />
+          <circle cx="210" cy="139" r="8" />
+        </g>
+        {/* smile + cheeks */}
+        <path d="M156 176c10 11 38 11 48 0" fill="none" stroke="#27314d" strokeWidth="5" strokeLinecap="round" />
+        <circle cx="138" cy="171" r="6" fill="#ffb27a" />
+        <circle cx="222" cy="171" r="6" fill="#ffb27a" />
+      </g>
+    </svg>
+  )
+}
+
+// Bespoke, consistent pillar icons (owned — not a stock set).
+function PillarIcon({ name }) {
+  const s = { fill: 'none', stroke: '#f16610', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round' }
+  return (
+    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#fff1e1]">
+      <svg viewBox="0 0 48 48" className="h-7 w-7" aria-hidden="true">
+        {name === 'docs' && (<g {...s}><rect x="13" y="9" width="20" height="27" rx="3" /><path d="M18 17h10M18 23h10M18 29h6" /><path d="M29 33l4 4 7-8" stroke="#10b981" /></g>)}
+        {name === 'calendar' && (<g {...s}><rect x="10" y="13" width="28" height="25" rx="4" /><path d="M10 20h28M18 9v6M30 9v6" /><circle cx="24" cy="28" r="6" stroke="#10b981" /><path d="M24 25v3l2.5 2" stroke="#10b981" /></g>)}
+        {name === 'chart' && (<g {...s}><path d="M12 37V11M12 37h25" /><rect x="17" y="27" width="4.5" height="7" rx="1" fill="#f16610" /><rect x="26" y="21" width="4.5" height="13" rx="1" fill="#f16610" /><rect x="35" y="15" width="4.5" height="19" rx="1" fill="#10b981" stroke="#10b981" /></g>)}
+        {name === 'target' && (<g {...s}><circle cx="23" cy="25" r="13" /><circle cx="23" cy="25" r="7" /><circle cx="23" cy="25" r="1.8" fill="#f16610" /><path d="M33 15l6-6M35 9h4v4" stroke="#10b981" /></g>)}
+      </svg>
+    </span>
+  )
+}
+
+// The signature "money thread": an orange line that draws itself as the section
+// scrolls through the viewport, with numbered nodes and alternating step cards.
+function MoneyThread() {
+  const ref = useRef(null)
+  const [progress, setProgress] = useState(0)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const onScroll = () => {
+      const rect = el.getBoundingClientRect()
+      const vh = window.innerHeight || 1
+      const p = (vh * 0.5 - rect.top) / rect.height
+      setProgress(Math.max(0, Math.min(1, p)))
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
+  return (
+    <div ref={ref} className="relative mx-auto mt-16 max-w-5xl">
+      <div className="pointer-events-none absolute bottom-0 left-5 top-0 w-[3px] -translate-x-1/2 rounded-full bg-[#f16610]/15 md:left-1/2" />
+      <div className="pointer-events-none absolute left-5 top-0 w-[3px] -translate-x-1/2 rounded-full bg-gradient-to-b from-[#ff9a4d] to-[#f16610] md:left-1/2" style={{ height: `${progress * 100}%` }}>
+        <span className="absolute -bottom-1.5 left-1/2 h-4 w-4 -translate-x-1/2 rounded-full bg-[#f16610] shadow-[0_0_0_6px_rgba(241,102,16,0.18)]" />
+      </div>
+
+      <div className="space-y-12 md:space-y-20">
+        {ADVANTAGE_ROWS.map((step, i) => {
+          const left = i % 2 === 0
+          return (
+            <div key={step.tag} className="relative md:grid md:grid-cols-2 md:gap-12">
+              <div className="absolute left-5 top-0 z-10 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full border-2 border-[#f16610] bg-white text-sm font-extrabold text-[#f16610] md:left-1/2" style={display}>
+                {`0${i + 1}`}
+              </div>
+              <Reveal className={left ? 'ml-14 md:ml-0 md:pr-14 md:text-right' : 'ml-14 md:col-start-2 md:ml-0 md:pl-14'}>
+                <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+                  <div className={`flex items-center gap-3 ${left ? 'md:flex-row-reverse' : ''}`}>
+                    <PillarIcon name={step.icon} />
+                    <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#f16610]">{step.tag}</p>
+                  </div>
+                  <p className="mt-3 text-2xl font-extrabold leading-tight text-[#0b1224]" style={display}>{step.title}</p>
+                  <p className="mt-3 leading-relaxed text-slate-600">{step.copy}</p>
+                </div>
+              </Reveal>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 /* ───────────────────────── data ───────────────────────── */
 
 const AUDIENCE_PILLS = [
@@ -160,25 +315,25 @@ const SERVICE_CARDS = [
 const ADVANTAGE_ROWS = [
   {
     tag: 'Documents, sorted',
-    art: 'taking-notes',
+    icon: 'docs',
     title: 'You did not become a founder to chase receipts.',
     copy: 'Finny plugs into your inbox, bank feeds, and ERP to pull every invoice, receipt, and statement — then sorts and reconciles them quietly in the background, so your books are clean before you open your laptop.',
   },
   {
     tag: 'Deadlines, tracked',
-    art: 'digital-nomad',
+    icon: 'calendar',
     title: '“Wait — when was that due again?” Never again.',
     copy: 'Every recurring due date — Corporate Tax, VAT, payroll, renewals — lands on one internal calendar. You get a calm, well-timed nudge with everything already prepped and ready to file.',
   },
   {
     tag: 'Numbers, nailed',
-    art: 'keynote-presentation',
+    icon: 'chart',
     title: 'You have the numbers. Now they mean something.',
     copy: 'Your data becomes clean, simple financial reports with deeper analysis on request — so you always know exactly where the business stands, at any moment.',
   },
   {
     tag: 'Plans, precise',
-    art: 'product-launch',
+    icon: 'target',
     title: 'Big decisions deserve better than a blind guess.',
     copy: 'Finny does not just record what happened — it helps you plan what comes next. From forecasts to scenario models, you get the answer before you even ask the question.',
   },
@@ -197,6 +352,13 @@ const REVIEWS = [
   { type: 'text', name: 'Leena Kurian', role: 'Co-founder, Atlas Clinics', quote: TESTIMONIALS[6].quote },
   { type: 'video', name: 'Ahmed Khalil', role: 'CEO, Greenfield Properties', company: 'Greenfield', duration: '1:32', img: 'photo-1519085360753-af0119f7cbe7' },
   { type: 'text', name: 'Rohan Mehta', role: 'Managing Partner, Premier Realty', quote: TESTIMONIALS[3].quote },
+]
+
+const STATS = [
+  { to: 6000, suffix: '+', label: 'UAE businesses served' },
+  { to: 50000, suffix: '+', label: 'Filings & reports delivered' },
+  { to: 6, suffix: ' hrs', label: 'Avg. response time' },
+  { to: 5, suffix: '.0', label: 'Average client rating' },
 ]
 
 // Discrete, evenly-spaced slider stops (non-linear values, like skrooge's slider).
@@ -239,6 +401,66 @@ const unsplash = (id) => `https://images.unsplash.com/${id}?auto=format&fit=crop
 
 /* ───────────────────────── small components ───────────────────────── */
 
+// Thin top scroll-progress bar.
+function ScrollProgress() {
+  const [p, setP] = useState(0)
+  useEffect(() => {
+    const onScroll = () => {
+      const h = document.documentElement
+      const max = h.scrollHeight - h.clientHeight
+      setP(max > 0 ? (h.scrollTop / max) * 100 : 0)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
+  return (
+    <div className="fixed inset-x-0 top-0 z-[60] h-1">
+      <div className="h-full bg-gradient-to-r from-[#ff9a4d] to-[#f16610] transition-[width] duration-150 ease-out" style={{ width: `${p}%` }} />
+    </div>
+  )
+}
+
+// Counts a number up the first time it scrolls into view.
+function CountUp({ to, prefix = '', suffix = '', duration = 1600 }) {
+  const ref = useRef(null)
+  const [val, setVal] = useState(0)
+  const started = useRef(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true
+          const start = performance.now()
+          const tick = (now) => {
+            const t = Math.min(1, (now - start) / duration)
+            const eased = 1 - Math.pow(1 - t, 3)
+            setVal(Math.round(to * eased))
+            if (t < 1) requestAnimationFrame(tick)
+          }
+          requestAnimationFrame(tick)
+        }
+      },
+      { threshold: 0.4 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [to, duration])
+  return (
+    <span ref={ref}>
+      {prefix}
+      {val.toLocaleString()}
+      {suffix}
+    </span>
+  )
+}
+
 function FaqItem({ item, isOpen, onToggle }) {
   return (
     <button onClick={onToggle} className="w-full text-left rounded-[18px] border border-slate-200 bg-white px-6 py-5 transition hover:border-[#f16610]/40 hover:shadow-sm">
@@ -267,6 +489,7 @@ export default function Home4() {
 
   return (
     <main className="bg-white text-[#0b1224]">
+      <ScrollProgress />
       <style>{`
         @keyframes home4-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         .home4-marquee-track { display:flex; width:max-content; animation: home4-marquee 32s linear infinite; }
@@ -278,8 +501,24 @@ export default function Home4() {
         .home4-float-sm { animation: home4-float-sm 5s ease-in-out infinite; }
         .home4-sway { animation: home4-sway 7s ease-in-out infinite; transform-origin: center bottom; }
         .home4-bar { transform-origin: bottom; animation: home4-bar .7s ease-out both; }
+        /* bespoke Finny mascot */
+        @keyframes finny-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+        @keyframes finny-blink { 0%,90%,100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+        @keyframes finny-wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(20deg); } }
+        @keyframes finny-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(1.6); } }
+        @keyframes finny-twinkle { 0%,100% { opacity: 0.2; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1); } }
+        @keyframes finny-orbit1 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+        @keyframes finny-orbit2 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(12px); } }
+        .finny-bob { animation: finny-bob 5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+        .finny-blink { animation: finny-blink 5s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+        .finny-wave { animation: finny-wave 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0%; }
+        .finny-pulse { animation: finny-pulse 2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+        .finny-twinkle { animation: finny-twinkle 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+        .finny-orbit1 { animation: finny-orbit1 6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+        .finny-orbit2 { animation: finny-orbit2 7s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
         @media (prefers-reduced-motion: reduce) {
-          .home4-float, .home4-float-sm, .home4-sway, .home4-marquee-track, .home4-bar { animation: none !important; }
+          .home4-float, .home4-float-sm, .home4-sway, .home4-marquee-track, .home4-bar,
+          .finny-bob, .finny-blink, .finny-wave, .finny-pulse, .finny-twinkle, .finny-orbit1, .finny-orbit2 { animation: none !important; }
         }
       `}</style>
 
@@ -296,10 +535,12 @@ export default function Home4() {
       {/* ──────────── HERO (centered · illustration + floating cards) ──────────── */}
       <section className="relative overflow-hidden bg-[#fff8f1] pt-28 pb-20 md:pt-32">
         <div className="absolute -top-24 left-1/2 h-[460px] w-[760px] -translate-x-1/2 rounded-full bg-[#f16610]/8 blur-[150px]" />
+        <div className="absolute right-[8%] top-40 h-[280px] w-[280px] rounded-full bg-[#7e8bff]/10 blur-[120px]" />
+        <div className="absolute left-[6%] top-24 h-[240px] w-[240px] rounded-full bg-amber-300/15 blur-[120px]" />
         <div className={`relative ${SHELL}`}>
           {/* illustration with floating cards */}
           <div className="relative mx-auto mb-12 max-w-[880px]">
-            <PopsyArt name="work-from-home" alt="A founder relaxing while Finny keeps the books in order" className="home4-sway mx-auto w-full max-w-[420px]" />
+            <FinnyMascot className="mx-auto w-full max-w-[380px]" />
 
             {/* profit card (top-right) */}
             <div className="home4-float-sm absolute right-0 top-0 hidden rounded-2xl border border-slate-100 bg-white p-3.5 shadow-xl sm:block lg:right-6">
@@ -356,6 +597,20 @@ export default function Home4() {
             </a>
             <a href="#pricing" className="text-sm font-bold text-[#f16610] hover:underline" style={display}>See Pricing</a>
           </div>
+        </div>
+      </section>
+
+      {/* ──────────── STATS BAND (count-up) ──────────── */}
+      <section className="border-y border-[#f16610]/10 bg-white py-12">
+        <div className={`${SHELL} grid grid-cols-2 gap-8 text-center md:grid-cols-4`}>
+          {STATS.map((stat) => (
+            <div key={stat.label}>
+              <p className="text-4xl font-extrabold text-[#f16610] md:text-5xl" style={display}>
+                <CountUp to={stat.to} suffix={stat.suffix} />
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-500">{stat.label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -541,28 +796,9 @@ export default function Home4() {
       <section className="bg-white pt-16">
         <div className={SHELL}>
           <h2 className="text-center text-4xl font-extrabold text-[#0b1224] md:text-5xl" style={display}>The Finny Advantage</h2>
-          <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-            {ADVANTAGE_ROWS.map((r) => (
-              <span key={r.tag} className="inline-flex items-center rounded-full bg-[#fff1e1] px-4 py-2 text-xs font-bold text-[#f16610]">{r.tag}</span>
-            ))}
-          </div>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-lg text-slate-600">Four things Finny quietly handles end-to-end — follow the thread.</p>
 
-          <div className="mt-14 space-y-16">
-            {ADVANTAGE_ROWS.map((row, i) => (
-              <Reveal key={row.tag} className="grid items-center gap-10 md:grid-cols-2">
-                <div className={`flex justify-center ${i % 2 === 1 ? 'md:order-2' : ''}`}>
-                  <div className="flex h-64 w-full max-w-md items-center justify-center rounded-[28px] bg-[#fff8f1] p-6">
-                    <PopsyArt name={row.art} alt={row.title} className="home4-float h-full w-auto max-w-full object-contain" />
-                  </div>
-                </div>
-                <div className={i % 2 === 1 ? 'md:order-1' : ''}>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#f16610]">{row.tag}</p>
-                  <p className="mt-3 text-3xl font-extrabold leading-tight text-[#0b1224]" style={display}>{row.title}</p>
-                  <p className="mt-4 text-lg leading-relaxed text-slate-600">{row.copy}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+          <MoneyThread />
         </div>
 
         {/* scalloped divider into pricing */}
