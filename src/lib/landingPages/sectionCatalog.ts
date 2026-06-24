@@ -77,7 +77,7 @@ const TRUST_LOGOS_DEFAULT = [
 ]
 
 const STATS_DEFAULT = [
-  { value: '6000+', label: 'UAE businesses served' },
+  { value: '7,000', label: 'UAE businesses served' },
   { value: '12,000+', label: 'Returns filed' },
   { value: '4.9★', label: 'Google rating' },
   { value: 'AED 0', label: 'Penalties paid by clients' },
@@ -93,7 +93,7 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     defaultProps: {
       eyebrow: 'UAE Corporate Tax',
       heading: 'Register your business for Corporate Tax — in 3 days, FTA-approved.',
-      subheading: 'Trusted by 6,000+ UAE businesses. Get a free consultation today.',
+      subheading: 'Trusted by 7,000+ UAE businesses. Get a free consultation today.',
       bullets: [
         'FTA-approved tax agents',
         'Free consultation in 24h',
@@ -128,7 +128,7 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     group: 'Trust',
     icon: 'shield',
     defaultProps: {
-      heading: 'Trusted by 6,000+ UAE businesses',
+      heading: 'Trusted by 7,000+ UAE businesses',
       logos: TRUST_LOGOS_DEFAULT,
       ratingLabel: '4.9 / 5 on Google',
     },

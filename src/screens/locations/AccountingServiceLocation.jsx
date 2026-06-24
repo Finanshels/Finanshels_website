@@ -35,7 +35,7 @@ const PROCESS = [
 ]
 
 const STATS = [
-  { value: '6,000+', label: 'UAE clients served' },
+  { value: '7,000+', label: 'UAE clients served' },
   { value: '135+', label: 'Finance experts' },
   { value: '99.4%', label: 'On-time filings' },
   { value: '4.9★', label: 'Average Google rating' },

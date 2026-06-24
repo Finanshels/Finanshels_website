@@ -74,7 +74,7 @@ export default function Footer() {
               priority
             />
             <p className="text-lg text-slate-600 leading-relaxed max-w-xl">
-              Finanshels, the back office finance partner for 6000+ founders in the UAE run by 180+ members so founders can stay focused on growth.
+              Finanshels, the back office finance partner for 7,000 founders in the UAE run by 180+ members so founders can stay focused on growth.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               {SOCIALS.map((social) => (

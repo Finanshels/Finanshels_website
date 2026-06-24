@@ -165,7 +165,7 @@ export default function AmlPage() {
             </p>
             <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl">
               {[
-                { value: '6,000+', label: 'Businesses protected' },
+                { value: '7,000+', label: 'Businesses protected' },
                 { value: '7 days', label: 'Average to compliance' },
                 { value: '100%', label: 'Inspection pass rate' },
                 { value: 'AED 499', label: 'goAML registration' },

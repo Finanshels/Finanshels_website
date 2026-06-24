@@ -18,16 +18,11 @@ import {
 import AnimatedSection from '../components/AnimatedSection'
 import { Card } from '../components/ui/Card'
 import TestimonialCarousel from '../components/TestimonialCarousel'
+import HomeFaqSection from '../components/HomeFaqSection'
 import { TESTIMONIALS } from '../data/team'
 
-const HERO_BULLETS = [
-  'Accounting, Bookkeeping, VAT, Corporate Tax, AML & CFO — all in one place',
-  'FTA-registered. Books closed by Day 10, every month',
-  'Backed by MBRIF, in5 Tech, and Kube VC. Recognised by Gulf News',
-]
-
 const HERO_STATS = [
-  { value: '6,000+', label: 'UAE businesses trust us' },
+  { value: '7,000+', label: 'UAE businesses trust us' },
   { value: 'AED 499', label: 'starting per month' },
   { value: 'Day 10', label: 'books closed every month' },
   { value: '4.9★', label: 'on Trustpilot · 280+ reviews' },
@@ -412,77 +407,94 @@ export default function Home() {
   return (
     <div className="bg-[#fffdfb] text-slate-900 overflow-hidden">
       {/* HERO */}
-      <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 px-5 sm:px-10 lg:px-16">
-        <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute inset-x-0 top-0 h-[480px] bg-gradient-to-b from-[#fef3eb] via-[#fffaf3] to-transparent" />
-          <div className="absolute -top-20 -left-32 w-[420px] h-[420px] rounded-full bg-[#f16610]/15 blur-[120px]" />
-          <div className="absolute top-40 -right-20 w-[460px] h-[460px] rounded-full bg-[#7e8bff]/20 blur-[140px] animate-pulse-slow" />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.04)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]" />
+      <section className="relative bg-slate-950 text-white overflow-hidden pt-24 sm:pt-36 pb-40 sm:pb-56 px-5 sm:px-10">
+        {/* Background */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full bg-[#f16610]/20 blur-[140px]" />
+          <div className="absolute -top-20 right-0 w-[600px] h-[600px] rounded-full bg-[#6366f1]/15 blur-[120px]" />
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] rounded-full bg-[#f16610]/8 blur-[80px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:44px_44px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(241,102,16,0.1),transparent)]" />
         </div>
 
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-14 lg:items-center">
-          <AnimatedSection animation="fade-right">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-white/70 px-3 py-1.5 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.22em] sm:tracking-[0.25em] text-[#f16610] backdrop-blur">
-              <Sparkles size={13} /> Finance operators for founders
-            </span>
-            <h1 className="mt-5 sm:mt-6 text-[2.25rem] sm:text-[clamp(2.5rem,5vw,4rem)] font-bold leading-[1.1] sm:leading-[1.05] tracking-tight">
-              Your UAE back office{' '}
-              <span className="sm:hidden">finance team, without </span>
-              <span className="hidden sm:inline"><br />finance team,{' '}</span>
-              <span className="relative inline-block">
-                <span className="relative z-10 text-[#f16610]">without the headcount.</span>
-                <span className="absolute inset-x-0 bottom-1 h-3 bg-[#ffd19b] -z-0 -skew-x-6" />
+        {/* Fade to light bg at bottom so dashboard transitions smoothly */}
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#fffdfb] to-transparent z-10" />
+
+        {/* Centered content */}
+        <div className="relative z-20 max-w-4xl mx-auto text-center">
+          <AnimatedSection animation="fade-up">
+
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-white/12 bg-white/6 px-4 py-2 backdrop-blur-sm mb-8">
+              <span className="relative flex h-2 w-2 flex-shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#f16610] opacity-70" />
+                <span className="relative h-2 w-2 rounded-full bg-[#f16610]" />
               </span>
-            </h1>
-            <p className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed">
-              Accounting, Bookkeeping, DDA Audit, VAT, Corporate Tax, AML &amp; CFO support — handled by experts, delivered on one platform. Join 6,000+ UAE businesses that trust Finanshels with their books. From AED 499/mo. No lock-in.
-            </p>
-            <div className="mt-6 sm:mt-7 grid gap-2.5 max-w-lg">
-              {HERO_BULLETS.map((bullet) => (
-                <div key={bullet} className="flex items-start gap-2.5 text-sm text-slate-700">
-                  <CheckCircle2 className="text-[#f16610] mt-0.5 flex-shrink-0" size={18} />
-                  <span>{bullet}</span>
-                </div>
-              ))}
+              <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/70">Finance operators for founders</span>
             </div>
-            <div className="mt-7 sm:mt-9 flex flex-col sm:flex-row sm:flex-wrap gap-3">
+
+            {/* Headline */}
+            <h1 className="text-[3rem] sm:text-[4.8rem] lg:text-[5.75rem] font-black leading-[1.0] tracking-[-0.03em]">
+              Focus on growth,
+              <br />
+              leave the{' '}
+              <span className="bg-gradient-to-r from-[#ff8c38] via-[#f16610] to-[#ff6a00] bg-clip-text text-transparent">
+                finance heavy lifting
+              </span>
+              <br />
+              to us.
+            </h1>
+
+            {/* Subline */}
+            <p className="mt-6 sm:mt-8 text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
+              Your UAE back office finance team, without the overhead.
+              Accounting, VAT, Corporate Tax, AML &amp; CFO — handled by qualified accountants.
+              From <span className="text-white font-semibold">AED 499/mo</span>. No lock-in.
+            </p>
+
+            {/* CTAs */}
+            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center gap-3">
               <a
                 href="https://contact-finanshels.zohobookings.com/#/customer/finanshels"
-                className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#f16610]/30 hover:shadow-xl hover:shadow-[#f16610]/40 hover:-translate-y-0.5 transition-all"
+                className="group inline-flex items-center justify-center gap-2.5 rounded-2xl bg-[#f16610] px-8 py-4 text-[15px] font-bold text-white shadow-[0_0_40px_rgba(241,102,16,0.5)] hover:shadow-[0_0_60px_rgba(241,102,16,0.65)] hover:-translate-y-0.5 transition-all"
               >
                 Book a Free Consultation
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </a>
               <a
                 href="https://wa.me/97145457841?text=Hi%20Team%20Finanshels%2C%20I%27d%20like%20to%20chat%20with%20an%20expert."
-                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 bg-white px-6 py-3.5 font-semibold text-slate-900 hover:bg-slate-900 hover:text-white transition"
+                className="group inline-flex items-center justify-center gap-2.5 rounded-2xl border border-white/15 bg-white/8 px-8 py-4 text-[15px] font-semibold text-white/90 backdrop-blur hover:bg-white/15 hover:border-white/25 transition"
               >
-                <MessageSquare size={18} />
+                <MessageSquare size={17} className="text-white/60 group-hover:text-white/90 transition-colors" />
                 Chat with an Expert
               </a>
             </div>
-            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-y-3 gap-x-8 text-xs text-slate-500">
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  {['#f16610', '#4f46e5', '#059669', '#d946ef'].map((c, i) => (
-                    <div
-                      key={i}
-                      className="h-7 w-7 rounded-full border-2 border-white"
-                      style={{ background: `linear-gradient(135deg, ${c}, ${c}99)` }}
-                    />
-                  ))}
-                </div>
-                <span><strong className="text-slate-900">6,000+ UAE businesses</strong> trust Finanshels with their books</span>
-              </div>
-              <div className="flex items-center gap-1 text-amber-500">
-                {'★★★★★'.split('').map((s, i) => <span key={i}>{s}</span>)}
-                <span className="text-slate-600 ml-1.5">4.9 on Trustpilot · 280+ reviews</span>
-              </div>
-            </div>
-          </AnimatedSection>
 
-          <AnimatedSection animation="fade-left" delay={100}>
-            <HeroDashboard />
+            {/* Stats grid */}
+            <div className="mt-10 sm:mt-14 grid grid-cols-2 sm:grid-cols-4 rounded-2xl overflow-hidden border border-white/8">
+              {[
+                { value: '7,000+', label: 'UAE businesses' },
+                { value: 'AED 499', label: 'per month' },
+                { value: 'Day 10', label: 'books closed' },
+                { value: '4.9 ★', label: 'Trustpilot' },
+              ].map((s, i) => (
+                <div key={s.value} className={`bg-white/4 px-6 py-5 text-center ${i < 3 ? 'border-r border-white/8' : ''}`}>
+                  <p className="text-2xl sm:text-3xl font-black text-white">{s.value}</p>
+                  <p className="mt-1 text-xs text-slate-500 uppercase tracking-[0.2em]">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+          </AnimatedSection>
+        </div>
+
+        {/* Dashboard — centered, elevated over the fade-to-white */}
+        <div className="relative z-30 mt-16 sm:mt-20 max-w-4xl mx-auto px-2">
+          <AnimatedSection animation="fade-up" delay={160}>
+            <div className="relative">
+              <div className="absolute -inset-8 rounded-[56px] bg-gradient-to-br from-[#f16610]/30 via-[#6366f1]/20 to-transparent blur-3xl" />
+              <HeroDashboard />
+            </div>
           </AnimatedSection>
         </div>
       </section>
@@ -760,7 +772,7 @@ export default function Home() {
           <AnimatedSection animation="fade-up">
             <div className="grid md:grid-cols-[1fr_auto] gap-6 items-end">
               <div>
-                <span className="text-xs uppercase tracking-[0.4em] text-[#f16610] font-semibold">Why 6,000+ UAE businesses choose Finanshels</span>
+                <span className="text-xs uppercase tracking-[0.4em] text-[#f16610] font-semibold">Why 7,000+ UAE businesses choose Finanshels</span>
                 <h2 className="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight max-w-2xl">
                   UAE-first. Founder-focused. Tech-powered.
                 </h2>
@@ -897,6 +909,8 @@ export default function Home() {
           </AnimatedSection>
         </div>
       </section>
+
+      <HomeFaqSection />
 
       {/* FINAL CTA */}
       <section className="px-5 sm:px-10 lg:px-16 pb-16 sm:pb-24">

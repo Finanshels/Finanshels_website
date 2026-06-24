@@ -64,8 +64,8 @@ const AMBASSADOR = {
 }
 
 const TRUST_STATS = [
-  { value: '4.9★', label: 'from 6,000+ reviews' },
-  { value: '6,000+', label: 'UAE businesses served' },
+  { value: '4.9★', label: 'from 7,000+ reviews' },
+  { value: '7,000+', label: 'UAE businesses served' },
   { value: '180+', label: 'finance specialists' },
   { value: '12', label: 'active markets' },
 ]
@@ -370,7 +370,7 @@ export default function Home3() {
                   ))}
                 </div>
                 <p className="text-xs font-semibold text-slate-700">
-                  4.9/5 from 6,000+ UAE businesses
+                  4.9/5 from 7,000+ UAE businesses
                 </p>
               </div>
             </AnimatedSection>
@@ -854,7 +854,7 @@ export default function Home3() {
             Ready to put your finance ops on autopilot?
           </h2>
           <p className="mt-4 text-lg text-white/90 max-w-xl mx-auto">
-            6,000+ UAE businesses already trust us with their numbers. Your move.
+            7,000+ UAE businesses already trust us with their numbers. Your move.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <a

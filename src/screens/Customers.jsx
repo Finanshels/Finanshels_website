@@ -41,7 +41,7 @@ export default function Customers() {
           <AnimatedSection animation="fade-right">
             <p className="text-sm uppercase tracking-[0.4em] text-[#f16610]/80 font-semibold">customer stories</p>
             <h1 className="text-4xl sm:text-5xl font-semibold mt-4">
-              6000+ founders trust Finanshels with every financial decision
+              7,000 founders trust Finanshels with every financial decision
             </h1>
             <p className="text-lg text-slate-600 mt-6">
               From venture-backed rockets to disciplined SMBs, our teams integrate with leadership, investors, and

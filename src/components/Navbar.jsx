@@ -20,91 +20,144 @@ import {
   ShoppingCart,
   Building2,
   HelpCircle,
-  Megaphone,
   Briefcase,
-  Archive
+  Archive,
+  GraduationCap,
+  Newspaper,
+  FileBarChart,
+  ListChecks,
+  LayoutTemplate,
+  Scale,
+  Wallet,
+  HeartPulse,
+  CalendarClock,
+  HandCoins,
+  Percent,
+  Receipt,
+  Heart,
+  Handshake,
+  BriefcaseBusiness,
+  CalendarDays,
+  Mic,
+  Video,
+  Calculator,
+  ClipboardCheck,
+  Utensils,
+  Gem
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '../lib/utils'
-import { PRODUCT_CATEGORIES } from '../data/products'
 
 const SERVICES_SECTIONS = [
   {
-    title: 'By Service',
+    title: 'Compliance',
     items: [
-      { name: 'Corporate Tax Filing', description: 'File corporate tax across the UAE', badge: 'New', href: '/solutions/corporate-tax-filing', icon: FileText },
-      { name: 'Bookkeeping', description: 'Monthly closes with full reconciliations', href: '/solutions/bookkeeping', icon: BookOpen },
-      { name: 'Tax Consultancy', description: 'Advisory, strategies, and filings', href: '/solutions/tax-consultancy', icon: MessageSquare },
-      { name: 'Fractional CFO', description: 'Strategic finance and operating cadences', href: '/solutions/fractional-cfo', icon: TrendingUp },
-      { name: 'Compliance Services', description: 'AML, ESR, governance, and policies', badge: 'New', href: '/solutions/compliance-services', icon: ShieldCheck }
+      { name: 'Corporate Tax Registration', href: '/corporate-tax-registration-uae', icon: FileSpreadsheet },
+      { name: 'Corporate Tax Filing', href: '/corporate-tax-filing-uae', icon: FileText },
+      { name: 'VAT Registration', href: '/vat-registration-uae', icon: BadgePercent },
+      { name: 'VAT Filing', href: '/vat-filing-uae', icon: Receipt },
+      { name: 'AML Compliance', href: '/aml-uae', icon: ShieldCheck },
+      { name: 'DDA Audit Services', href: '/audit-services-dubai', icon: ClipboardCheck },
+      { name: 'Company Liquidation', href: '/company-liquidation-dubai', icon: Archive }
     ]
   },
   {
-    title: 'Other Services',
+    title: 'Finance Back Office',
     items: [
-      { name: 'VAT Registration', description: 'Effortless VAT onboarding & renewals', href: '/solutions/vat-registration', icon: BadgePercent },
-      { name: 'Corporate Tax Registration', description: 'Entity set up and filings', href: '/solutions/corporate-tax-registration', icon: FileSpreadsheet },
-      { name: 'Liquidation Services', description: 'Stress-free company closure', href: '/solutions/liquidation-services', icon: Archive },
-      { name: 'Hire an Expert', description: 'Deploy controllers and CFOs instantly', href: '/solutions/hire-an-expert', icon: Users },
-      { name: 'VAT Filing', description: 'Managed VAT cycles every month', badge: 'New', href: '/solutions/vat-filing', icon: FileText }
+      { name: 'Accounting Services UAE', href: '/accounting-services-uae', icon: BookOpen },
+      { name: 'Bookkeeping Services', href: '/bookkeeping-services-uae', icon: Calculator },
+      { name: 'Financial Controller (FCaaS)', href: '/financial-controller-uae', icon: TrendingUp },
+      { name: 'CFO Services Dubai', href: '/cfo-services-dubai', icon: Briefcase }
     ]
   },
   {
-    title: 'By Industry',
+    title: 'Sectors',
     items: [
-      { name: 'Restaurants', description: 'Tailored finance for F&B groups', href: '/solutions/restaurants', icon: Store },
-      { name: 'Startups', description: 'Strategic partner for venture-backed teams', href: '/solutions/startups', icon: Sparkles },
-      { name: 'eCommerce', description: 'Inventory, PSP, and marketplace control', href: '/solutions/ecommerce', icon: ShoppingCart },
-      { name: 'SMEs', description: 'Purpose-built teams for scaling SMBs', href: '/solutions/smes', icon: Building2 }
+      { name: 'Small Business Accounting', href: '/small-business-accounting', icon: Store },
+      { name: 'Real Estate Accounting', href: '/real-estate-accounting', icon: Building2 },
+      { name: 'Healthcare Accounting', href: '/healthcare-accounting', icon: HeartPulse },
+      { name: 'Non-Profit Accounting', href: '/non-profit-accounting', icon: Heart },
+      { name: 'E-Commerce Accounting', href: '/ecommerce-accounting', icon: ShoppingCart }
+    ]
+  },
+  {
+    title: '',
+    items: [
+      { name: 'Technology & Startup Accounting', href: '/technology-accounting', icon: Sparkles },
+      { name: 'Restaurant & F&B Accounting', href: '/restaurant-accounting', icon: Utensils },
+      { name: 'Trading Business Accounting', href: '/trading-business-accounting', icon: Scale },
+      { name: 'Jewellers & Precious Metals', href: '/jewellery-business-accounting', icon: Gem },
+      { name: 'VC Fund Accounting', href: '/vc-fund-accounting', icon: Wallet }
     ]
   }
 ]
 
 const RESOURCES_SECTIONS = [
   {
-    title: 'Learn',
+    title: 'Knowledge',
     items: [
-      { name: 'Blog', description: 'Sharp takes on startup finance.', href: '/blog', icon: Megaphone },
-      { name: 'Glossary', description: 'Speak finance like a founder.', href: '/glossary', icon: BookOpen },
-      { name: 'FAQs', description: 'Answers to the most common questions.', href: '/contact', icon: HelpCircle }
+      { name: 'Guides Hub', href: '/guide', icon: GraduationCap },
+      { name: 'Blog Hub', href: '/blog', icon: Newspaper },
+      { name: 'Glossary Hub', href: '/glossary', icon: BookOpen },
+      { name: 'Reports', href: '/report', icon: FileBarChart }
     ]
   },
   {
-    title: 'Products & Tools',
+    title: 'Quick Reference',
     items: [
-      { name: 'All Products', description: 'Purpose-built tools for finance teams.', href: '/products', icon: Briefcase },
-      ...PRODUCT_CATEGORIES.slice(0, 1).flatMap((section) =>
-        section.items.slice(0, 2).map((item) => ({
-          name: item.name,
-          description: item.description,
-          href: `/products/${item.slug}`,
-          icon: item.icon
-        }))
-      )
+      { name: 'FAQs', href: '/faq', icon: HelpCircle },
+      { name: 'Cheat Sheets', href: '/cheat-sheet', icon: ListChecks },
+      { name: 'Templates', href: '/template', icon: LayoutTemplate }
     ]
   },
   {
-    title: 'Customers',
+    title: 'Calculators',
     items: [
-      { name: 'Case studies', description: 'See how teams scale with Finanshels.', href: '/customers', icon: Sparkles },
-      { name: 'Resources hub', description: 'Guides, templates, and playbooks.', href: '/resources', icon: FileText }
+      { name: 'Cash Flow', href: '/cash-flow-management-calculator', icon: Wallet },
+      { name: 'Gratuity', href: '/gratuity-calculator', icon: HandCoins },
+      { name: 'VAT', href: '/vat-calculator', icon: Percent },
+      { name: 'E-Invoicing', href: '/einvoicing-tax-calculator', icon: Receipt }
+    ]
+  },
+  {
+    title: 'Benchmarks & Checks',
+    items: [
+      { name: 'Salary Benchmark', href: '/accounting-finance-salary-benchmark', icon: Scale },
+      { name: 'Finance Health Check', href: '/business-finance-health-checker', icon: HeartPulse },
+      { name: 'CT Deadline Check', href: '/corporate-tax-deadline-checker', icon: CalendarClock }
     ]
   }
 ]
 
 const COMPANY_SECTIONS = [
   {
-    title: 'About Finanshels',
+    title: 'About',
     items: [
-      { name: 'About us', description: 'Who we are and why we build Finanshels.', href: '/about', icon: Building2 },
-      { name: 'Careers', description: 'Join the team.', badge: "We're hiring!", href: '/careers', icon: Users }
+      { name: 'About Us', href: '/about-us', icon: Building2 },
+      { name: 'Customers', href: '/customers', icon: Heart }
     ]
   },
   {
-    title: 'Get in touch',
+    title: 'Connect',
     items: [
-      { name: 'Contact', description: 'Talk to our team.', href: '/contact', icon: MessageSquare },
-      { name: 'Become a partner', description: 'Grow with the Finanshels partner network.', href: 'https://partner.finanshels.com', icon: Briefcase }
+      { name: 'Partners', href: '/partners', icon: Handshake },
+      { name: 'Contact', href: '/contact', icon: MessageSquare }
+    ]
+  },
+  {
+    title: 'Careers',
+    items: [
+      { name: 'Careers', badge: "We're hiring!", href: '/careers', icon: Briefcase },
+      { name: 'Jobs', href: '/jobs', icon: BriefcaseBusiness }
+    ]
+  },
+  {
+    title: 'Media',
+    items: [
+      { name: 'Community', href: '/community', icon: Users },
+      { name: 'Events', href: '/events', icon: CalendarDays },
+      { name: 'Podcasts', href: '/podcasts', icon: Mic },
+      { name: 'Webinars', href: '/webinars', icon: Video }
     ]
   }
 ]
@@ -140,6 +193,7 @@ export default function Navbar() {
       {
         name: 'Services',
         dropdown: SERVICES_SECTIONS,
+        dropdownOptions: { cols: 4, compact: true },
         cta: {
           text: 'Need help scoping the right finance services for your business?',
           primary: { href: 'mailto:contact@finanshels.com', label: 'Book now' },
@@ -153,24 +207,26 @@ export default function Navbar() {
       {
         name: 'Resources',
         dropdown: RESOURCES_SECTIONS,
+        dropdownOptions: { cols: 4, compact: true },
         cta: {
-          text: 'Guides, products, and case studies for ambitious operators.',
+          text: 'Free guides, calculators, and tools for ambitious operators.',
           primary: { href: '/blog', label: 'View blog' },
           actions: [
-            { href: '/products', label: 'Browse products' },
-            { href: '/customers', label: 'Customer stories' }
+            { href: '/guide', label: 'Browse guides' },
+            { href: '/vat-calculator', label: 'Try a calculator' }
           ]
         }
       },
       {
         name: 'Company',
         dropdown: COMPANY_SECTIONS,
+        dropdownOptions: { cols: 4, compact: true },
         cta: {
           text: 'Learn about Finanshels, join the team, or grow with us as a partner.',
           primary: { href: '/contact', label: 'Contact us' },
           actions: [
             { href: '/careers', label: 'Careers' },
-            { href: 'https://partner.finanshels.com', label: 'Become a partner' }
+            { href: '/partners', label: 'Become a partner' }
           ]
         }
       }
@@ -178,8 +234,13 @@ export default function Navbar() {
     [homeToggleItem]
   )
 
-  const renderDropdown = (sections, cta) => (
-    <div 
+  const renderDropdown = (sections, cta, options = {}) => {
+    const { cols = 3, compact = false } = options
+    const gridClass = cols === 4
+      ? 'grid gap-4 grid-cols-2 lg:grid-cols-4'
+      : 'grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+    return (
+    <div
       className="fixed left-1/2 top-20 -translate-x-1/2 w-full max-w-[1100px] px-4 sm:px-8 z-50"
       onMouseEnter={() => setOpenDropdown(openDropdown)}
       onMouseLeave={() => setOpenDropdown(null)}
@@ -190,18 +251,32 @@ export default function Navbar() {
         <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-white via-[#fff9f5] to-white opacity-90 pointer-events-none" />
         <div className="absolute -top-10 right-16 h-24 w-24 rounded-full bg-[#f16610]/25 blur-[60px]" />
         <div className="relative z-10">
-        <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={gridClass}>
           {sections.map((section) => (
-            <div key={section.title} className="space-y-4 min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.45em] text-[#f16610]/80">{section.title}</p>
-              <div className="space-y-3">
+            <div key={section.title} className="space-y-2 min-w-0">
+              {section.title
+                ? <p className="text-xs font-semibold uppercase tracking-[0.45em] text-[#f16610]/80">{section.title}</p>
+                : <div className="h-[18px]" />
+              }
+              <div className={compact ? 'space-y-1' : 'space-y-3'}>
                 {section.items.map((item) => {
                   const Icon = item.icon || ArrowUpRight
               const ItemComponent = item.href?.startsWith('http') ? 'a' : Link
               const componentProps = item.href?.startsWith('http')
                 ? { href: item.href, target: '_blank', rel: 'noreferrer' }
                 : { href: item.href || '#' }
-                  return (
+                  return compact ? (
+                    <ItemComponent
+                      key={item.name}
+                      {...componentProps}
+                      className="group flex items-center gap-2 rounded-2xl border border-transparent bg-white/60 px-2.5 py-2 transition-all hover:border-[#ffd7c0] hover:bg-white min-w-0"
+                    >
+                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl bg-[#fff1e3] text-[#f16610]">
+                        <Icon size={14} />
+                      </div>
+                      <p className="font-semibold text-slate-800 text-xs leading-tight">{item.name}</p>
+                    </ItemComponent>
+                  ) : (
                     <ItemComponent
                       key={item.name}
                       {...componentProps}
@@ -266,6 +341,7 @@ export default function Navbar() {
     </div>
     </div>
   )
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-white/95 via-white/90 to-[#fff6ee]/90 border-b border-white/40 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-2xl">
@@ -295,7 +371,7 @@ export default function Navbar() {
                     {item.name}
                     <ChevronDown size={14} className={cn('transition-transform', openDropdown === item.name && 'rotate-180')} />
                   </button>
-                  {openDropdown === item.name && renderDropdown(item.dropdown, item.cta)}
+                  {openDropdown === item.name && renderDropdown(item.dropdown, item.cta, item.dropdownOptions)}
                 </div>
               ) : item.external ? (
                 <a

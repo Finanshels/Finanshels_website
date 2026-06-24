@@ -57,7 +57,7 @@ export default function OpengraphImage() {
         </div>
 
         <div style={{ display: 'flex', gap: '32px', fontSize: '24px', color: '#475569' }}>
-          <span>6,000+ UAE clients</span>
+          <span>7,000+ UAE clients</span>
           <span>·</span>
           <span>135+ finance experts</span>
           <span>·</span>

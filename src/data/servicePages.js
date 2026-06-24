@@ -325,7 +325,7 @@ export const SERVICE_PAGES = {
     description:
       'As your business grows, so do the compliance requirements. Failure to keep up with FTA audits can lead to penalties and tarnish your business reputation. Finanshels prepares UAE businesses for statutory and FTA audits with clean accrual-basis accounts, working paper packs, and auditor liaison support.',
     stats: [
-      { label: 'UAE businesses served', value: '6,000+' },
+      { label: 'UAE businesses served', value: '7,000+' },
       { label: 'Audit inspection pass rate', value: '100%' },
       { label: 'Certified auditors', value: 'CPA, CA, ACCA, CMA' },
     ],
@@ -344,7 +344,7 @@ export const SERVICE_PAGES = {
       'Certified professionals with UAE Ministry of Economy audit approval — CPA, CA, ACCA, CMA.',
       'Advanced audit software and automated testing — faster turnaround without cutting corners.',
       'We do not disappear after the report — post-audit advisory support, recommendations implementation, and year-round guidance.',
-      'Trusted by 6,000+ UAE businesses with a consistent delivery record.',
+      'Trusted by 7,000+ UAE businesses with a consistent delivery record.',
     ],
     workflow: [
       'Book your free audit consultation and receive a customised audit assessment.',
@@ -798,7 +798,7 @@ export const SERVICE_PAGES = {
     description:
       'We become your finance department—bookkeeping, compliance, and CFO strategy under one subscription.',
     stats: [
-      { label: 'SMBs onboarded', value: '6000+' }],
+      { label: 'SMBs onboarded', value: '7,000' }],
     valueProps: [
       'Affordable teams customisable to your industry.',
       'Policy design, approvals, and internal controls from day one.',

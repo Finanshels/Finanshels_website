@@ -577,7 +577,7 @@ export default function Home4() {
           {/* trust pill */}
           <div className="mx-auto flex w-fit items-center gap-2.5 rounded-full border border-amber-200 bg-white px-5 py-2.5 shadow-sm">
             <span>🤝</span>
-            <p className="text-sm font-semibold text-slate-700">Trusted by 6,000+ businesses</p>
+            <p className="text-sm font-semibold text-slate-700">Trusted by 7,000+ businesses</p>
             <span className="text-slate-300">·</span>
             <span className="text-sm font-bold text-slate-700">5.0</span>
             <div className="flex">{[1, 2, 3, 4, 5].map((i) => <Star key={i} size={14} className="fill-amber-500 text-amber-500" />)}</div>
@@ -929,7 +929,7 @@ export default function Home4() {
         <div className={`relative ${SHELL} text-center`}>
           <FinnyOrb size={84} />
           <h2 className="mx-auto mt-6 max-w-3xl text-4xl font-extrabold md:text-6xl" style={display}>You run your business. Finny minds the books.</h2>
-          <p className="mx-auto mt-5 max-w-xl text-lg text-white/80">6,000+ UAE businesses already trust us with their numbers. Your move.</p>
+          <p className="mx-auto mt-5 max-w-xl text-lg text-white/80">7,000+ UAE businesses already trust us with their numbers. Your move.</p>
           <a href={WHATSAPP_HREF} target="_blank" rel="noreferrer" className="mt-9 inline-flex items-center gap-2 rounded-full bg-[#f16610] px-9 py-4 text-base font-bold text-white shadow-lg shadow-[#f16610]/40 transition hover:-translate-y-0.5" style={display}><Phone size={18} /> WhatsApp Finny</a>
         </div>
       </section>
