@@ -2,6 +2,11 @@
 
 import { useRef } from 'react'
 import { slugifyForCms } from '@/lib/cms/slugify'
+import { AiFieldButton } from './ai/AiFieldButton'
+import type { AiContext, AiFieldConfig } from '@/lib/cms/ai/fieldMap'
+
+// This component IS the title field, so the AI config is always a title suggestion.
+const TITLE_AI_CONFIG: AiFieldConfig = { kind: 'title', label: 'Suggest', multiChoice: true }
 
 type Props = {
   /** When true, changing the title updates the slug until the slug is edited manually. */
@@ -18,6 +23,8 @@ type Props = {
   initialSlug: string
   titleClassName: string
   slugClassName: string
+  /** When provided, shows an ✨ "Suggest" button that writes AI titles into the field. */
+  aiContext?: AiContext
 }
 
 export function CmsTitleSlugFields({
@@ -34,6 +41,7 @@ export function CmsTitleSlugFields({
   initialSlug,
   titleClassName,
   slugClassName,
+  aiContext,
 }: Props) {
   const slugManual = useRef(!autoSyncSlug)
   const titleRef = useRef<HTMLInputElement>(null)
@@ -58,6 +66,14 @@ export function CmsTitleSlugFields({
             <span className="rounded-full border border-brand-primary/30 bg-brand-primary/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-brand-primary">
               Required
             </span>
+          ) : null}
+          {aiContext ? (
+            <AiFieldButton
+              targetName={titleName}
+              fieldLabel={titleLabel}
+              config={TITLE_AI_CONFIG}
+              context={aiContext}
+            />
           ) : null}
         </span>
         <input

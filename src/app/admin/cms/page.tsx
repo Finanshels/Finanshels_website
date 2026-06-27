@@ -8,6 +8,7 @@ import { AiFieldButton } from '@/components/cms/admin/ai/AiFieldButton'
 import { resolveAiField, type AiContext } from '@/lib/cms/ai/fieldMap'
 import { getFieldHelperText } from '@/lib/cms/fieldHelperText'
 import { CmsTitleSlugFields } from '@/components/cms/admin/CmsTitleSlugFields'
+import { CmsFormValidator } from '@/components/cms/admin/CmsFormValidator'
 // FIX-039: FieldRenderer extracted to a shared FieldEditor reused by the create flow.
 import { FieldEditor as FieldRenderer } from '@/components/cms/admin/FieldEditor'
 import { getStatusStyle } from '@/components/cms/admin/statusStyle'
@@ -628,6 +629,7 @@ function renderMainEditorSection(
             initialSlug={stringifyFieldValue(sf, values[sf.name])}
             titleClassName={`block text-sm font-medium text-slate-800 ${fieldColumnSpan(tf)}`}
             slugClassName={`block text-sm font-medium text-slate-800 ${fieldColumnSpan(sf)}`}
+            aiContext={aiContext}
           />
         ) : null}
         {restFields.map((field) => {
@@ -1151,6 +1153,9 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
             {params.slug ? <input type="hidden" name="cmsOriginalSlug" value={params.slug} /> : null}
             {params.slug ? <input type="hidden" name="id" value={params.slug} /> : null}
             <input type="hidden" name="cmsCurrentStatus" value={currentStatus} />
+            {/* Task 11: friendly inline validation — scrolls to + highlights the
+                offending field instead of leaving a raw error code in a banner. */}
+            <CmsFormValidator error={error ?? null} />
 
             <div className="flex min-h-0 flex-col space-y-0 overflow-hidden rounded-2xl border border-cms-rule bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
               {/* Sticky editor header — Webflow style */}
@@ -1191,15 +1196,6 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       className="inline-flex shrink-0 items-center rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-800"
                     >
                       Saved · cache refreshed
-                    </span>
-                  ) : null}
-                  {error ? (
-                    <span
-                      role="alert"
-                      title={error}
-                      className="inline-flex max-w-[min(320px,45vw)] shrink-0 truncate rounded-full border border-red-300 bg-red-50 px-2.5 py-1 text-[10px] font-semibold text-red-800"
-                    >
-                      {error}
                     </span>
                   ) : null}
                   {params.slug ? (
@@ -1288,12 +1284,6 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
               </div>
 
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-4">
-                {error ? (
-                  <p role="alert" className="rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-700">
-                    Action failed: {error}
-                  </p>
-                ) : null}
-
                 <div className="space-y-4">
                   {renderMainEditorSection(
                     'main-editor',
