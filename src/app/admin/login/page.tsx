@@ -6,6 +6,7 @@ import {
   isLegacyEnvAuthEnabled,
 } from '@/lib/cms/adminAuth'
 import { getUserCount } from '@/lib/cms/usersRepository'
+import { Alert, Button, Input } from '@/components/cms/admin/ui'
 
 type SearchParams = Promise<{ error?: string; email?: string; ok?: string; next?: string }>
 
@@ -36,36 +37,65 @@ async function loginAction(formData: FormData) {
   redirect(next)
 }
 
+/** Shared full-height, centered shell so every login state looks the same. */
+function LoginShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="flex min-h-dvh items-center justify-center overflow-y-auto bg-cms-canvas px-4 py-10">
+      <div className="w-full max-w-md">{children}</div>
+    </main>
+  )
+}
+
+/** Finanshels brandmark + heading used at the top of the auth card. */
+function Brandmark({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="mb-8 text-center">
+      <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-primary text-xl font-bold text-white shadow-sm">
+        F
+      </div>
+      <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
+      <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+    </div>
+  )
+}
+
 export default async function AdminLoginPage({ searchParams }: { searchParams: SearchParams }) {
   if (!(await isAdminLoginAvailable())) {
     return (
-      <section className="mx-auto max-w-2xl px-6 pb-16 pt-32 sm:px-10">
-        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-amber-900">
-          <h1 className="text-2xl font-semibold">Admin login is not available yet</h1>
-          <p className="mt-3 text-sm leading-relaxed">
-            Pick one of these setups (Vercel → Project →{' '}
-            <strong className="font-semibold">Settings → Environment Variables</strong>, then redeploy):
-          </p>
-          <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-relaxed">
+      <LoginShell>
+        <Brandmark title="Almost there" subtitle="Finanshels Content Studio" />
+        <div className="rounded-2xl border border-cms-rule bg-white p-6 shadow-[0_10px_40px_rgba(15,23,42,0.06)] sm:p-8">
+          <Alert variant="warning">
+            <div>
+              <p className="font-semibold">Admin login isn&rsquo;t available yet</p>
+              <p className="mt-1 text-sm">
+                Pick one of these setups (Vercel → Project →{' '}
+                <strong className="font-semibold">Settings → Environment Variables</strong>, then redeploy):
+              </p>
+            </div>
+          </Alert>
+          <ul className="mt-5 space-y-3 text-sm leading-relaxed text-slate-600">
             <li>
-              <strong>Bootstrap (empty database):</strong> set{' '}
-              <code className="rounded bg-amber-100/80 px-1 font-mono text-xs">CMS_ADMIN_PASSWORD</code>, reload, sign in
+              <strong className="text-slate-900">Bootstrap (empty database):</strong> set{' '}
+              <code className="rounded bg-slate-100 px-1 font-mono text-xs">CMS_ADMIN_PASSWORD</code>, reload, sign in
               with email empty and that password, then add users under{' '}
-              <code className="font-mono text-xs">/admin/settings/users</code>.
+              <code className="rounded bg-slate-100 px-1 font-mono text-xs">/admin/settings/users</code>.
             </li>
             <li>
-              <strong>Team login only:</strong> ensure Firestore is wired ({' '}
-              <code className="font-mono text-xs">FIREBASE_ADMIN_*</code>) and create at least one user in{' '}
-              <code className="font-mono text-xs">cms_users</code> (locally or via bootstrap). Also set{' '}
-              <code className="font-mono text-xs">CMS_ADMIN_SESSION_SECRET</code> for cookie signing in production.
+              <strong className="text-slate-900">Team login only:</strong> ensure Firestore is wired ({' '}
+              <code className="rounded bg-slate-100 px-1 font-mono text-xs">FIREBASE_ADMIN_*</code>) and create at least
+              one user in <code className="rounded bg-slate-100 px-1 font-mono text-xs">cms_users</code> (locally or via
+              bootstrap). Also set{' '}
+              <code className="rounded bg-slate-100 px-1 font-mono text-xs">CMS_ADMIN_SESSION_SECRET</code> for cookie
+              signing in production.
             </li>
           </ul>
-          <p className="mt-4 text-xs text-amber-800/90">
+          <p className="mt-5 text-xs leading-relaxed text-slate-500">
             Without Firebase credentials on Vercel, user-based login cannot work — add them so this page can reach your{' '}
             <code className="font-mono">cms_users</code> collection.
           </p>
         </div>
-      </section>
+      </LoginShell>
     )
   }
 
@@ -85,76 +115,70 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: S
   const userCount = await getUserCount().catch(() => 0)
   const allowEnvOnly = isLegacyEnvAuthEnabled()
 
+  const subtext =
+    userCount > 0
+      ? 'Use your team email and password.'
+      : allowEnvOnly
+      ? 'No team members yet — sign in with the bootstrap admin password (leave email empty), then invite your team in Settings.'
+      : 'Use your team email and password.'
+
   return (
-    <section className="mx-auto max-w-2xl px-6 pb-16 pt-32 sm:px-10">
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Finanshels CMS</p>
-        <h1 className="mt-3 text-3xl font-semibold text-slate-900">Sign in</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          {userCount > 0
-            ? 'Use your team email and password.'
-            : allowEnvOnly
-            ? 'No team members yet — sign in with the bootstrap admin password (leave email empty), then invite your team in Settings.'
-            : 'Use your team email and password.'}
-        </p>
+    <LoginShell>
+      <Brandmark title="Welcome back" subtitle="Sign in to Finanshels Content Studio" />
+
+      <div className="rounded-2xl border border-cms-rule bg-white p-6 shadow-[0_10px_40px_rgba(15,23,42,0.06)] sm:p-8">
+        <p className="text-sm text-slate-600">{subtext}</p>
 
         {showInviteAccepted ? (
-          <p className="mt-6 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">
+          <Alert variant="success" className="mt-5">
             Password set. Sign in below to enter the CMS.
-          </p>
+          </Alert>
+        ) : null}
+        {showError ? (
+          <Alert variant="error" className="mt-5">
+            Invalid credentials. Please try again.
+          </Alert>
+        ) : null}
+        {showDisabled ? (
+          <Alert variant="error" className="mt-5">
+            This account is disabled. Contact an owner.
+          </Alert>
+        ) : null}
+        {showInvitePending ? (
+          <Alert variant="warning" className="mt-5">
+            You haven&rsquo;t accepted your invite yet — check your email for the invitation link, or ask an admin to
+            resend it.
+          </Alert>
         ) : null}
 
-        <form action={loginAction} className="mt-8 space-y-4">
+        <form action={loginAction} className="mt-6 space-y-4">
           {/* FIX-048: pass through the post-login destination (sanitised
               upstream) so the editor returns to where the session expired. */}
           <input type="hidden" name="next" value={nextPath} />
-          <label className="block text-sm font-medium text-slate-700">
-            Email
-            <input
-              type="email"
-              name="email"
-              autoComplete="username"
-              defaultValue={prefillEmail}
-              placeholder={userCount === 0 && allowEnvOnly ? 'Leave empty for bootstrap login' : 'you@finanshels.com'}
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none ring-[#f16610] focus:ring"
-            />
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            Password
-            <input
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-slate-900 outline-none ring-[#f16610] focus:ring"
-              required
-            />
-          </label>
-          {showError ? (
-            <p className="text-sm text-red-600">Invalid credentials. Try again.</p>
-          ) : null}
-          {showDisabled ? (
-            <p className="text-sm text-red-600">This account is disabled. Contact an owner.</p>
-          ) : null}
-          {showInvitePending ? (
-            <p className="text-sm text-amber-700">
-              You haven't accepted your invite yet — check your email for the invitation link, or ask an admin to resend it.
-            </p>
-          ) : null}
-          <button
-            type="submit"
-            className="inline-flex items-center rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
-          >
+          <Input
+            label="Email"
+            type="email"
+            name="email"
+            autoComplete="username"
+            defaultValue={prefillEmail}
+            placeholder={userCount === 0 && allowEnvOnly ? 'Leave empty for bootstrap login' : 'you@finanshels.com'}
+          />
+          <Input label="Password" type="password" name="password" autoComplete="current-password" required />
+          <Button type="submit" variant="primary" size="lg" className="w-full">
             Sign in
-          </button>
+          </Button>
         </form>
 
         {allowEnvOnly && userCount === 0 ? (
-          <p className="mt-6 text-xs text-slate-500">
-            First sign in: leave the email empty and enter your <code className="font-mono">CMS_ADMIN_PASSWORD</code>{' '}
-            value. You'll then create real users in <code className="font-mono">/admin/settings/users</code>.
+          <p className="mt-6 text-xs leading-relaxed text-slate-500">
+            First sign in: leave the email empty and enter your{' '}
+            <code className="rounded bg-slate-100 px-1 font-mono">CMS_ADMIN_PASSWORD</code> value. You&rsquo;ll then
+            create real users in <code className="rounded bg-slate-100 px-1 font-mono">/admin/settings/users</code>.
           </p>
         ) : null}
       </div>
-    </section>
+
+      <p className="mt-6 text-center text-xs text-slate-400">Finanshels · UAE financial services</p>
+    </LoginShell>
   )
 }
