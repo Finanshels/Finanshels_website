@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { ArrowRight, ArrowUpRight } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
-import { PRODUCT_CATEGORIES } from '../data/products'
+import AnimatedSection from '../components/marketing/AnimatedSection'
+import { PRODUCT_CATEGORIES } from '@/content/products'
 import { Card } from '../components/ui/Card'
 
 export default function Products() {

@@ -16,10 +16,10 @@ import {
   Building2,
   BarChart3,
 } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
+import AnimatedSection from '../components/marketing/AnimatedSection'
 import { Button } from '../components/ui/Button'
-import { TESTIMONIALS } from '../data/team'
-import { SERVICE_PAGES } from '../data/servicePages'
+import { TESTIMONIALS } from '@/content/team'
+import { SERVICE_PAGES } from '@/content/service-pages'
 
 const PLANS = [
   {

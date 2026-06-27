@@ -1,11 +1,11 @@
 'use client'
 
 import { ArrowRight, Star, Award, Users, TrendingUp } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
+import AnimatedSection from '../components/marketing/AnimatedSection'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import TestimonialCard from '../components/TestimonialCard'
-import { TESTIMONIALS } from '../data/team'
+import TestimonialCard from '../components/marketing/TestimonialCard'
+import { TESTIMONIALS } from '@/content/team'
 
 const HIGHLIGHTS = [
   { label: 'Avg. NPS', value: '79', description: 'We act like an embedded finance team, not an outsourced vendor.' },

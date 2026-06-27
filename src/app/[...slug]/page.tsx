@@ -12,6 +12,8 @@ import {
 // static-output collisions can overwrite the dedicated page's HTML (observed
 // on /accounting-services-{city}: catch-all's generic template shadowed the
 // AccountingServiceLocation screen, breaking LocalBusiness JSON-LD).
+// Homepage variants live in src/app/(homepage-variants)/ but resolve to /home2, /home3, /home4.
+// They must be listed here so the catch-all doesn't claim those URLs.
 const EXISTING_APP_ROUTES = new Set<string>([
   '/',
   '/about',
@@ -23,6 +25,8 @@ const EXISTING_APP_ROUTES = new Set<string>([
   '/customers',
   '/careers',
   '/home2',
+  '/home3',
+  '/home4',
   '/privacy',
   '/terms',
   '/accounting-services-dubai',
@@ -35,6 +39,18 @@ const EXISTING_APP_ROUTES = new Set<string>([
   '/aml-uae',
   '/audit-services-dubai',
   '/company-liquidation-dubai',
+  // Sector / industry accounting pages — each has a dedicated app/<slug>/page.jsx
+  // rendering ServiceDetailPage. Keep in sync with SECTOR_STATIC_ROUTES.
+  '/small-business-accounting',
+  '/real-estate-accounting',
+  '/healthcare-accounting',
+  '/non-profit-accounting',
+  '/ecommerce-accounting',
+  '/technology-accounting',
+  '/restaurant-accounting',
+  '/trading-business-accounting',
+  '/jewellery-business-accounting',
+  '/vc-fund-accounting',
 ])
 
 const CATCH_ALL_STATIC_PATHS = NON_RESOURCE_STATIC_PAGE_PATHS.filter(

@@ -1,7 +1,7 @@
 'use client'
 
-import { useScrollAnimation } from '../hooks/useScrollAnimation'
-import { cn } from '../lib/utils'
+import { useScrollAnimation } from '@/hooks/useScrollAnimation'
+import { cn } from '@/lib/utils'
 
 export default function AnimatedSection({ 
   children, 

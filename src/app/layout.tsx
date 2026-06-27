@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Fraunces, Plus_Jakarta_Sans } from 'next/font/google'
-import '../index.css'
-import AppChrome from '../components/AppChrome'
-import CookieConsent from '../components/CookieConsent'
+import '../styles/globals.css'
+import AppChrome from '../components/layout/AppChrome'
+import CookieConsent from '../components/layout/CookieConsent'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 
 const fontSans = Plus_Jakarta_Sans({

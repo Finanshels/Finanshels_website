@@ -37,9 +37,10 @@ Don't sprinkle `revalidatePath` calls elsewhere. If you need to revalidate from 
 
 ## Routing
 
-- Generic content detail page: `src/app/content/[collection]/[slug]/page.tsx` — resolves all 15 routed collections.
+- Generic content detail page: `src/app/content/[collection]/[slug]/page.tsx` — resolves every routed collection (those with a `routePattern`).
 - Marketing-specific routes (`/blog`, `/glossary`, `/customers`, etc.) live alongside `/content/<collection>` for SEO-friendly URLs.
 - `/[...slug]` catch-all is the marketing fallback; check it before adding new top-level routes to avoid collisions.
+- Homepage variants live under the `src/app/(homepage-variants)/` route group, which is URL-transparent: `home2/page.jsx` serves `/home2`. Any new variant must also be added to `EXISTING_APP_ROUTES` in `[...slug]/page.tsx` so the catch-all doesn't claim its URL.
 
 ## SEO surfaces
 

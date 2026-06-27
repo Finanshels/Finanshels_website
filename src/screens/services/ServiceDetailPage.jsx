@@ -12,9 +12,11 @@ import {
   Target,
   Compass,
   TrendingUp,
+  Users,
+  Layers,
 } from 'lucide-react'
-import AnimatedSection from '../../components/AnimatedSection'
-import { TESTIMONIALS } from '../../data/team'
+import AnimatedSection from '../../components/marketing/AnimatedSection'
+import { TESTIMONIALS } from '@/content/team'
 
 const createStoryBeats = (title) => [
   {
@@ -78,6 +80,8 @@ export default function ServiceDetailPage({ page }) {
       'Too many spreadsheets, not enough signal for leadership.',
       'Compliance pressure from boards, regulators, and investors.',
     ]
+  const hasPricingTiers = page.pricingTiers?.length > 0
+  const startingPrice = hasPricingTiers ? page.pricingTiers[0].price : '$219/mo'
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -152,6 +156,42 @@ export default function ServiceDetailPage({ page }) {
         </div>
       </section>
 
+      {/* WHO THIS IS FOR */}
+      {page.whoFor?.length > 0 && (
+        <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <AnimatedSection animation="fade-up">
+              <div className="flex flex-col items-center text-center gap-3 mb-10">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-[#fff4ec] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#f16610]">
+                  <Users size={12} /> Who this is for
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Built for your situation</h2>
+              </div>
+            </AnimatedSection>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {page.whoFor.map((audience) => (
+                <AnimatedSection key={audience.segment} animation="fade-up">
+                  <div className="h-full rounded-[28px] border border-slate-100 bg-gradient-to-br from-[#fff8f0] to-white p-6 hover:-translate-y-1 hover:shadow-[0_25px_50px_-25px_rgba(241,102,16,0.25)] transition-all">
+                    <h3 className="text-lg font-semibold tracking-tight text-slate-900">{audience.segment}</h3>
+                    <p className="mt-3 text-sm text-slate-600 leading-relaxed">{audience.description}</p>
+                    {audience.points?.length > 0 && (
+                      <ul className="mt-4 space-y-2">
+                        {audience.points.map((point) => (
+                          <li key={point} className="flex items-start gap-2 text-xs text-slate-600 leading-relaxed">
+                            <CheckCircle2 size={14} className="text-[#f16610] mt-0.5 flex-shrink-0" />
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* SIGNALS + TRIGGERS */}
       <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-6 items-start">
@@ -198,6 +238,53 @@ export default function ServiceDetailPage({ page }) {
           </AnimatedSection>
         </div>
       </section>
+
+      {/* CHALLENGES */}
+      {page.challenges?.length > 0 && (
+        <section className="px-6 sm:px-10 lg:px-16 py-16">
+          <div className="max-w-6xl mx-auto">
+            <AnimatedSection animation="fade-up">
+              <div className="max-w-3xl mb-10">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#4f46e5]/30 bg-[#eef2ff] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#4f46e5]">
+                  <Layers size={12} /> {page.challengesEyebrow || 'What makes this different'}
+                </span>
+                <h2 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight">
+                  {page.challengesHeading || 'The accounting challenges this sector faces'}
+                </h2>
+              </div>
+            </AnimatedSection>
+            <div className="space-y-5">
+              {page.challenges.map((challenge, index) => (
+                <AnimatedSection key={challenge.heading} animation="fade-up" delay={index * 60}>
+                  <div className="rounded-[28px] border border-slate-100 bg-white p-7 sm:p-8 hover:border-[#4f46e5]/30 transition-colors">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-2xl bg-gradient-to-br from-[#4f46e5] to-[#7e8bff] text-white flex items-center justify-center font-bold text-sm shadow-md shadow-[#4f46e5]/20">
+                        {(index + 1).toString().padStart(2, '0')}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-semibold tracking-tight text-slate-900">{challenge.heading}</h3>
+                        {challenge.body && (
+                          <p className="mt-3 text-sm text-slate-600 leading-relaxed whitespace-pre-line">{challenge.body}</p>
+                        )}
+                        {challenge.points?.length > 0 && (
+                          <ul className="mt-4 space-y-2.5">
+                            {challenge.points.map((point) => (
+                              <li key={point} className="flex items-start gap-3 text-sm text-slate-700 leading-relaxed">
+                                <CheckCircle2 size={16} className="text-[#4f46e5] mt-0.5 flex-shrink-0" />
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* STORY ARC — DARK */}
       <section className="px-6 sm:px-10 lg:px-16 py-20">
@@ -423,6 +510,74 @@ export default function ServiceDetailPage({ page }) {
         </section>
       )}
 
+      {/* PRICING TIERS */}
+      {hasPricingTiers && (
+        <section className="px-6 sm:px-10 lg:px-16 py-16">
+          <div className="max-w-6xl mx-auto">
+            <AnimatedSection animation="fade-up">
+              <div className="flex flex-col items-center text-center gap-3 mb-10">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-[#fff4ec] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#f16610]">
+                  <Wallet size={12} /> Pricing
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Specialist knowledge, fixed monthly pricing</h2>
+              </div>
+            </AnimatedSection>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+              {page.pricingTiers.map((tier) => (
+                <AnimatedSection key={tier.name} animation="fade-up">
+                  <div
+                    className={`relative h-full rounded-[28px] border p-7 flex flex-col ${
+                      tier.highlighted
+                        ? 'border-[#f16610] bg-gradient-to-br from-[#fff4ec] to-white shadow-[0_30px_60px_-30px_rgba(241,102,16,0.35)]'
+                        : 'border-slate-100 bg-white'
+                    }`}
+                  >
+                    {tier.highlighted && (
+                      <span className="absolute -top-3 left-7 inline-flex items-center rounded-full bg-[#f16610] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow">
+                        Most popular
+                      </span>
+                    )}
+                    <h3 className="text-lg font-semibold tracking-tight text-slate-900">{tier.name}</h3>
+                    <p className="mt-2 text-2xl font-semibold tracking-tight bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">
+                      {tier.price}
+                    </p>
+                    {tier.bestFor && <p className="mt-2 text-xs text-slate-500 leading-relaxed">{tier.bestFor}</p>}
+                    <div className="mt-5 space-y-2.5 flex-1">
+                      {tier.includes.map((item) => (
+                        <div key={item} className="flex items-start gap-2.5 text-sm text-slate-700 leading-relaxed">
+                          <CheckCircle2 size={16} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
+
+            {page.pricingAddOns?.length > 0 && (
+              <AnimatedSection animation="fade-up">
+                <div className="mt-6 rounded-[28px] border border-slate-100 bg-white p-7">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-slate-500 font-bold">One-time services</p>
+                  <div className="mt-4 grid sm:grid-cols-2 gap-x-8 gap-y-2.5">
+                    {page.pricingAddOns.map((addOn) => (
+                      <div key={addOn.name} className="flex items-center justify-between gap-4 border-b border-dashed border-slate-100 pb-2 text-sm">
+                        <span className="text-slate-700">{addOn.name}</span>
+                        <span className="font-semibold text-slate-900 whitespace-nowrap">{addOn.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </AnimatedSection>
+            )}
+
+            {page.pricingNote && (
+              <p className="mt-6 text-center text-sm text-slate-500">{page.pricingNote}</p>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* PRICING + LEAD FORM */}
       <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-6">
@@ -435,7 +590,7 @@ export default function ServiceDetailPage({ page }) {
                 </span>
                 <h3 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight">
                   Starting from{' '}
-                  <span className="bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">$219/mo</span>
+                  <span className="bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">{startingPrice}</span>
                 </h3>
                 <p className="mt-3 text-slate-600 leading-relaxed">
                   Every subscription plugs bookkeeping, tax, compliance, reporting rituals, and direct access to Finanshels specialists into one partnership.

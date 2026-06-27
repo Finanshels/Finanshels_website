@@ -15,11 +15,11 @@ import {
   CheckCircle2,
   Globe2,
 } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
+import AnimatedSection from '../components/marketing/AnimatedSection'
 import { Card } from '../components/ui/Card'
-import TestimonialCarousel from '../components/TestimonialCarousel'
-import HomeFaqSection from '../components/HomeFaqSection'
-import { TESTIMONIALS } from '../data/team'
+import TestimonialCarousel from '../components/marketing/TestimonialCarousel'
+import HomeFaqSection from '../components/marketing/HomeFaqSection'
+import { TESTIMONIALS } from '@/content/team'
 
 const HERO_STATS = [
   { value: '7,000+', label: 'UAE businesses trust us' },

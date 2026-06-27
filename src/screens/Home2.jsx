@@ -14,10 +14,10 @@ import {
   FileText,
   HelpCircle
 } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
-import AnimatedCounter from '../components/AnimatedCounter'
-import TestimonialCarousel from '../components/TestimonialCarousel'
-import { TESTIMONIALS } from '../data/team'
+import AnimatedSection from '../components/marketing/AnimatedSection'
+import AnimatedCounter from '../components/marketing/AnimatedCounter'
+import TestimonialCarousel from '../components/marketing/TestimonialCarousel'
+import { TESTIMONIALS } from '@/content/team'
 
 export default function Home2() {
   const problems = [

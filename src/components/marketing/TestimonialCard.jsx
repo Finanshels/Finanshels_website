@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { Star } from 'lucide-react'
-import { Card } from './ui/Card'
+import { Card } from '@/components/ui/Card'
 
 export default function TestimonialCard({ testimonial }) {
   return (

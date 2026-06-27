@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import { notFound, redirect } from 'next/navigation'
-import ConfirmDeleteForm from '@/components/cms/admin/landingPages/ConfirmDeleteForm'
-import LandingPageEditor from '@/components/cms/admin/landingPages/LandingPageEditor'
+import ConfirmDeleteForm from '@/components/cms/admin/landing-pages/ConfirmDeleteForm'
+import LandingPageEditor from '@/components/cms/admin/landing-pages/LandingPageEditor'
 import { requireAdminAuth, sessionDisplayName } from '@/lib/cms/adminAuth'
-import { deleteLandingPage, getLandingPageById, updateLandingPage } from '@/lib/landingPages/repository'
-import type { LandingPageWriteInput } from '@/lib/landingPages/repository'
+import { deleteLandingPage, getLandingPageById, updateLandingPage } from '@/lib/landing-pages/repository'
+import type { LandingPageWriteInput } from '@/lib/landing-pages/repository'
 
 export const dynamic = 'force-dynamic'
 

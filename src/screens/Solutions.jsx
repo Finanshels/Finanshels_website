@@ -14,7 +14,7 @@ import {
   Quote,
   Activity,
 } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
+import AnimatedSection from '../components/marketing/AnimatedSection'
 
 const SOLUTION_SETS = [
   {

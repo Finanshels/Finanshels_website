@@ -1,7 +1,7 @@
 'use client'
 
 import { use } from 'react'
-import { PRODUCT_PAGES } from '../../../data/products'
+import { PRODUCT_PAGES } from '@/content/products'
 import ProductDetailPage from '../../../screens/products/ProductDetailPage'
 
 export default function ProductRoute({ params }) {

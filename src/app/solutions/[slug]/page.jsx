@@ -1,7 +1,7 @@
 'use client'
 
 import { use } from 'react'
-import { SERVICE_PAGES } from '../../../data/servicePages'
+import { SERVICE_PAGES } from '@/content/service-pages'
 import ServiceDetailPage from '../../../screens/services/ServiceDetailPage'
 
 export default function ServiceRoute({ params }) {

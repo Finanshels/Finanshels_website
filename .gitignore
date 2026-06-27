@@ -29,3 +29,9 @@ dist-ssr
 # Importer output (per-run JSON reports, asset cache, etc.)
 tmp/
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Playwright MCP debug output (page snapshots, console logs)
+.playwright-mcp/
+

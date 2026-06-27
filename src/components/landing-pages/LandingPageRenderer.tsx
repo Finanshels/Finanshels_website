@@ -1,5 +1,5 @@
-import { buildCtaLinks } from '@/lib/landingPages/buildCtaLinks'
-import type { LandingPageDoc, LandingPageSection } from '@/lib/landingPages/types'
+import { buildCtaLinks } from '@/lib/landing-pages/buildCtaLinks'
+import type { LandingPageDoc, LandingPageSection } from '@/lib/landing-pages/types'
 import HeroSection from './sections/HeroSection'
 import {
   AwardsPress,

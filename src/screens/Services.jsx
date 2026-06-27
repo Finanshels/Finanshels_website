@@ -16,7 +16,7 @@ import {
   Users2,
   Compass,
 } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
+import AnimatedSection from '../components/marketing/AnimatedSection'
 
 const SERVICE_GROUPS = [
   {

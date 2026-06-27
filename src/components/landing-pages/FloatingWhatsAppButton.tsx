@@ -1,7 +1,7 @@
 'use client'
 
 import { MessageCircle } from 'lucide-react'
-import { fireConversion } from '@/lib/landingPages/gtag'
+import { fireConversion } from '@/lib/landing-pages/gtag'
 import type { CtaConfig } from './CtaButtons'
 
 export default function FloatingWhatsAppButton({ cta }: { cta: CtaConfig }) {

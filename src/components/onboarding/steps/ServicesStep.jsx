@@ -2,7 +2,7 @@ import { useOnboarding } from '../../../contexts/OnboardingContext'
 import { Button } from '../../ui/Button'
 import { Card } from '../../ui/Card'
 import { ArrowRight, ArrowLeft, Briefcase, Package, Building2 } from 'lucide-react'
-import AnimatedSection from '../../AnimatedSection'
+import AnimatedSection from '@/components/marketing/AnimatedSection'
 
 export default function ServicesStep() {
   const { nextStep, previousStep } = useOnboarding()

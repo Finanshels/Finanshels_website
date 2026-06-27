@@ -21,23 +21,35 @@ Marketing site + CMS for [finanshels.com](https://finanshels.com). Next.js 15 Ap
 
 | Area | Entry point | Notes |
 |---|---|---|
-| CMS definitions (SoT) | [src/lib/cms/collectionDefinitions.ts](src/lib/cms/collectionDefinitions.ts) | ~1300 LOC. 12 collections × 9 sections. Read [docs/cms-firestore.md](docs/cms-firestore.md) before editing. |
+| CMS definitions (SoT) | [src/lib/cms/collectionDefinitions.ts](src/lib/cms/collectionDefinitions.ts) | ~1300 LOC. 14 collections × 9 sections (`CmsCollectionKey` is the authoritative list). Read [docs/cms-firestore.md](docs/cms-firestore.md) before editing. |
 | Field encode/decode (SoT) | [src/lib/cms/fieldCodec.ts](src/lib/cms/fieldCodec.ts) | Every `CmsFieldType` has exactly one codec. Decode throws `InvalidFieldValueError` on bad input. |
 | Firestore client | [src/lib/cms/firestore.ts](src/lib/cms/firestore.ts) | `normalizePrivateKey` handles 5 mangled env formats. |
 | Admin auth | [src/lib/cms/adminAuth.ts](src/lib/cms/adminAuth.ts) + [src/middleware.ts](src/middleware.ts) | Cookie HMAC, `tokenVersion` invalidation, PBKDF2-SHA256 200k. |
 | Revalidation | [src/app/api/revalidate/route.ts](src/app/api/revalidate/route.ts) | Bearer-auth POST, called from GCP Functions on Firestore write. |
 | Page-blocks renderer | [src/components/cms/PageBlocksRenderer.tsx](src/components/cms/PageBlocksRenderer.tsx) | One branch per block type in `CMS_BLOCK_TYPES`. |
 | Admin panel | [src/app/admin/cms/](src/app/admin/cms/) | Collection-driven editor; per-type create flow in `/admin/cms/new/`. |
-| Routed content | [src/app/content/](src/app/content/) | Generic detail page resolves all 12 collections. |
+| Routed content | [src/app/content/](src/app/content/) | Generic detail page resolves every routed collection. |
+| Employee onboarding | [src/app/admin/onboarding/](src/app/admin/onboarding/) | Gamified internal onboarding behind `requireAdminAuth()`. UI: [src/components/onboarding/](src/components/onboarding/), state: [src/contexts/OnboardingContext.jsx](src/contexts/OnboardingContext.jsx). |
 | Firestore rules | [firestore.rules](firestore.rules) | **Deny all client access.** Reads/writes via Admin SDK only. |
+
+### Frontend (marketing) layout
+
+| Area | Folder | Notes |
+|---|---|---|
+| Page-level screens | [src/screens/](src/screens/) | One file per marketing page, composed into routes under `src/app/`. |
+| Layout chrome | [src/components/layout/](src/components/layout/) | `Navbar`, `Footer`, `AppChrome`, `CookieConsent`. |
+| Marketing UI | [src/components/marketing/](src/components/marketing/) | Animated/section components reused across screens. |
+| Static content | [src/content/](src/content/) | Typed page data (`team.ts`, `products.ts`, `service-pages.ts`, `home-faqs.ts`). |
+| Global styles | [src/styles/globals.css](src/styles/globals.css) | Imported once in `src/app/layout.tsx`. |
+| Landing pages | [src/lib/landing-pages/](src/lib/landing-pages/) + [src/components/landing-pages/](src/components/landing-pages/) | CMS-driven landing page system. |
+| Homepage variants | [src/app/(homepage-variants)/](src/app/(homepage-variants)/) | `/home2`, `/home3`, `/home4` — route group is URL-transparent; list these in the `[...slug]` catch-all's `EXISTING_APP_ROUTES`. |
 
 ## Read these first when starting CMS work
 
 1. [docs/cms-firestore.md](docs/cms-firestore.md) — collections, indexes, env, security, workflow
-2. [docs/cms-field-guide.md](docs/cms-field-guide.md) — every field type
-3. [docs/cms/marketing-field-guide.md](docs/cms/marketing-field-guide.md) — marketing-specific
-4. [docs/cms-marketing-field-guide.md](docs/cms-marketing-field-guide.md)
-5. [.claude/rules/cms.md](.claude/rules/cms.md) — CMS invariants
+2. [docs/cms-field-guide.md](docs/cms-field-guide.md) — every field type, per editor section (engineer reference)
+3. [docs/cms/marketing-field-guide.md](docs/cms/marketing-field-guide.md) — every field ranked by priority for the marketing team (which to fill, hide, or ignore)
+4. [.claude/rules/cms.md](.claude/rules/cms.md) — CMS invariants
 
 ## Hard invariants
 

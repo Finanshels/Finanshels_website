@@ -16,6 +16,7 @@ See **[docs/cms-firestore.md](docs/cms-firestore.md)** for collections and reval
 
 - `/admin/login` — password login (`CMS_ADMIN_PASSWORD`)
 - `/admin/cms` — multi-collection CMS with collection-specific fields and templates
+- `/admin/onboarding` — gamified employee onboarding flow (auth-gated)
 - SEO/GEO/AEO built into every collection editor section
 - `GET /llms.txt` publishes machine-readable canonical links for AI answer engines.
 
@@ -64,13 +65,25 @@ npm run firebase:deploy
 
 ```
 src/
-├── app/                 # Next.js routes (layout, pages)
-├── screens/             # Page-level UI composed into routes
-├── components/          # Shared UI
-├── data/                # Static content (products, shared page data, etc.)
-├── lib/                 # Utilities and CMS adapters
-└── index.css            # Global styles
+├── app/                 # Next.js routes (layout, pages, API, /admin)
+│   ├── (homepage-variants)/  # /home2, /home3, /home4 (URL-transparent route group)
+│   ├── content/         # Generic detail page for every routed CMS collection
+│   └── admin/           # Auth-gated CMS + employee onboarding
+├── screens/             # Page-level UI, one file per marketing page
+├── components/
+│   ├── layout/          # Navbar, Footer, AppChrome, CookieConsent
+│   ├── marketing/       # Reusable animated/section components
+│   ├── cms/             # CMS admin + page-block renderers
+│   └── ui/              # Primitives (Button, Card)
+├── content/             # Typed static page data (team, products, service-pages…)
+├── contexts/            # React context providers (onboarding)
+├── hooks/               # Reusable hooks
+├── lib/                 # Utilities, CMS repositories, landing-pages system
+├── styles/globals.css   # Global styles (imported in app/layout.tsx)
+└── middleware.ts        # Admin-route auth guard
 ```
+
+More detail for contributors lives in **[CLAUDE.md](CLAUDE.md)** ("Where things live").
 
 ## Links
 

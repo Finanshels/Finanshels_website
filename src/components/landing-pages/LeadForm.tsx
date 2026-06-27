@@ -1,9 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { captureAttribution, readAttribution, sha256Hex } from '@/lib/landingPages/attribution'
-import { fireConversion, fireEvent } from '@/lib/landingPages/gtag'
-import type { LeadAttribution } from '@/lib/landingPages/types'
+import { captureAttribution, readAttribution, sha256Hex } from '@/lib/landing-pages/attribution'
+import { fireConversion, fireEvent } from '@/lib/landing-pages/gtag'
+import type { LeadAttribution } from '@/lib/landing-pages/types'
 
 declare global {
   interface Window {

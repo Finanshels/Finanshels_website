@@ -5,7 +5,7 @@ import * as Lucide from 'lucide-react'
 import { useState } from 'react'
 import LeadForm from '../LeadForm'
 import { CallButton, FormScrollButton, WhatsappButton, type CtaConfig } from '../CtaButtons'
-import { asObject, b, jsonArray, n, s, splitLines } from '@/lib/landingPages/safeProps'
+import { asObject, b, jsonArray, n, s, splitLines } from '@/lib/landing-pages/safeProps'
 
 type Common = {
   props: Record<string, unknown>

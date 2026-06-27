@@ -24,9 +24,9 @@ import {
   BarChart3,
   HeartHandshake,
 } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
-import TestimonialCarousel from '../components/TestimonialCarousel'
-import { TESTIMONIALS } from '../data/team'
+import AnimatedSection from '../components/marketing/AnimatedSection'
+import TestimonialCarousel from '../components/marketing/TestimonialCarousel'
+import { TESTIMONIALS } from '@/content/team'
 
 const WHATSAPP_HREF =
   'https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance.'

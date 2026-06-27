@@ -1,16 +1,16 @@
 import { createHash } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
-import { getLandingPageById } from '@/lib/landingPages/repository'
+import { getLandingPageById } from '@/lib/landing-pages/repository'
 import {
   checkAndIncrementRateLimit,
   updateLeadSyncState,
   writeLead,
-} from '@/lib/landingPages/repository'
-import { verifyTurnstile } from '@/lib/landingPages/turnstile'
-import { leadToZohoPayload, pushLeadToZoho } from '@/lib/landingPages/zohoClient'
-import { sendLeadNotification } from '@/lib/landingPages/leadNotification'
-import { getLead } from '@/lib/landingPages/repository'
+} from '@/lib/landing-pages/repository'
+import { verifyTurnstile } from '@/lib/landing-pages/turnstile'
+import { leadToZohoPayload, pushLeadToZoho } from '@/lib/landing-pages/zohoClient'
+import { sendLeadNotification } from '@/lib/landing-pages/leadNotification'
+import { getLead } from '@/lib/landing-pages/repository'
 
 export const runtime = 'nodejs'
 

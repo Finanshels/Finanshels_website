@@ -1,7 +1,7 @@
 'use client'
 
 import { Phone, MessageCircle, ArrowRight } from 'lucide-react'
-import { fireConversion } from '@/lib/landingPages/gtag'
+import { fireConversion } from '@/lib/landing-pages/gtag'
 
 export type CtaConfig = {
   telHref: string

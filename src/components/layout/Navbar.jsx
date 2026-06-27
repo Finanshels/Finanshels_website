@@ -32,12 +32,11 @@ import {
   Wallet,
   HeartPulse,
   CalendarClock,
-  HandCoins,
+  Coins,
   Percent,
   Receipt,
   Heart,
-  Handshake,
-  BriefcaseBusiness,
+  HeartHandshake,
   CalendarDays,
   Mic,
   Video,
@@ -47,7 +46,7 @@ import {
   Gem
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { cn } from '../lib/utils'
+import { cn } from '@/lib/utils'
 
 const SERVICES_SECTIONS = [
   {
@@ -115,7 +114,7 @@ const RESOURCES_SECTIONS = [
     title: 'Calculators',
     items: [
       { name: 'Cash Flow', href: '/cash-flow-management-calculator', icon: Wallet },
-      { name: 'Gratuity', href: '/gratuity-calculator', icon: HandCoins },
+      { name: 'Gratuity', href: '/gratuity-calculator', icon: Coins },
       { name: 'VAT', href: '/vat-calculator', icon: Percent },
       { name: 'E-Invoicing', href: '/einvoicing-tax-calculator', icon: Receipt }
     ]
@@ -141,7 +140,7 @@ const COMPANY_SECTIONS = [
   {
     title: 'Connect',
     items: [
-      { name: 'Partners', href: '/partners', icon: Handshake },
+      { name: 'Partners', href: '/partners', icon: HeartHandshake },
       { name: 'Contact', href: '/contact', icon: MessageSquare }
     ]
   },
@@ -149,7 +148,7 @@ const COMPANY_SECTIONS = [
     title: 'Careers',
     items: [
       { name: 'Careers', badge: "We're hiring!", href: '/careers', icon: Briefcase },
-      { name: 'Jobs', href: '/jobs', icon: BriefcaseBusiness }
+      { name: 'Jobs', href: '/jobs', icon: Briefcase }
     ]
   },
   {

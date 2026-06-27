@@ -123,8 +123,28 @@ export const LEGACY_STATIC_ROUTES = [
   '/tools/finance-hiring-salary-benchmark',
 ] as const
 
+// Sector / industry accounting pages. Keys mirror SECTOR_PAGES in
+// src/content/sectors/index.ts and the route dirs under src/app/<slug>/.
+// Keep all three in sync when adding a sector.
+export const SECTOR_STATIC_ROUTES = [
+  '/small-business-accounting',
+  '/real-estate-accounting',
+  '/healthcare-accounting',
+  '/non-profit-accounting',
+  '/ecommerce-accounting',
+  '/technology-accounting',
+  '/restaurant-accounting',
+  '/trading-business-accounting',
+  '/jewellery-business-accounting',
+  '/vc-fund-accounting',
+] as const
+
 export const NON_RESOURCE_STATIC_PAGE_PATHS = Array.from(
-  new Set([...PRIMARY_STATIC_ROUTES, ...LEGACY_STATIC_ROUTES])
+  new Set([
+    ...PRIMARY_STATIC_ROUTES,
+    ...LEGACY_STATIC_ROUTES,
+    ...SECTOR_STATIC_ROUTES,
+  ])
 )
 
 export const STATIC_PAGE_ALIASES: Record<string, string> = {

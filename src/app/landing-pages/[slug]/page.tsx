@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import LandingPageRenderer from '@/components/landingPages/LandingPageRenderer'
+import LandingPageRenderer from '@/components/landing-pages/LandingPageRenderer'
 import { getCurrentSession } from '@/lib/cms/adminAuth'
-import { getLandingPageBySlug, listPublishedSlugs } from '@/lib/landingPages/repository'
+import { getLandingPageBySlug, listPublishedSlugs } from '@/lib/landing-pages/repository'
 
 export const revalidate = 60
 export const dynamicParams = true

@@ -14,6 +14,37 @@ export interface ServiceCaseStudy {
   result: string
 }
 
+/** A persona/segment block for the "Who this is for" section. */
+export interface ServiceAudience {
+  segment: string
+  description: string
+  /** Optional supporting bullets (e.g. "What Finanshels handles for clinics"). */
+  points?: string[]
+}
+
+/** A challenge/explainer block — heading + optional body paragraph + optional bullets. */
+export interface ServiceChallenge {
+  heading: string
+  body?: string
+  points?: string[]
+}
+
+/** A pricing tier card. `price` is the formatted amount (e.g. "AED 799/month"). */
+export interface ServicePricingTier {
+  name: string
+  price: string
+  period?: string
+  bestFor?: string
+  includes: string[]
+  highlighted?: boolean
+}
+
+/** A one-time / add-on service line (e.g. "VAT Registration — AED 499"). */
+export interface ServicePricingAddOn {
+  name: string
+  price: string
+}
+
 export interface ServicePage {
   title: string
   subtitle: string
@@ -27,6 +58,19 @@ export interface ServicePage {
   deliverables?: string[]
   faqs?: ServiceFaq[]
   caseStudy?: ServiceCaseStudy
+  /** "Who this is for" persona blocks (sector pages). */
+  whoFor?: ServiceAudience[]
+  /** Sector-specific challenge/explainer blocks rendered below the signals row. */
+  challenges?: ServiceChallenge[]
+  /** Optional eyebrow + heading overrides for the challenges section. */
+  challengesEyebrow?: string
+  challengesHeading?: string
+  /** Tiered pricing. When present, replaces the default "$219/mo" snapshot. */
+  pricingTiers?: ServicePricingTier[]
+  /** One-time services listed under the pricing tiers. */
+  pricingAddOns?: ServicePricingAddOn[]
+  /** Short note shown beneath the pricing tiers (e.g. region availability). */
+  pricingNote?: string
 }
 
 export const SERVICE_PAGES: Record<string, ServicePage> = {

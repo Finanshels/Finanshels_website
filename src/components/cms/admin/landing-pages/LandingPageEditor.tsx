@@ -1,14 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { SECTION_CATALOG, getSectionCatalogEntry, type SectionCatalogEntry, type SectionFieldDef } from '@/lib/landingPages/sectionCatalog'
-import { SERVICE_INTERESTS } from '@/lib/landingPages/serviceInterests'
+import { SECTION_CATALOG, getSectionCatalogEntry, type SectionCatalogEntry, type SectionFieldDef } from '@/lib/landing-pages/sectionCatalog'
+import { SERVICE_INTERESTS } from '@/lib/landing-pages/serviceInterests'
 import type {
   HeroVariant,
   LandingPageDoc,
   LandingPageSection,
   LandingPageStatus,
-} from '@/lib/landingPages/types'
+} from '@/lib/landing-pages/types'
 
 function slugify(input: string): string {
   return input

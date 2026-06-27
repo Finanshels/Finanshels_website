@@ -1,6 +1,6 @@
 import Home from '../screens/Home'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
-import { HOME_FAQS } from '../data/homeFaqs'
+import { HOME_FAQS } from '@/content/home-faqs'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.finanshels.com'
 

@@ -17,9 +17,9 @@ import {
   Building2,
   MessageSquare,
 } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
-import LeadershipCard from '../components/LeadershipCard'
-import { COMPANY_VALUES, LEADERSHIP_TEAM } from '../data/team'
+import AnimatedSection from '../components/marketing/AnimatedSection'
+import LeadershipCard from '../components/marketing/LeadershipCard'
+import { COMPANY_VALUES, LEADERSHIP_TEAM } from '@/content/team'
 
 const STORY_POINTS = [
   {

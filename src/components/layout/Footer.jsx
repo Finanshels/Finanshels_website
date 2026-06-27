@@ -2,7 +2,8 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Linkedin, Twitter, Instagram, Youtube, ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
+import { Linkedin, Twitter, Instagram, Youtube } from '@/components/icons/BrandIcons'
 import { usePathname } from 'next/navigation'
 
 const NAV_LINKS = [

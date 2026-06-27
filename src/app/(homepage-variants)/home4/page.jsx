@@ -1,5 +1,5 @@
 import { Baloo_2, Montserrat } from 'next/font/google'
-import Home4 from '../../screens/Home4'
+import Home4 from '@/screens/Home4'
 
 // Rounded geometric display face (skrooge-style headings) + Montserrat body.
 const display = Baloo_2({

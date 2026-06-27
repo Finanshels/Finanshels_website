@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react'
-import { cn } from '../lib/utils'
+import { cn } from '@/lib/utils'
 
 function clampRating(value) {
   const n = Math.round(Number(value))

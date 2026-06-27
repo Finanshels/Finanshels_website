@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { HOME_FAQS } from '../data/homeFaqs'
-import { cn } from '../lib/utils'
+import { HOME_FAQS } from '@/content/home-faqs'
+import { cn } from '@/lib/utils'
 import AnimatedSection from './AnimatedSection'
 
 function FaqAnswer({ faq }) {

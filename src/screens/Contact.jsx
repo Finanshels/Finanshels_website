@@ -16,7 +16,7 @@ import {
   Globe2,
   Zap,
 } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
+import AnimatedSection from '../components/marketing/AnimatedSection'
 
 const OFFICES = [
   {

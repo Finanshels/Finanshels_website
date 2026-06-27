@@ -6,9 +6,9 @@ import {
   listLandingPages,
   listLeads,
   updateLeadSyncState,
-} from '@/lib/landingPages/repository'
-import { leadToZohoPayload, pushLeadToZoho } from '@/lib/landingPages/zohoClient'
-import { getServiceInterestLabel } from '@/lib/landingPages/serviceInterests'
+} from '@/lib/landing-pages/repository'
+import { leadToZohoPayload, pushLeadToZoho } from '@/lib/landing-pages/zohoClient'
+import { getServiceInterestLabel } from '@/lib/landing-pages/serviceInterests'
 
 export const dynamic = 'force-dynamic'
 

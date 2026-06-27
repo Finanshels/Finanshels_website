@@ -15,7 +15,7 @@ import {
   Sparkles,
   Star,
 } from 'lucide-react'
-import { LEADERSHIP_TEAM, TESTIMONIALS } from '../data/team'
+import { LEADERSHIP_TEAM, TESTIMONIALS } from '@/content/team'
 
 const WHATSAPP_HREF =
   'https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance.'

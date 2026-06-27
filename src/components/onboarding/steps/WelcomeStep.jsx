@@ -1,7 +1,7 @@
 import { useOnboarding } from '../../../contexts/OnboardingContext'
 import { Button } from '../../ui/Button'
 import { ArrowRight, Sparkles, Mail } from 'lucide-react'
-import AnimatedSection from '../../AnimatedSection'
+import AnimatedSection from '@/components/marketing/AnimatedSection'
 
 export default function WelcomeStep() {
   const { nextStep } = useOnboarding()

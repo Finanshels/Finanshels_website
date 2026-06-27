@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import ConfirmDeleteForm from '@/components/cms/admin/landingPages/ConfirmDeleteForm'
+import ConfirmDeleteForm from '@/components/cms/admin/landing-pages/ConfirmDeleteForm'
 import { requireAdminAuth, sessionDisplayName } from '@/lib/cms/adminAuth'
 import {
   createLandingPage,
@@ -9,9 +9,9 @@ import {
   duplicateLandingPage,
   findAvailableSlug,
   listLandingPages,
-} from '@/lib/landingPages/repository'
-import { DEFAULT_CONVERSION_LABELS, DEFAULT_SEO, DEFAULT_THEME } from '@/lib/landingPages/types'
-import { SERVICE_INTERESTS, getServiceInterestLabel } from '@/lib/landingPages/serviceInterests'
+} from '@/lib/landing-pages/repository'
+import { DEFAULT_CONVERSION_LABELS, DEFAULT_SEO, DEFAULT_THEME } from '@/lib/landing-pages/types'
+import { SERVICE_INTERESTS, getServiceInterestLabel } from '@/lib/landing-pages/serviceInterests'
 
 export const dynamic = 'force-dynamic'
 

@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
-import { ChatWidget } from './chat/ChatWidget'
+import { ChatWidget } from '../chat/ChatWidget'
 import Footer from './Footer'
 import Navbar from './Navbar'
 

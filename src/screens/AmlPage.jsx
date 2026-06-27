@@ -8,9 +8,9 @@ import {
   Building2,
   MessageSquare,
 } from 'lucide-react'
-import AnimatedSection from '../components/AnimatedSection'
-import TestimonialCarousel from '../components/TestimonialCarousel'
-import { TESTIMONIALS } from '../data/team'
+import AnimatedSection from '../components/marketing/AnimatedSection'
+import TestimonialCarousel from '../components/marketing/TestimonialCarousel'
+import { TESTIMONIALS } from '@/content/team'
 
 const SECTORS = [
   { tag: 'DNFBP', title: 'Real Estate', desc: 'Brokers, developers & agencies handling AED 55K+ cash deals must file DPMSR/REAR via goAML.' },
