@@ -44,6 +44,8 @@ export const blogPostSchema = z.object({
   // publicly (collectionRepository defaults to `'draft'` for new writes —
   // the asymmetry is intentional: public-read fallback vs. admin-write
   // safety).
+  blog_category: z.string().optional(),
+  blog_tags: z.array(z.string()).optional(),
   status: z.enum(['draft', 'in_review', 'published']).default('published'),
 })
 

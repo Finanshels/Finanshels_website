@@ -21,12 +21,45 @@ export const metadata = {
   },
 }
 
-export default async function BlogIndexPage() {
-  const posts = await listPublishedBlogPosts().catch((err) => {
+const CATEGORY_LABELS: Record<string, string> = {
+  'corporate-tax': 'Corporate Tax',
+  'vat': 'VAT',
+  'transfer-pricing': 'Transfer Pricing',
+  'audit': 'Audit',
+  'accounting': 'Accounting',
+  'bookkeeping': 'Bookkeeping',
+  'payroll': 'Payroll',
+  'compliance': 'Compliance',
+  'advisory': 'Advisory',
+  'cfo-services': 'CFO Services',
+  'esr-aml-ubo': 'ESR / AML / UBO',
+  'regulatory-updates': 'Regulatory Updates',
+  'founder-stories': 'Founder Stories',
+  'how-to-guides': 'How-to Guides',
+}
+
+export default async function BlogIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>
+}) {
+  const { category } = await searchParams
+  const activeCategory = category && CATEGORY_LABELS[category] ? category : null
+
+  const allPosts = await listPublishedBlogPosts().catch((err) => {
     console.warn('[blog] listing failed:', err instanceof Error ? err.message : err)
     return []
   })
   const cmsReady = isCmsConfigured()
+
+  const posts = activeCategory
+    ? allPosts.filter((p) => p.blog_category === activeCategory)
+    : allPosts
+
+  // Only show categories that have at least one published post
+  const usedCategories = Array.from(
+    new Set(allPosts.map((p) => p.blog_category).filter(Boolean) as string[])
+  ).filter((c) => c in CATEGORY_LABELS)
 
   return (
     <>
@@ -56,19 +89,55 @@ export default async function BlogIndexPage() {
               On Vercel, set the Firebase Admin service account variables. Until then, this index stays empty by design so you never ship placeholder copy as real content.
             </p>
           </div>
-        ) : posts.length === 0 ? (
+        ) : allPosts.length === 0 ? (
           <p className="rounded-3xl border border-dashed border-slate-200 px-8 py-16 text-center text-slate-600">
             No published posts yet. Publish documents in the <code className="font-mono text-sm">blog_posts</code> collection
             with <code className="font-mono text-sm">status: &quot;published&quot;</code>.
           </p>
         ) : (
-          <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => (
-              <li key={post.slug}>
-                <BlogCard post={post} />
-              </li>
-            ))}
-          </ul>
+          <>
+            {usedCategories.length > 0 && (
+              <div className="mb-10 flex flex-wrap gap-2">
+                <Link
+                  href="/blog"
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                    !activeCategory
+                      ? 'bg-slate-900 text-white'
+                      : 'border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900'
+                  }`}
+                >
+                  All
+                </Link>
+                {usedCategories.map((cat) => (
+                  <Link
+                    key={cat}
+                    href={`/blog?category=${cat}`}
+                    className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                      activeCategory === cat
+                        ? 'bg-slate-900 text-white'
+                        : 'border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900'
+                    }`}
+                  >
+                    {CATEGORY_LABELS[cat]}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {posts.length === 0 ? (
+              <p className="rounded-3xl border border-dashed border-slate-200 px-8 py-16 text-center text-slate-500">
+                No posts in this category yet.
+              </p>
+            ) : (
+              <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                {posts.map((post) => (
+                  <li key={post.slug}>
+                    <BlogCard post={post} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </>

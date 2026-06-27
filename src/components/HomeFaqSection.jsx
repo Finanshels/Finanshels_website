@@ -23,34 +23,36 @@ function FaqAnswer({ faq }) {
   )
 }
 
-export default function HomeFaqSection() {
+export default function HomeFaqSection({ showHeader = true }) {
   const [open, setOpen] = useState(null)
 
   return (
     <section className="px-5 sm:px-10 lg:px-16 py-20 sm:py-28">
       <div className="max-w-4xl mx-auto space-y-10">
-        <AnimatedSection animation="fade-up">
-          <div className="flex flex-col items-center text-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/20 bg-[#fff4ec] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#f16610]">
-              FAQs
-            </span>
-            <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">
-              Everything founders ask before they start.
-            </h2>
-            <p className="text-slate-500 text-base sm:text-lg max-w-xl">
-              Still have a question?{' '}
-              <a
-                href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20I%20have%20a%20question."
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold text-[#f16610] hover:underline"
-              >
-                Chat with our team
-              </a>{' '}
-              — we'll give you a straight answer.
-            </p>
-          </div>
-        </AnimatedSection>
+        {showHeader && (
+          <AnimatedSection animation="fade-up">
+            <div className="flex flex-col items-center text-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/20 bg-[#fff4ec] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#f16610]">
+                FAQs
+              </span>
+              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">
+                Everything founders ask before they start.
+              </h2>
+              <p className="text-slate-500 text-base sm:text-lg max-w-xl">
+                Still have a question?{' '}
+                <a
+                  href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20I%20have%20a%20question."
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-[#f16610] hover:underline"
+                >
+                  Chat with our team
+                </a>{' '}
+                — we'll give you a straight answer.
+              </p>
+            </div>
+          </AnimatedSection>
+        )}
 
         <div className="space-y-2.5">
           {HOME_FAQS.map((faq, index) => {

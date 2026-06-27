@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   Menu,
@@ -348,9 +349,12 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-8 relative">
         <div className="flex items-center gap-4 h-20">
           <Link href="/" className="flex items-center gap-2 group">
-            <img
+            <Image
               src="/finanshels_logo.png"
               alt="Finanshels"
+              width={140}
+              height={28}
+              priority
               className="h-7 w-auto transition-transform duration-200 group-hover:scale-[1.04]"
             />
             <span className="sr-only">Finanshels</span>

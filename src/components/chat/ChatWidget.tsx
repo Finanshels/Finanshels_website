@@ -2,8 +2,13 @@
 
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { MessageCircle } from 'lucide-react'
-import { ChatPanel } from './ChatPanel'
+
+const ChatPanel = dynamic(() => import('./ChatPanel').then((m) => ({ default: m.ChatPanel })), {
+  loading: () => null,
+  ssr: false,
+})
 
 const HIDDEN_PREFIXES = ['/admin']
 
@@ -15,17 +20,6 @@ export function ChatWidget() {
   useEffect(() => {
     setMounted(true)
   }, [])
-
-  useEffect(() => {
-    if (!mounted) return
-    if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return
-    if (sessionStorage.getItem('finanshels:chat:auto-opened') === '1') return
-    const timer = window.setTimeout(() => {
-      setOpen(true)
-      sessionStorage.setItem('finanshels:chat:auto-opened', '1')
-    }, 7500)
-    return () => window.clearTimeout(timer)
-  }, [mounted, pathname])
 
   useEffect(() => {
     if (!open) return

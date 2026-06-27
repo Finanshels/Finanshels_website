@@ -10,6 +10,8 @@ export const glossaryTermSchema = z.object({
   /** Optional long-form HTML from CMS. */
   definition_full: z.string().optional(),
   bodyHtml: z.string().optional(),
+  term_category: z.string().optional(),
+  alphabet_letter: z.string().optional(),
   relatedSlugs: z.array(z.string()).optional(),
   updatedAt: z.coerce.date().optional(),
   // FIX-035: surface SEO/index controls + AEO FAQ items so the canonical

@@ -74,6 +74,14 @@
       ]
     },
     {
+      "collectionGroup": "faqs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "sort_order", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "landing_page_leads",
       "queryScope": "COLLECTION",
       "fields": [
