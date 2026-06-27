@@ -26,6 +26,7 @@
     "redirects:import": "node scripts/import-webflow-redirects.mjs"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.0",
     "@ai-sdk/react": "^2.0.0",
     "@tiptap/extension-image": "^3.22.5",
     "@tiptap/extension-link": "^3.22.5",
