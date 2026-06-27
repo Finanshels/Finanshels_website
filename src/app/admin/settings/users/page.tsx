@@ -29,6 +29,7 @@ import {
 import { getSiteUrl, isCmsConfigured } from '@/lib/cms/config'
 import { isEmailConfigured, sendEmail } from '@/lib/email/resend'
 import { renderInviteEmail } from '@/lib/email/templates/invite'
+import { Alert, Button } from '@/components/cms/admin/ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -570,28 +571,18 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
                 </p>
               </div>
               <form action={logoutAction}>
-                <button type="submit" className="rounded-xl border border-cms-rule bg-cms-soft px-3 py-2 text-sm text-slate-700 hover:bg-cms-hover">
+                <Button type="submit" variant="secondary" size="sm">
                   Sign out
-                </button>
+                </Button>
               </form>
             </header>
 
             {ok ? (
-              <p
-                className={`rounded-xl border px-4 py-2.5 text-sm ${
-                  ok === 'invited_no_email'
-                    ? 'border-amber-300 bg-amber-50 text-amber-800'
-                    : 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                }`}
-              >
+              <Alert variant={ok === 'invited_no_email' ? 'warning' : 'success'}>
                 {okMessages[ok] ?? 'Done.'}
-              </p>
+              </Alert>
             ) : null}
-            {error ? (
-              <p className="rounded-xl border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-700">
-                {errorMessages[error] ?? `Action failed: ${error}`}
-              </p>
-            ) : null}
+            {error ? <Alert variant="error">{errorMessages[error] ?? `Action failed: ${error}`}</Alert> : null}
 
             {inviteUrl ? (
               <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
@@ -629,7 +620,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
             ) : null}
 
             <section className="rounded-2xl border border-cms-rule bg-cms-soft p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Invite a team member</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Invite a team member</h2>
               <p className="mt-1 text-xs text-slate-500">
                 We'll email a one-time link so they can set their own password. The invite expires in 7 days; you can resend
                 it any time.
@@ -669,12 +660,9 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
                   </select>
                 </label>
                 <div className="md:col-span-2 flex items-center justify-between gap-3">
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-gradient-brand px-4 py-2.5 text-sm font-semibold text-brand-dark shadow-[0_12px_30px_rgba(241,102,16,0.25)] transition hover:brightness-110"
-                  >
-                    {emailReady ? '+ Send invitation' : '+ Generate invite link'}
-                  </button>
+                  <Button type="submit" variant="primary" size="lg">
+                    {emailReady ? '✉ Send invitation' : '+ Generate invite link'}
+                  </Button>
                   <span className="text-xs text-slate-500">
                     {emailReady ? 'Email will be sent via Resend.' : 'Email delivery is OFF — link will be shown inline.'}
                   </span>
@@ -684,7 +672,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
 
             <section className="rounded-2xl border border-cms-rule bg-white">
               <header className="flex items-center justify-between border-b border-cms-rule bg-cms-soft px-4 py-3">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Team members</h2>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Team members</h2>
                 <Link href="#role-reference" className="text-xs text-slate-500 hover:text-brand-primary">
                   Role reference ↓
                 </Link>
@@ -717,7 +705,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
             </section>
 
             <section id="role-reference" className="rounded-2xl border border-cms-rule bg-cms-soft p-4">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Role reference</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Role reference</h2>
               <ul className="mt-3 space-y-2 text-sm">
                 {(['owner', 'admin', 'editor', 'viewer'] as CmsUserRole[]).map((r) => (
                   <li key={r} className="flex items-start gap-3">
