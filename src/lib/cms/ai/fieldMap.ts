@@ -1,7 +1,8 @@
 // Client-safe AI field map. No `server-only` — imported by both the admin UI
 // (to decide which fields get an ✨ button and how the popover behaves) and the
-// API route (to validate the requested field kind). Prompt text lives in the
-// server-only `prompts.ts`; this file holds only metadata.
+// API route (to validate the requested field kind and derive its cost tier).
+// Prompt text lives in the server-only `prompts.ts`; model wiring lives in the
+// server-only `models.ts`. This file holds only client-safe metadata.
 
 export type AiGenerateField =
   | 'title'
@@ -36,6 +37,39 @@ export function isAiGenerateField(value: string): value is AiGenerateField {
   return (AI_GENERATE_FIELDS as readonly string[]).includes(value)
 }
 
+/**
+ * Cost tier for a generation. The server maps each tier to a concrete model
+ * (see `models.ts`), so the UI never picks a model directly — it only knows the
+ * field kind, and the tier follows from that.
+ *
+ * - `nano`     — ultra-short, high-volume suggestions (titles, keywords, CTAs).
+ * - `standard` — short prose (summaries, meta descriptions, answers, FAQs).
+ * - `quality`  — long-form output where quality matters most (article bodies).
+ */
+export type AiTier = 'nano' | 'standard' | 'quality'
+
+const TIER_BY_FIELD: Record<AiGenerateField, AiTier> = {
+  title: 'nano',
+  focus_keyword: 'nano',
+  keywords: 'nano',
+  cta_label: 'nano',
+  alt_text: 'nano',
+
+  summary: 'standard',
+  meta_title: 'standard',
+  meta_description: 'standard',
+  direct_answer: 'standard',
+  faq_question: 'standard',
+
+  body: 'quality',
+  faq_items: 'quality',
+}
+
+/** Derive the cost tier from the field kind. Single source of truth. */
+export function tierForField(kind: AiGenerateField): AiTier {
+  return TIER_BY_FIELD[kind]
+}
+
 export interface AiFieldConfig {
   /** Which prompt template to run. */
   kind: AiGenerateField
@@ -47,59 +81,57 @@ export interface AiFieldConfig {
   charLimit?: { min: number; max: number }
   /** Long-form rich text — handled inside the editor toolbar, not the label row. */
   longForm?: boolean
-  /** Model tier: haiku (fast, short fields) | sonnet (long-form quality). */
-  model: 'haiku' | 'sonnet'
 }
 
 // Exact field-name → config. Matched first.
 const EXACT: Record<string, AiFieldConfig> = {
-  title:        { kind: 'title', label: 'Suggest', multiChoice: true, model: 'haiku' },
-  webinar_title:{ kind: 'title', label: 'Suggest', multiChoice: true, model: 'haiku' },
-  video_title:  { kind: 'title', label: 'Suggest', multiChoice: true, model: 'haiku' },
-  story_title:  { kind: 'title', label: 'Suggest', multiChoice: true, model: 'haiku' },
-  tool_name:    { kind: 'title', label: 'Suggest', multiChoice: true, model: 'haiku' },
-  term:         { kind: 'title', label: 'Suggest', multiChoice: true, model: 'haiku' },
+  title:        { kind: 'title', label: 'Suggest', multiChoice: true },
+  webinar_title:{ kind: 'title', label: 'Suggest', multiChoice: true },
+  video_title:  { kind: 'title', label: 'Suggest', multiChoice: true },
+  story_title:  { kind: 'title', label: 'Suggest', multiChoice: true },
+  tool_name:    { kind: 'title', label: 'Suggest', multiChoice: true },
+  term:         { kind: 'title', label: 'Suggest', multiChoice: true },
 
-  body:            { kind: 'body', label: 'Write', longForm: true, model: 'sonnet' },
-  content:         { kind: 'body', label: 'Write', longForm: true, model: 'sonnet' },
-  article:         { kind: 'body', label: 'Write', longForm: true, model: 'sonnet' },
-  definition_full: { kind: 'body', label: 'Write', longForm: true, model: 'sonnet' },
-  full_description:{ kind: 'body', label: 'Write', longForm: true, model: 'sonnet' },
-  full_bio:        { kind: 'body', label: 'Write', longForm: true, model: 'sonnet' },
+  body:            { kind: 'body', label: 'Write', longForm: true },
+  content:         { kind: 'body', label: 'Write', longForm: true },
+  article:         { kind: 'body', label: 'Write', longForm: true },
+  definition_full: { kind: 'body', label: 'Write', longForm: true },
+  full_description:{ kind: 'body', label: 'Write', longForm: true },
+  full_bio:        { kind: 'body', label: 'Write', longForm: true },
 
-  answer:        { kind: 'direct_answer', label: 'Generate', model: 'haiku' },
-  direct_answer: { kind: 'direct_answer', label: 'Generate', model: 'haiku' },
-  question:      { kind: 'faq_question', label: 'Suggest', multiChoice: true, model: 'haiku' },
-  faq_items:     { kind: 'faq_items', label: 'Generate', model: 'sonnet' },
+  answer:        { kind: 'direct_answer', label: 'Generate' },
+  direct_answer: { kind: 'direct_answer', label: 'Generate' },
+  question:      { kind: 'faq_question', label: 'Suggest', multiChoice: true },
+  faq_items:     { kind: 'faq_items', label: 'Generate' },
 
-  excerpt:           { kind: 'summary', label: 'Generate', model: 'haiku' },
-  summary:           { kind: 'summary', label: 'Generate', model: 'haiku' },
-  description:       { kind: 'summary', label: 'Generate', model: 'haiku' },
-  short_description: { kind: 'summary', label: 'Generate', model: 'haiku' },
-  definition_short:  { kind: 'summary', label: 'Generate', model: 'haiku' },
-  short_bio:         { kind: 'summary', label: 'Generate', model: 'haiku' },
-  card_description:  { kind: 'summary', label: 'Generate', model: 'haiku' },
-  episode_summary:   { kind: 'summary', label: 'Generate', model: 'haiku' },
-  challenge_summary: { kind: 'summary', label: 'Generate', model: 'haiku' },
-  solution_summary:  { kind: 'summary', label: 'Generate', model: 'haiku' },
-  results_summary:   { kind: 'summary', label: 'Generate', model: 'haiku' },
-  output_description:{ kind: 'summary', label: 'Generate', model: 'haiku' },
+  excerpt:           { kind: 'summary', label: 'Generate' },
+  summary:           { kind: 'summary', label: 'Generate' },
+  description:       { kind: 'summary', label: 'Generate' },
+  short_description: { kind: 'summary', label: 'Generate' },
+  definition_short:  { kind: 'summary', label: 'Generate' },
+  short_bio:         { kind: 'summary', label: 'Generate' },
+  card_description:  { kind: 'summary', label: 'Generate' },
+  episode_summary:   { kind: 'summary', label: 'Generate' },
+  challenge_summary: { kind: 'summary', label: 'Generate' },
+  solution_summary:  { kind: 'summary', label: 'Generate' },
+  results_summary:   { kind: 'summary', label: 'Generate' },
+  output_description:{ kind: 'summary', label: 'Generate' },
 
-  seo_title:        { kind: 'meta_title', label: 'Generate', charLimit: { min: 50, max: 60 }, model: 'haiku' },
-  meta_description: { kind: 'meta_description', label: 'Generate', charLimit: { min: 120, max: 160 }, model: 'haiku' },
-  og_description:   { kind: 'meta_description', label: 'Generate', charLimit: { min: 120, max: 160 }, model: 'haiku' },
+  seo_title:        { kind: 'meta_title', label: 'Generate', charLimit: { min: 50, max: 60 } },
+  meta_description: { kind: 'meta_description', label: 'Generate', charLimit: { min: 120, max: 160 } },
+  og_description:   { kind: 'meta_description', label: 'Generate', charLimit: { min: 120, max: 160 } },
 
-  focus_keyword:     { kind: 'focus_keyword', label: 'Suggest', multiChoice: true, model: 'haiku' },
-  secondary_keywords:{ kind: 'keywords', label: 'Suggest', model: 'haiku' },
-  meta_keywords:     { kind: 'keywords', label: 'Suggest', model: 'haiku' },
-  search_keywords:   { kind: 'keywords', label: 'Suggest', model: 'haiku' },
+  focus_keyword:     { kind: 'focus_keyword', label: 'Suggest', multiChoice: true },
+  secondary_keywords:{ kind: 'keywords', label: 'Suggest' },
+  meta_keywords:     { kind: 'keywords', label: 'Suggest' },
+  search_keywords:   { kind: 'keywords', label: 'Suggest' },
 
-  featured_image_alt: { kind: 'alt_text', label: 'Generate', model: 'haiku' },
+  featured_image_alt: { kind: 'alt_text', label: 'Generate' },
 
-  cta_label:                    { kind: 'cta_label', label: 'Suggest', multiChoice: true, model: 'haiku' },
-  card_cta_label:               { kind: 'cta_label', label: 'Suggest', multiChoice: true, model: 'haiku' },
-  listing_sticky_cta_label:     { kind: 'cta_label', label: 'Suggest', multiChoice: true, model: 'haiku' },
-  detail_sticky_side_cta_label: { kind: 'cta_label', label: 'Suggest', multiChoice: true, model: 'haiku' },
+  cta_label:                    { kind: 'cta_label', label: 'Suggest', multiChoice: true },
+  card_cta_label:               { kind: 'cta_label', label: 'Suggest', multiChoice: true },
+  listing_sticky_cta_label:     { kind: 'cta_label', label: 'Suggest', multiChoice: true },
+  detail_sticky_side_cta_label: { kind: 'cta_label', label: 'Suggest', multiChoice: true },
 }
 
 /**
@@ -113,12 +145,12 @@ export function resolveAiField(fieldName: string, fieldType: string): AiFieldCon
   // Heuristic fallbacks for collection-specific aliases not in the exact map.
   const n = fieldName.toLowerCase()
   if (fieldType === 'text' || fieldType === 'textarea') {
-    if (n.endsWith('meta_description') || n.endsWith('_description') && n.includes('meta'))
-      return { kind: 'meta_description', label: 'Generate', charLimit: { min: 120, max: 160 }, model: 'haiku' }
+    if (n.endsWith('meta_description') || (n.endsWith('_description') && n.includes('meta')))
+      return { kind: 'meta_description', label: 'Generate', charLimit: { min: 120, max: 160 } }
     if (n.endsWith('summary') || n.endsWith('excerpt'))
-      return { kind: 'summary', label: 'Generate', model: 'haiku' }
+      return { kind: 'summary', label: 'Generate' }
     if (n.endsWith('_alt') || n.endsWith('image_alt'))
-      return { kind: 'alt_text', label: 'Generate', model: 'haiku' }
+      return { kind: 'alt_text', label: 'Generate' }
   }
   return null
 }

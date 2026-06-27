@@ -29,7 +29,6 @@ export function AiBodyButton({ context, onInsert }: AiBodyButtonProps) {
     }
     setPayload({
       field: 'body',
-      model: 'sonnet',
       fieldLabel: 'Body',
       title: readFieldValue(context.titleField),
       collection: context.collection,

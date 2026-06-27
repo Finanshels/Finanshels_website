@@ -44,7 +44,6 @@ export function AiFieldButton({ targetName, fieldLabel, config, context }: AiFie
     // Snapshot live context at open time so the model sees the latest edits.
     setPayload({
       field: config.kind,
-      model: config.model,
       fieldLabel,
       title: readFieldValue(context.titleField),
       body: readFieldValue(context.bodyField),

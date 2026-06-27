@@ -7,7 +7,6 @@ export type AiStatus = 'idle' | 'loading' | 'done' | 'error'
 
 export interface AiGeneratePayload {
   field: AiGenerateField
-  model: 'haiku' | 'sonnet'
   title?: string
   body?: string
   fieldLabel?: string
