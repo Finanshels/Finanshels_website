@@ -827,6 +827,8 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     titleField: 'tool_name',
     slugField: 'slug',
     defaultSchemaType: 'SoftwareApplication',
+    routePattern: '/tools/[slug]',
+    listingRoute: '/tools',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
@@ -846,6 +848,12 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
         { name: 'related_services', label: 'Related services', type: 'tags' },
         { name: 'gated', label: 'Gated', type: 'boolean' },
         { name: 'lead_capture_enabled', label: 'Lead capture enabled', type: 'boolean' },
+        { name: 'hub_group', label: 'Hub group', type: 'select', options: ['Calculators', 'Benchmarks & Checks'], required: true },
+        { name: 'cta_headline', label: 'CTA headline', type: 'text', placeholder: 'We will file it for you' },
+        { name: 'gated_output_label', label: 'Gated output button label', type: 'text', placeholder: 'Email me the full breakdown' },
+        { name: 'lead_magnet_description', label: 'Lead magnet description', type: 'textarea', placeholder: 'What the gated result delivers.' },
+        { name: 'related_service_url', label: 'Related service URL', type: 'url', placeholder: '/vat-filing-uae' },
+        { name: 'related_service_label', label: 'Related service label', type: 'text', placeholder: 'Get VAT filing done' },
       ],
     },
   },
