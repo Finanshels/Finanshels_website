@@ -11,6 +11,7 @@ import PageBlocksEditor from '@/components/cms/admin/PageBlocksEditor'
 import RichTextField from '@/components/cms/admin/RichTextField'
 import { CmsMultiReferencePick } from '@/components/cms/admin/CmsMultiReferencePick'
 import type { CmsFieldDefinition } from '@/lib/cms/collectionDefinitions'
+import type { AiContext } from '@/lib/cms/ai/fieldMap'
 
 export type ReferenceOption = { id: string; label: string }
 
@@ -23,6 +24,8 @@ type Props = {
   mediaAssetUrls?: string[]
   /** Stable per open document so multi-reference picks remount after navigation. */
   documentHydrationKey?: string
+  /** When set, long-form rich-text fields show an AI "Write" button in the toolbar. */
+  aiContext?: AiContext
 }
 
 const inputClass =
@@ -71,6 +74,7 @@ export function FieldEditor({
   referenceOptions,
   mediaAssetUrls = [],
   documentHydrationKey = '',
+  aiContext,
 }: Props) {
   const hint = fieldHint(field)
   const tagPreview =
@@ -93,7 +97,14 @@ export function FieldEditor({
 
   if (field.type === 'textarea' || field.type === 'json' || field.type === 'rows') {
     if (field.type === 'textarea' && isLongBodyField(field)) {
-      return <RichTextField name={field.name} initialValue={value} placeholder={field.placeholder} />
+      return (
+        <RichTextField
+          name={field.name}
+          initialValue={value}
+          placeholder={field.placeholder}
+          aiContext={aiContext}
+        />
+      )
     }
     const isCode = field.type === 'json' || field.type === 'rows'
     const rowsAttr = field.type === 'json' ? 12 : field.type === 'rows' ? 6 : isLongBodyField(field) ? 16 : 5

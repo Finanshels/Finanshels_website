@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react'
 import {
   CalendarClock,
   PlayCircle,
@@ -7,7 +8,62 @@ import {
   Calculator
 } from 'lucide-react'
 
-const PRODUCT_DATA = [
+export interface ProductStat {
+  label: string
+  value: string
+}
+
+export interface ProductFeature {
+  title: string
+  description: string
+}
+
+export interface ProductSpotlight {
+  title: string
+  bullets: string[]
+}
+
+export interface ProductSupport {
+  title: string
+  bullets: string[]
+}
+
+export interface ProductCta {
+  primaryLabel: string
+  primaryHref: string
+  secondaryLabel: string
+  secondaryHref: string
+}
+
+export interface Product {
+  slug: string
+  name: string
+  category: string
+  accent: string
+  summary: string
+  subtitle: string
+  description: string
+  stats: ProductStat[]
+  features: ProductFeature[]
+  workflow: string[]
+  outputs: string[]
+  spotlight: ProductSpotlight
+  support: ProductSupport
+  cta: ProductCta
+  icon: LucideIcon
+}
+
+export interface ProductCategory {
+  title: string
+  items: {
+    name: string
+    description: string
+    slug: string
+    icon: LucideIcon
+  }[]
+}
+
+const PRODUCT_DATA: Product[] = [
   {
     slug: 'corporate-tax-deadline-checker',
     name: 'Corporate Tax Deadline Checker',
@@ -78,7 +134,7 @@ const PRODUCT_DATA = [
       { label: 'Response time', value: '<2 min' }
     ],
     features: [
-      { title: 'Chat-first console', description: 'Ask “What is my VAT payable this month?” and get the reconciled answer instantly.' },
+      { title: 'Chat-first console', description: 'Ask "What is my VAT payable this month?" and get the reconciled answer instantly.' },
       { title: 'Playbooks built-in', description: 'Every reply links to the underlying close process for full context.' },
       { title: 'Executive summaries', description: 'Weekly digests showing KPI movement, risks, and owner notes.' }
     ],
@@ -335,12 +391,17 @@ const PRODUCT_DATA = [
   }
 ]
 
-export const PRODUCT_PAGES = PRODUCT_DATA.reduce((acc, product) => {
-  acc[product.slug] = product
-  return acc
-}, {})
+export { PRODUCT_DATA }
 
-export const PRODUCT_CATEGORIES = [
+export const PRODUCT_PAGES: Record<string, Product> = PRODUCT_DATA.reduce<Record<string, Product>>(
+  (acc, product) => {
+    acc[product.slug] = product
+    return acc
+  },
+  {}
+)
+
+export const PRODUCT_CATEGORIES: ProductCategory[] = [
   {
     title: 'Taxes',
     items: PRODUCT_DATA.filter((product) => product.category === 'Taxes').map((product) => ({
@@ -369,4 +430,3 @@ export const PRODUCT_CATEGORIES = [
     }))
   }
 ]
-

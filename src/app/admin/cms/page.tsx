@@ -4,6 +4,9 @@ import { redirect } from 'next/navigation'
 import CardPreview from '@/components/cms/admin/CardPreview'
 import { AdminSidebar } from '@/components/cms/admin/AdminSidebar'
 import { AutosaveShell } from '@/components/cms/admin/AutosaveShell'
+import { AiFieldButton } from '@/components/cms/admin/ai/AiFieldButton'
+import { resolveAiField, type AiContext } from '@/lib/cms/ai/fieldMap'
+import { getFieldHelperText } from '@/lib/cms/fieldHelperText'
 import { CmsTitleSlugFields } from '@/components/cms/admin/CmsTitleSlugFields'
 // FIX-039: FieldRenderer extracted to a shared FieldEditor reused by the create flow.
 import { FieldEditor as FieldRenderer } from '@/components/cms/admin/FieldEditor'
@@ -505,6 +508,24 @@ async function logoutAction() {
   redirect('/admin/login')
 }
 
+/**
+ * Per-field affordances shared by every section renderer:
+ *  - an inline ✨ AI button for eligible short fields (rendered in the label row)
+ *  - plain-language helper text under the control
+ *  - an `aiContext` pass-through for long-form fields (handled in the editor toolbar)
+ */
+function fieldAffordances(field: CmsFieldDefinition, aiContext?: AiContext) {
+  const ai = aiContext ? resolveAiField(field.name, field.type) : null
+  const aiButton =
+    ai && !ai.longForm && aiContext ? (
+      <AiFieldButton targetName={field.name} fieldLabel={field.label} config={ai} context={aiContext} />
+    ) : null
+  const helperText = getFieldHelperText(field.name)
+  const helper = helperText ? <p className="mt-1 text-xs text-slate-500">{helperText}</p> : null
+  const editorAiContext = ai?.longForm ? aiContext : undefined
+  return { aiButton, helper, editorAiContext }
+}
+
 function renderSection(
   id: string,
   title: string,
@@ -512,7 +533,8 @@ function renderSection(
   values: FieldValueMap,
   referenceOptions: Record<string, Array<{ id: string; label: string }>>,
   mediaAssetUrls: string[],
-  documentHydrationKey = ''
+  documentHydrationKey = '',
+  aiContext?: AiContext
 ) {
   return (
     <section id={id} className="rounded-2xl border border-cms-rule bg-white p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
@@ -520,6 +542,7 @@ function renderSection(
       <div className="mt-3 grid gap-4 md:grid-cols-2">
         {fields.map((field) => {
           const value = stringifyFieldValue(field, values[field.name])
+          const { aiButton, helper, editorAiContext } = fieldAffordances(field, aiContext)
           const header = (
             <span className="flex items-center gap-2">
               {field.label}
@@ -528,6 +551,7 @@ function renderSection(
                   Required
                 </span>
               ) : null}
+              {aiButton}
             </span>
           )
           const control = (
@@ -537,6 +561,7 @@ function renderSection(
               referenceOptions={referenceOptions}
               mediaAssetUrls={mediaAssetUrls}
               documentHydrationKey={documentHydrationKey}
+              aiContext={editorAiContext}
             />
           )
           const baseClass = `block text-sm font-medium text-slate-800 ${fieldColumnSpan(field)}`
@@ -545,6 +570,7 @@ function renderSection(
               <div key={field.name} className={baseClass}>
                 {header}
                 {control}
+                {helper}
               </div>
             )
           }
@@ -552,6 +578,7 @@ function renderSection(
             <label key={field.name} className={baseClass}>
               {header}
               {control}
+              {helper}
             </label>
           )
         })}
@@ -569,7 +596,8 @@ function renderMainEditorSection(
   referenceOptions: Record<string, Array<{ id: string; label: string }>>,
   mediaAssetUrls: string[],
   documentHydrationKey: string,
-  opts: { slugAutoSync: boolean; titleFieldName: string; slugFieldName: string }
+  opts: { slugAutoSync: boolean; titleFieldName: string; slugFieldName: string },
+  aiContext?: AiContext
 ) {
   const tf = fields[0]
   const sf = fields[1]
@@ -604,6 +632,7 @@ function renderMainEditorSection(
         ) : null}
         {restFields.map((field) => {
           const value = stringifyFieldValue(field, values[field.name])
+          const { aiButton, helper, editorAiContext } = fieldAffordances(field, aiContext)
           const header = (
             <span className="flex items-center gap-2">
               {field.label}
@@ -612,6 +641,7 @@ function renderMainEditorSection(
                   Required
                 </span>
               ) : null}
+              {aiButton}
             </span>
           )
           const control = (
@@ -621,6 +651,7 @@ function renderMainEditorSection(
               referenceOptions={referenceOptions}
               mediaAssetUrls={mediaAssetUrls}
               documentHydrationKey={documentHydrationKey}
+              aiContext={editorAiContext}
             />
           )
           const baseClass = `block text-sm font-medium text-slate-800 ${fieldColumnSpan(field)}`
@@ -629,6 +660,7 @@ function renderMainEditorSection(
               <div key={field.name} className={baseClass}>
                 {header}
                 {control}
+                {helper}
               </div>
             )
           }
@@ -636,6 +668,7 @@ function renderMainEditorSection(
             <label key={field.name} className={baseClass}>
               {header}
               {control}
+              {helper}
             </label>
           )
         })}
@@ -652,7 +685,8 @@ function renderSidebarSection(
   subtitle?: string,
   referenceOptions: Record<string, Array<{ id: string; label: string }>> = {},
   mediaAssetUrls: string[] = [],
-  documentHydrationKey = ''
+  documentHydrationKey = '',
+  aiContext?: AiContext
 ) {
   return (
     <section id={id} className="rounded-2xl border border-cms-rule bg-white p-4">
@@ -661,6 +695,7 @@ function renderSidebarSection(
       <div className="mt-3 flex flex-col gap-3">
         {fields.map((field) => {
           const value = stringifyFieldValue(field, values[field.name])
+          const { aiButton, helper, editorAiContext } = fieldAffordances(field, aiContext)
           const header = (
             <span className="flex items-center gap-2">
               {field.label}
@@ -669,6 +704,7 @@ function renderSidebarSection(
                   Required
                 </span>
               ) : null}
+              {aiButton}
             </span>
           )
           const control = (
@@ -678,6 +714,7 @@ function renderSidebarSection(
               referenceOptions={referenceOptions}
               mediaAssetUrls={mediaAssetUrls}
               documentHydrationKey={documentHydrationKey}
+              aiContext={editorAiContext}
             />
           )
           const boxClass = 'block rounded-xl border border-cms-rule bg-cms-soft p-3 text-sm font-medium text-slate-800'
@@ -686,6 +723,7 @@ function renderSidebarSection(
               <div key={field.name} className={boxClass}>
                 {header}
                 {control}
+                {helper}
               </div>
             )
           }
@@ -693,6 +731,7 @@ function renderSidebarSection(
             <label key={field.name} className={boxClass}>
               {header}
               {control}
+              {helper}
             </label>
           )
         })}
@@ -1030,6 +1069,13 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
       !(f.name === 'title' && definition.titleField !== 'title')
   )
   const currentStatus = String(formValues.status ?? 'draft')
+  // AI generation context: title + main body field names let the ✨ buttons pull
+  // live values from the form, and the collection key tunes the prompt voice.
+  const aiContext: AiContext = {
+    titleField: definition.titleField,
+    bodyField: primaryPublishFields.find((f) => isMainContentField(f))?.name,
+    collection: definition.key,
+  }
   // FIX-025: canonical SEO field names are snake_case. CamelCase reads remain
   // as fallbacks for any unmigrated documents (whose admin form no longer
   // exposes them, but whose stored values still flow through grading).
@@ -1083,7 +1129,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     options?: { defaultOpen?: boolean; extra?: React.ReactNode }
   ) => (
     <div className="space-y-3">
-      {renderSection(id, title, fields, values, refs, assets, editorDocKey)}
+      {renderSection(id, title, fields, values, refs, assets, editorDocKey, aiContext)}
       {options?.extra ? <div>{options.extra}</div> : null}
     </div>
   )
@@ -1261,7 +1307,8 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       slugAutoSync: false,
                       titleFieldName: definition.titleField,
                       slugFieldName: definition.slugField,
-                    }
+                    },
+                    aiContext
                   )}
 
                   {renderCollapsibleSection(
@@ -1449,7 +1496,8 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       'Core metadata for publishing',
                       referenceOptions,
                       allMediaUrls,
-                      editorDocKey
+                      editorDocKey,
+                      aiContext
                     )
                   : null}
 
@@ -1520,7 +1568,8 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                   'Single-column CMO control panel',
                   referenceOptions,
                   allMediaUrls,
-                  editorDocKey
+                  editorDocKey,
+                  aiContext
                 )}
                 {renderChecklistCard('SEO Checklist', seoChecklist)}
               </div>
@@ -1550,7 +1599,8 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                   'FAQ, direct answers, and speakable schema',
                   referenceOptions,
                   allMediaUrls,
-                  editorDocKey
+                  editorDocKey,
+                  aiContext
                 )}
                 {renderChecklistCard('AEO Checklist', aeoChecklist)}
               </div>
@@ -1582,7 +1632,8 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                   'Citations, entities, and AI-trust signals',
                   referenceOptions,
                   allMediaUrls,
-                  editorDocKey
+                  editorDocKey,
+                  aiContext
                 )}
                 {renderChecklistCard('GEO Checklist', geoChecklist)}
               </div>

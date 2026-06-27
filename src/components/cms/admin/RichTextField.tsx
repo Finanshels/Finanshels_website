@@ -42,10 +42,14 @@ import {
   Eye,
 } from 'lucide-react'
 
+import { AiBodyButton } from '@/components/cms/admin/ai/AiBodyButton'
+import type { AiContext } from '@/lib/cms/ai/fieldMap'
+
 type Props = {
   name: string
   initialValue: string
   placeholder?: string
+  aiContext?: AiContext
 }
 
 function GroupLabel({ children }: { children: React.ReactNode }) {
@@ -100,7 +104,7 @@ function Sep() {
   return <span aria-hidden className="mx-0.5 h-4 w-px bg-cms-soft" />
 }
 
-export default function RichTextField({ name, initialValue, placeholder }: Props) {
+export default function RichTextField({ name, initialValue, placeholder, aiContext }: Props) {
   const [html, setHtml] = useState(initialValue || '')
   const [showSource, setShowSource] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -190,6 +194,16 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
     editor.commands.setContent(next, { emitUpdate: true })
     setHtml(next)
   }
+  const insertAiHtml = (incoming: string) => {
+    if (!editor) return
+    const isEmpty = !editor.getText().trim()
+    if (isEmpty) {
+      editor.commands.setContent(incoming, { emitUpdate: true })
+    } else {
+      editor.chain().focus().insertContent(incoming).run()
+    }
+    setHtml(editor.getHTML())
+  }
 
   return (
     <div className="mt-2">
@@ -251,6 +265,12 @@ export default function RichTextField({ name, initialValue, placeholder }: Props
             <IconBtn label={showPreview ? 'Hide split preview' : 'Split preview'} active={showPreview} onClick={() => setShowPreview((v) => !v)}>
               <Eye className="h-3.5 w-3.5" />
             </IconBtn>
+            {aiContext ? (
+              <>
+                <Sep />
+                <AiBodyButton context={aiContext} onInsert={insertAiHtml} />
+              </>
+            ) : null}
           </ToolbarRow>
 
           <details className="mt-2 rounded-lg border border-cms-rule bg-white/80 open:bg-white">

@@ -81,6 +81,7 @@ export function AiGeneratePopover({
       ref={ref}
       role="dialog"
       aria-label="AI suggestion"
+      onClick={(e) => e.stopPropagation()}
       className={cn(
         'absolute top-full z-50 mt-2 w-[420px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-cms-rule bg-white shadow-xl',
         align === 'right' ? 'right-0' : 'left-0',
