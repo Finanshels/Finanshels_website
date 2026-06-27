@@ -352,6 +352,10 @@ export type LeadWriteInput = {
   attribution: LeadAttribution
   user_agent: string
   ip_hash: string
+  /** Capture surface, e.g. "tool:vat-calculator". Defaults to "landing_page". */
+  source?: string
+  /** Arbitrary serialisable context (e.g. a tool result snapshot). */
+  extra?: Record<string, unknown>
 }
 
 export async function writeLead(input: LeadWriteInput): Promise<string> {
@@ -377,6 +381,8 @@ export async function writeLead(input: LeadWriteInput): Promise<string> {
     landing_url: input.attribution.landing_url,
     user_agent: input.user_agent,
     ip_hash: input.ip_hash,
+    source: input.source ?? 'landing_page',
+    extra: input.extra ?? null,
     zoho_retry_count: 0,
     zoho_synced_at: null,
     resend_email_sent_at: null,
