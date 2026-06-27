@@ -1480,7 +1480,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 {sidePublishFields.length > 0
                   ? renderSidebarSection(
                       'publish',
-                      'Publish Fields',
+                      'Publishing',
                       sidePublishFields,
                       formValues,
                       'Core metadata for publishing',
@@ -1552,7 +1552,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 </section>
                 {renderSidebarSection(
                   'seo',
-                  'SEO Metadata',
+                  'Search (SEO)',
                   definition.sections.seo,
                   formValues,
                   'Single-column CMO control panel',
@@ -1583,7 +1583,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 </section>
                 {renderSidebarSection(
                   'aeo',
-                  'AEO Fields',
+                  'AI answers (AEO)',
                   definition.sections.aeo,
                   formValues,
                   'FAQ, direct answers, and speakable schema',
@@ -1616,7 +1616,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 </section>
                 {renderSidebarSection(
                   'geo',
-                  'GEO Fields',
+                  'AI search (GEO)',
                   definition.sections.geo,
                   formValues,
                   'Citations, entities, and AI-trust signals',
