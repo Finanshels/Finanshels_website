@@ -3,6 +3,7 @@ import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import CardPreview from '@/components/cms/admin/CardPreview'
 import { AdminSidebar } from '@/components/cms/admin/AdminSidebar'
+import { AutosaveShell } from '@/components/cms/admin/AutosaveShell'
 import { CmsTitleSlugFields } from '@/components/cms/admin/CmsTitleSlugFields'
 // FIX-039: FieldRenderer extracted to a shared FieldEditor reused by the create flow.
 import { FieldEditor as FieldRenderer } from '@/components/cms/admin/FieldEditor'
@@ -1154,6 +1155,14 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     >
                       {error}
                     </span>
+                  ) : null}
+                  {params.slug ? (
+                    <AutosaveShell
+                      formId="cms-editor-form"
+                      collection={definition.key}
+                      slug={params.slug}
+                      currentStatus={currentStatus}
+                    />
                   ) : null}
                   {definition.routePattern && publicSlug ? (
                     <a
