@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import CardPreview from '@/components/cms/admin/CardPreview'
+import { AdminSidebar } from '@/components/cms/admin/AdminSidebar'
 import { CmsTitleSlugFields } from '@/components/cms/admin/CmsTitleSlugFields'
 // FIX-039: FieldRenderer extracted to a shared FieldEditor reused by the create flow.
 import { FieldEditor as FieldRenderer } from '@/components/cms/admin/FieldEditor'
@@ -946,7 +947,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
       <section className="min-h-screen bg-cms-canvas text-slate-900">
         <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
           <div className="grid gap-3 xl:min-h-[calc(100vh-1.5rem)] xl:grid-cols-[minmax(260px,320px)_1fr]">
-            <CmsSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
+            <AdminSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
             <div className="space-y-4 rounded-2xl border border-cms-rule bg-white p-4 xl:overflow-y-auto shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
               {saved ? (
                 <p className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">
@@ -994,7 +995,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
       <section className="min-h-screen bg-cms-canvas text-slate-900">
         <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
           <div className="grid gap-3 xl:grid-cols-[minmax(260px,320px)_1fr]">
-            <CmsSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
+            <AdminSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
             <div className="rounded-2xl border border-cms-rule bg-white p-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
               <p className="text-lg font-medium text-slate-900">Item not found</p>
               <p className="mt-2 text-sm text-slate-400">
@@ -1090,7 +1091,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     <section className="h-dvh overflow-hidden bg-cms-canvas text-slate-900">
       <div className="mx-auto h-full max-w-[1900px] px-3 py-3 sm:px-5">
         <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(260px,320px)_minmax(0,60fr)_minmax(0,25fr)] lg:auto-rows-fr lg:overflow-hidden lg:items-stretch">
-          <CmsSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
+          <AdminSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
 
           <form
             action={saveCmsDocumentAction}
