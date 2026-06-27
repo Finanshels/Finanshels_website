@@ -27,7 +27,7 @@ Marketing site + CMS for [finanshels.com](https://finanshels.com). Next.js 15 Ap
 | Admin auth | [src/lib/cms/adminAuth.ts](src/lib/cms/adminAuth.ts) + [src/middleware.ts](src/middleware.ts) | Cookie HMAC, `tokenVersion` invalidation, PBKDF2-SHA256 200k. |
 | Revalidation | [src/app/api/revalidate/route.ts](src/app/api/revalidate/route.ts) | Bearer-auth POST, called from GCP Functions on Firestore write. |
 | Page-blocks renderer | [src/components/cms/PageBlocksRenderer.tsx](src/components/cms/PageBlocksRenderer.tsx) | One branch per block type in `CMS_BLOCK_TYPES`. |
-| Admin panel | [src/app/admin/cms/](src/app/admin/cms/) | Collection-driven editor; per-type create flow in `/admin/cms/new/`. |
+| Admin panel | [src/app/admin/cms/](src/app/admin/cms/) | Collection-driven editor. One editor serves edit (`?slug=…`) and create (`?intent=create`, blank doc; autosave stays off until the first manual save). |
 | Routed content | [src/app/content/](src/app/content/) | Generic detail page resolves every routed collection. |
 | Employee onboarding | [src/app/admin/onboarding/](src/app/admin/onboarding/) | Gamified internal onboarding behind `requireAdminAuth()`. UI: [src/components/onboarding/](src/components/onboarding/), state: [src/contexts/OnboardingContext.jsx](src/contexts/OnboardingContext.jsx). |
 | Firestore rules | [firestore.rules](firestore.rules) | **Deny all client access.** Reads/writes via Admin SDK only. |

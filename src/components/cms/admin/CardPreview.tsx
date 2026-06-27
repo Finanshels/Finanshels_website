@@ -90,7 +90,9 @@ export default function CardPreview({
         {image ? (
           <div
             className="aspect-[16/9] bg-slate-100 bg-cover bg-center"
-            style={{ backgroundImage: `url("${image}")` }}
+            // encodeURI keeps the URL valid while escaping quotes/parens/backslashes
+            // that would otherwise break the CSS url() (and act as an injection vector).
+            style={{ backgroundImage: `url("${encodeURI(image)}")` }}
             aria-hidden
           />
         ) : (

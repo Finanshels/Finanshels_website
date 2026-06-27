@@ -59,6 +59,7 @@ type SearchParams = Promise<{
   error?: string
   collection?: string
   slug?: string
+  intent?: string
 }>
 
 type FieldValueMap = Record<string, unknown>
@@ -209,6 +210,32 @@ const getCachedCmsCollectionItemCounts = unstable_cache(
   { tags: [CMS_CONTENT_CACHE_TAG], revalidate: 300 }
 )
 
+// PERF: opening ANY document for editing fanned out listReferenceOptions() across
+// every referenced collection (~5-8 collections × up to 200 docs each ≈ 1000-1600
+// uncached Firestore reads) on every single editor open. Reference dropdowns are
+// slow-changing label lists, so cache them per collection under the same
+// 'cms-content' tag — any CMS save already invalidates that tag, so a newly
+// created/renamed reference target shows up immediately, while repeat editor
+// opens hit the cache instead of re-reading thousands of docs.
+const CACHED_REFERENCE_OPTIONS: Partial<
+  Record<CmsCollectionKey, () => Promise<Array<{ id: string; label: string }>>>
+> = Object.fromEntries(
+  CMS_COLLECTION_DEFINITIONS.map((def) => [
+    def.key,
+    unstable_cache(() => listReferenceOptions(def.key), ['cms-reference-options', def.key], {
+      tags: [CMS_CONTENT_CACHE_TAG],
+      revalidate: 300,
+    }),
+  ])
+)
+
+function getReferenceOptionsForCollection(
+  key: CmsCollectionKey
+): Promise<Array<{ id: string; label: string }>> {
+  const cached = CACHED_REFERENCE_OPTIONS[key]
+  return cached ? cached() : listReferenceOptions(key)
+}
+
 function buildRevalidatePathTargets(collection: CmsCollectionKey, slug: string): string[] {
   const def = CMS_COLLECTION_DEFINITION_MAP[collection]
   const targets = new Set<string>([`/content/${collection}/${slug}`])
@@ -260,7 +287,7 @@ async function saveCmsDocumentAction(formData: FormData) {
   const cmsIntent = String(formData.get('cmsIntent') ?? '')
   const isCreate = cmsIntent === 'create'
   const cmsOriginalSlug = String(formData.get('cmsOriginalSlug') ?? '').trim()
-  const editorBaseCreate = `/admin/cms/new/${definition.key}`
+  const editorBaseCreate = `/admin/cms?collection=${definition.key}&intent=create`
   const editorBaseEdit = (s: string) => `/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(s)}`
 
   const slugField = definition.slugField
@@ -277,6 +304,17 @@ async function saveCmsDocumentAction(formData: FormData) {
     const existing = await getCmsDocument(definition.key, slug)
     if (existing) {
       redirect(`${editorBaseCreate}&error=slug-taken`)
+    }
+  }
+
+  // FIX-052: editing the slug renames the document. Because document id = slug,
+  // a rename = write at the new id + delete the old one (handled at save time).
+  // Guard against clobbering an existing document at the target slug first.
+  const isRename = !isCreate && cmsOriginalSlug.length > 0 && slug !== cmsOriginalSlug
+  if (isRename) {
+    const clash = await getCmsDocument(definition.key, slug)
+    if (clash) {
+      redirect(`${editorBaseEdit(cmsOriginalSlug)}&error=slug-taken`)
     }
   }
 
@@ -386,12 +424,19 @@ async function saveCmsDocumentAction(formData: FormData) {
   if (typeof payload.status !== 'string') payload.status = 'draft'
 
   try {
-    await upsertCmsDocument(definition.key, slug, payload, role)
+    await upsertCmsDocument(definition.key, slug, payload, sessionDisplayName(session))
+    // FIX-052: a rename writes at the new slug (= new id), then deletes the old
+    // document so it isn't orphaned (left live at its old URL) and duplicated.
+    if (isRename) {
+      await deleteCmsDocument(definition.key, cmsOriginalSlug)
+    }
   } catch {
     redirect(`${isCreate ? editorBaseCreate : editorBaseEdit(slug)}&error=save-failed`)
   }
 
   invalidateCmsCaches(definition.key, slug)
+  // Revalidate the old route too so the renamed-away URL stops serving stale content.
+  if (isRename) invalidateCmsCaches(definition.key, cmsOriginalSlug)
   redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(slug)}&saved=1`)
 }
 
@@ -407,7 +452,7 @@ async function rollbackCmsRevisionAction(revisionId: string, formData: FormData)
   }
 
   try {
-    await rollbackCmsDocumentToRevision(definition.key, id, revisionId, role)
+    await rollbackCmsDocumentToRevision(definition.key, id, revisionId, sessionDisplayName(session))
   } catch {
     redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(id)}&error=rollback-failed`)
   }
@@ -439,7 +484,7 @@ async function bulkUpdateStatusAction(formData: FormData) {
   if (ids.length === 0) redirect(`/admin/cms?collection=${definition.key}&error=no-selection`)
 
   try {
-    await bulkUpdateCmsDocumentStatus(definition.key, ids, effective, role)
+    await bulkUpdateCmsDocumentStatus(definition.key, ids, effective, sessionDisplayName(session))
   } catch {
     redirect(`/admin/cms?collection=${definition.key}&error=bulk-update-failed`)
   }
@@ -458,7 +503,7 @@ async function duplicateCmsDocumentAction(formData: FormData) {
   if (!definition || !id) redirect('/admin/cms?error=invalid-input')
   let result: { id: string; slug: string }
   try {
-    result = await duplicateCmsDocument(definition.key, id, role)
+    result = await duplicateCmsDocument(definition.key, id, sessionDisplayName(session))
   } catch {
     redirect(`/admin/cms?collection=${definition.key}&error=duplicate-failed`)
   }
@@ -802,7 +847,7 @@ function CmsSidebar({
         href={
           definition.key === 'media_assets'
             ? `/admin/cms?collection=${definition.key}#cms-media-upload`
-            : `/admin/cms/new/${definition.key}`
+            : `/admin/cms?collection=${definition.key}&intent=create`
         }
         className="mt-3 inline-flex w-full items-center justify-center rounded-xl bg-gradient-brand px-4 py-2.5 text-sm font-semibold text-brand-dark shadow-[0_12px_30px_rgba(241,102,16,0.25)] transition hover:brightness-110"
       >
@@ -909,7 +954,10 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     : fallbackCollection) as CmsCollectionKey
   const definition = CMS_COLLECTION_DEFINITION_MAP[activeCollection]
 
-  const isEditorView = Boolean(params.slug)
+  // Editor view opens for an existing doc (?slug=…) OR a blank create (?intent=create).
+  // Create mode renders the same full editor with empty values; AutosaveShell and the
+  // revision panel stay slug-gated, so a new doc is committed via the manual Save button.
+  const isEditorView = Boolean(params.slug) || params.intent === 'create'
   const fieldReferencedCollections = getReferencedCollections(definition)
   const allReferencedCollections = [
     ...new Set<CmsCollectionKey>([...fieldReferencedCollections, ...BLOCKS_REFERENCED_COLLECTIONS]),
@@ -919,7 +967,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     documentList,
     selectedDocument,
     collectionCounts,
-    mediaAssets,
+    mediaLibraryForDatalist,
     referenceOptionResults,
     revisions,
     mediaLibraryItems,
@@ -931,11 +979,17 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
       : listCmsDocuments(definition.key, definition.titleField, definition.slugField),
     isEditorView && params.slug ? getCmsDocument(definition.key, params.slug) : Promise.resolve(null),
     getCachedCmsCollectionItemCounts(),
-    isEditorView ? listCmsDocuments('media_assets', 'title', 'slug') : Promise.resolve([]),
+    // PERF: the editor's URL/image/file inputs decorate themselves with a datalist
+    // of uploaded asset URLs. listCmsMediaLibraryItems already returns assetUrl on
+    // each item, so this single read replaces the old behavior of (a) a wholly
+    // unused `listCmsDocuments('media_assets', …)` fetch AND (b) a second media
+    // read that ran *serially* after this Promise.all. One parallel read now.
+    isEditorView ? listCmsMediaLibraryItems(120) : Promise.resolve([]),
     // PERF: reference options are only used by the editor form (reference/multi_reference fields).
-    // The list view never reads them, so don't fan out to every referenced collection on every click.
+    // The list view never reads them; the editor reads them through the cached wrapper
+    // so repeat opens don't re-fan-out across every referenced collection.
     isEditorView
-      ? Promise.all(allReferencedCollections.map((key) => listReferenceOptions(key).then((options) => [key, options] as const)))
+      ? Promise.all(allReferencedCollections.map((key) => getReferenceOptionsForCollection(key).then((options) => [key, options] as const)))
       : Promise.resolve([] as Array<readonly [CmsCollectionKey, Array<{ id: string; label: string }>]>),
     isEditorView && params.slug ? listCmsRevisions(definition.key, params.slug) : Promise.resolve([]),
     !isEditorView && activeCollection === 'media_assets' ? listCmsMediaLibraryItems() : Promise.resolve([]),
@@ -949,10 +1003,10 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
           blog_posts: (referenceOptionsBase.blog_posts ?? []).filter((o) => o.id !== editingBlogSlug),
         }
       : referenceOptionsBase
-  // FIX-010: was Promise.all over 120 getCmsDocument() calls just to grab
-  // assetUrl strings for the <datalist>. listCmsMediaLibraryItems already
-  // returns assetUrl on each item; one read replaces the waterfall.
-  const mediaLibraryForDatalist = isEditorView ? await listCmsMediaLibraryItems(120) : []
+  // FIX-010: listCmsMediaLibraryItems already returns assetUrl on each item, so
+  // one read backs the <datalist>. PERF: that read now runs inside the Promise.all
+  // above (mediaLibraryForDatalist) instead of as a serial await here, removing a
+  // full round-trip from every editor open.
   const allMediaUrls = [
     ...new Set(
       mediaLibraryForDatalist
@@ -961,9 +1015,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     ),
   ]
 
-  // FIX-048: createCmsDraft redirects with `?saved=created`; the existing
-  // edit-save flow uses `?saved=1`. Both should trigger the success banner.
-  const saved = params.saved === '1' || params.saved === 'created'
+  const saved = params.saved === '1'
   const errorRaw = params.error
   const error =
     typeof errorRaw === 'string'
@@ -988,9 +1040,11 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     return (
       <section className="min-h-screen bg-cms-canvas text-slate-900">
         <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
-          <div className="grid gap-3 xl:min-h-[calc(100vh-1.5rem)] xl:grid-cols-[minmax(260px,320px)_1fr]">
-            <AdminSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
-            <div className="space-y-4 rounded-2xl border border-cms-rule bg-white p-4 xl:overflow-y-auto shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+          <div className="grid items-start gap-3 xl:grid-cols-[minmax(260px,320px)_1fr]">
+            <div className="xl:sticky xl:top-3">
+              <AdminSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
+            </div>
+            <div className="space-y-4 rounded-2xl border border-cms-rule bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
               {saved ? (
                 <p className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">
                   Changes saved. Content cache revalidated and routes refreshed.
@@ -1070,6 +1124,20 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
       // collection already uses a custom title field (e.g. term, full_name).
       !(f.name === 'title' && definition.titleField !== 'title')
   )
+  // CLEANUP: profile/label collections suppress the SEO/AEO/GEO sections (no public
+  // route → those answer-engine tabs are dead weight). Only surface a settings tab
+  // when its section actually has fields, so the aside header isn't padded with
+  // empty scorecards for a Team Member / Video / Review Source.
+  const showSeoTab = definition.sections.seo.length > 0
+  const showAeoTab = definition.sections.aeo.length > 0
+  const showGeoTab = definition.sections.geo.length > 0
+  const settingsTabIds = [
+    'publish',
+    ...(showSeoTab ? ['seo'] : []),
+    ...(showAeoTab ? ['aeo'] : []),
+    ...(showGeoTab ? ['geo'] : []),
+  ]
+  const lastSettingsTabId = settingsTabIds[settingsTabIds.length - 1]
   const currentStatus = String(formValues.status ?? 'draft')
   // AI generation context: title + main body field names let the ✨ buttons pull
   // live values from the form, and the collection key tunes the prompt voice.
@@ -1129,24 +1197,42 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     refs: Record<string, Array<{ id: string; label: string }>>,
     assets: string[],
     options?: { defaultOpen?: boolean; extra?: React.ReactNode }
-  ) => (
-    <div className="space-y-3">
-      {renderSection(id, title, fields, values, refs, assets, editorDocKey, aiContext)}
-      {options?.extra ? <div>{options.extra}</div> : null}
-    </div>
-  )
+  ) => {
+    // CLEANUP: never emit an empty section card (a header with no fields). Suppressed
+    // sections (card/listing/detail/blocks) arrive here as [] and should render
+    // nothing — this also drops the Card preview that rides on `extra`.
+    if (fields.length === 0) return null
+    return (
+      <div className="space-y-3">
+        {renderSection(id, title, fields, values, refs, assets, editorDocKey, aiContext)}
+        {options?.extra ? <div>{options.extra}</div> : null}
+      </div>
+    )
+  }
 
   return (
-    <section className="h-dvh overflow-hidden bg-cms-canvas text-slate-900">
-      <div className="mx-auto h-full max-w-[1900px] px-3 py-3 sm:px-5">
-        <div className="grid h-full min-h-0 gap-3 lg:grid-cols-[minmax(260px,320px)_minmax(0,60fr)_minmax(0,25fr)] lg:auto-rows-fr lg:overflow-hidden lg:items-stretch">
+    <section className="min-h-dvh bg-cms-canvas text-slate-900">
+      <div className="mx-auto max-w-[1900px] px-3 py-3 sm:px-5">
+        {/* FIX-053: the editor is a normal-scroll page (like every other admin
+            page since FIX-050), NOT a fixed h-dvh island. The old shell pinned the
+            section to h-dvh + overflow-hidden with per-pane internal scroll, which
+            left dead whitespace below short forms and trapped tall ones. Now the
+            page scrolls; the left nav and right rail are sticky so they stay in
+            view. `items-start` keeps the sticky rails from stretch-matching height. */}
+        <div className="grid gap-3 lg:grid-cols-[minmax(260px,320px)_minmax(0,60fr)_minmax(0,25fr)] lg:items-start">
           <AdminSidebar activeKey={definition.key} collectionCounts={collectionCounts} session={session} />
 
+          {/* FIX-052: noValidate — required fields can live in inactive (display:none)
+              tabs, and native HTML5 validation aborts submit on a non-focusable
+              required control with no message ("not focusable"), dead-ending the
+              save. Validation is done server-side and surfaced by CmsFormValidator
+              (which scrolls to + highlights the offending field, including in tabs). */}
           <form
             action={saveCmsDocumentAction}
             id="cms-editor-form"
             data-cms-editor=""
-            className="grid min-h-0 gap-3 lg:col-span-2 lg:h-full lg:auto-rows-fr lg:grid-cols-[minmax(0,60fr)_minmax(0,25fr)] lg:overflow-hidden"
+            noValidate
+            className="grid gap-3 lg:col-span-2 lg:grid-cols-[minmax(0,60fr)_minmax(0,25fr)] lg:items-start"
           >
             <input type="hidden" name="collection" value={definition.key} />
             <input type="hidden" name="cmsIntent" value={params.slug ? 'edit' : 'create'} />
@@ -1157,9 +1243,9 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 offending field instead of leaving a raw error code in a banner. */}
             <CmsFormValidator error={error ?? null} />
 
-            <div className="flex min-h-0 flex-col space-y-0 overflow-hidden rounded-2xl border border-cms-rule bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
+            <div className="flex flex-col space-y-0 rounded-2xl border border-cms-rule bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
               {/* Sticky editor header — Webflow style */}
-              <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-cms-rule bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+              <div className="sticky top-0 z-20 flex items-center gap-3 rounded-t-2xl border-b border-cms-rule bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/85">
                 <Link
                   href={`/admin/cms?collection=${definition.key}`}
                   aria-label={`Back to ${definition.label}`}
@@ -1386,7 +1472,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
               </div>
             </div>
 
-            <aside className="group/cms-aside flex min-h-0 flex-col overflow-hidden rounded-2xl border border-cms-rule bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:overflow-y-auto">
+            <aside className="group/cms-aside flex flex-col rounded-2xl border border-cms-rule bg-[#fcfaf7] p-0 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:sticky lg:top-3 lg:max-h-[calc(100dvh_-_1.5rem)] lg:overflow-y-auto">
               {/*
                 Tab visibility: Tailwind `peer-checked` only works for *following siblings* of `.peer`.
                 Panels lived inside a wrapper div, so they were never siblings of the radios and every
@@ -1395,8 +1481,11 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 `peer-checked/*` styles apply to the active tab chip.
               */}
               <div className="sticky top-0 z-20 border-b border-cms-rule bg-[#fcfaf7]/95 px-3 py-3 backdrop-blur supports-[backdrop-filter]:bg-[#fcfaf7]/80">
-                <div className="grid grid-cols-4 overflow-hidden rounded-lg border border-cms-rule bg-white text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  <div className="min-w-0 border-r border-cms-rule">
+                <div
+                  className="grid overflow-hidden rounded-lg border border-cms-rule bg-white text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"
+                  style={{ gridTemplateColumns: `repeat(${settingsTabIds.length}, minmax(0, 1fr))` }}
+                >
+                  <div className={`min-w-0${lastSettingsTabId === 'publish' ? '' : ' border-r border-cms-rule'}`}>
                     <input
                       id="cms-tab-publish"
                       type="radio"
@@ -1411,33 +1500,39 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       Publish
                     </label>
                   </div>
-                  <div className="min-w-0 border-r border-cms-rule">
-                    <input id="cms-tab-seo" type="radio" name="cms-settings-tab" className="peer/tab-seo sr-only" />
-                    <label
-                      htmlFor="cms-tab-seo"
-                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-seo:bg-brand-primary/10 peer-checked/tab-seo:text-brand-primary"
-                    >
-                      SEO
-                    </label>
-                  </div>
-                  <div className="min-w-0 border-r border-cms-rule">
-                    <input id="cms-tab-aeo" type="radio" name="cms-settings-tab" className="peer/tab-aeo sr-only" />
-                    <label
-                      htmlFor="cms-tab-aeo"
-                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-aeo:bg-brand-primary/10 peer-checked/tab-aeo:text-brand-primary"
-                    >
-                      AEO
-                    </label>
-                  </div>
-                  <div className="min-w-0">
-                    <input id="cms-tab-geo" type="radio" name="cms-settings-tab" className="peer/tab-geo sr-only" />
-                    <label
-                      htmlFor="cms-tab-geo"
-                      className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-geo:bg-brand-primary/10 peer-checked/tab-geo:text-brand-primary"
-                    >
-                      GEO
-                    </label>
-                  </div>
+                  {showSeoTab ? (
+                    <div className={`min-w-0${lastSettingsTabId === 'seo' ? '' : ' border-r border-cms-rule'}`}>
+                      <input id="cms-tab-seo" type="radio" name="cms-settings-tab" className="peer/tab-seo sr-only" />
+                      <label
+                        htmlFor="cms-tab-seo"
+                        className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-seo:bg-brand-primary/10 peer-checked/tab-seo:text-brand-primary"
+                      >
+                        SEO
+                      </label>
+                    </div>
+                  ) : null}
+                  {showAeoTab ? (
+                    <div className={`min-w-0${lastSettingsTabId === 'aeo' ? '' : ' border-r border-cms-rule'}`}>
+                      <input id="cms-tab-aeo" type="radio" name="cms-settings-tab" className="peer/tab-aeo sr-only" />
+                      <label
+                        htmlFor="cms-tab-aeo"
+                        className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-aeo:bg-brand-primary/10 peer-checked/tab-aeo:text-brand-primary"
+                      >
+                        AEO
+                      </label>
+                    </div>
+                  ) : null}
+                  {showGeoTab ? (
+                    <div className="min-w-0">
+                      <input id="cms-tab-geo" type="radio" name="cms-settings-tab" className="peer/tab-geo sr-only" />
+                      <label
+                        htmlFor="cms-tab-geo"
+                        className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-geo:bg-brand-primary/10 peer-checked/tab-geo:text-brand-primary"
+                      >
+                        GEO
+                      </label>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -1531,6 +1626,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 ) : null}
               </div>
 
+              {showSeoTab ? (
               <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-seo:checked]/cms-aside:block">
                 <section className="rounded-2xl border border-cms-rule bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">SEO Score</p>
@@ -1563,7 +1659,9 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 )}
                 {renderChecklistCard('SEO Checklist', seoChecklist)}
               </div>
+              ) : null}
 
+              {showAeoTab ? (
               <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-aeo:checked]/cms-aside:block">
                 <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">AEO Tips - Answer Engines</p>
@@ -1594,7 +1692,9 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 )}
                 {renderChecklistCard('AEO Checklist', aeoChecklist)}
               </div>
+              ) : null}
 
+              {showGeoTab ? (
               <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-geo:checked]/cms-aside:block">
                 <section className="rounded-2xl border border-cyan-300 bg-cyan-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700">GEO Tips - Optimized for LLMs</p>
@@ -1627,6 +1727,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 )}
                 {renderChecklistCard('GEO Checklist', geoChecklist)}
               </div>
+              ) : null}
             </aside>
           </form>
 

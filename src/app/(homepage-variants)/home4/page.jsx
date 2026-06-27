@@ -1,26 +1,20 @@
-import { Baloo_2, Montserrat } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import Home4 from '@/screens/Home4'
 
-// Rounded geometric display face (skrooge-style headings) + Montserrat body.
-const display = Baloo_2({
+// FONT: /home4 now uses the brand font (Inter), same as the rest of the site.
+// A single Inter load drives both --font-display and --font-body so the screen's
+// inline var(--font-display)/var(--font-body) styles all render Inter.
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
   variable: '--font-display',
-  display: 'swap',
-})
-
-const body = Montserrat({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-body',
   display: 'swap',
 })
 
 export default function Page() {
   return (
     <div
-      className={`${display.variable} ${body.variable}`}
-      style={{ fontFamily: 'var(--font-body)' }}
+      className={inter.variable}
+      style={{ '--font-body': 'var(--font-display)', fontFamily: 'var(--font-display)' }}
     >
       <Home4 />
     </div>

@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState, useTransition } from 'react'
+import { useDeferredValue, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Copy, Trash2, Search, Download, Plus, ChevronDown, X } from 'lucide-react'
+import { Copy, Trash2, Search, Download, Plus, ChevronDown, X, ExternalLink } from 'lucide-react'
 import { getStatusStyle } from './statusStyle'
 import { Badge, type BadgeVariant } from '@/components/cms/admin/ui'
 
@@ -87,6 +87,10 @@ function exportCsv(rows: CmsListRow[], collectionKey: string): void {
   URL.revokeObjectURL(url)
 }
 
+// FIX-050: rows are paginated client-side so collections with hundreds of docs
+// don't render every <tr> at once (perf) and the page stays navigable.
+const PAGE_SIZE = 25
+
 // FIX-047: filter tabs match the new 3-state enum.
 const TAB_DEFS: Array<{ key: 'all' | CmsListRow['status']; label: string }> = [
   { key: 'all', label: 'All' },
@@ -111,11 +115,16 @@ export function CmsCollectionItemTable({
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [q, setQ] = useState('')
+  // PERF: the input stays bound to `q` for instant feedback, but the expensive
+  // filter+sort over every row reads this deferred value so it doesn't re-run on
+  // every keystroke (React keeps the field responsive and recomputes when idle).
+  const deferredQ = useDeferredValue(q)
   const [tab, setTab] = useState<'all' | CmsListRow['status']>('all')
   const [sortKey, setSortKey] = useState<SortKey>('updatedAt')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [updateOpen, setUpdateOpen] = useState(false)
+  const [page, setPage] = useState(0)
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: items.length }
@@ -124,7 +133,7 @@ export function CmsCollectionItemTable({
   }, [items])
 
   const visible = useMemo(() => {
-    const s = q.trim().toLowerCase()
+    const s = deferredQ.trim().toLowerCase()
     let list = items
     if (tab !== 'all') list = list.filter((i) => i.status === tab)
     if (s) {
@@ -139,7 +148,18 @@ export function CmsCollectionItemTable({
       if (sortKey === 'createdAt') return ((new Date(a.createdAtIso ?? 0).getTime()) - (new Date(b.createdAtIso ?? 0).getTime())) * dir
       return ((new Date(a.updatedAtIso ?? 0).getTime()) - (new Date(b.updatedAtIso ?? 0).getTime())) * dir
     })
-  }, [items, q, tab, sortKey, sortDir])
+  }, [items, deferredQ, tab, sortKey, sortDir])
+
+  // Pagination. `page` is clamped against the current result set so changing a
+  // filter/search/sort that shrinks the list never leaves us on an empty page.
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
+  const safePage = Math.min(page, pageCount - 1)
+  const paged = useMemo(
+    () => visible.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE),
+    [visible, safePage]
+  )
+  const rangeStart = visible.length === 0 ? 0 : safePage * PAGE_SIZE + 1
+  const rangeEnd = Math.min(visible.length, safePage * PAGE_SIZE + PAGE_SIZE)
 
   const allVisibleSelected = visible.length > 0 && visible.every((r) => selected.has(r.id))
   const someVisibleSelected = visible.some((r) => selected.has(r.id))
@@ -171,6 +191,7 @@ export function CmsCollectionItemTable({
   }
 
   function toggleSort(key: SortKey): void {
+    setPage(0)
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
     else {
       setSortKey(key)
@@ -272,7 +293,7 @@ export function CmsCollectionItemTable({
             href={
               collectionKey === 'media_assets'
                 ? `/admin/cms?collection=${collectionKey}#cms-media-upload`
-                : `/admin/cms/new/${collectionKey}`
+                : `/admin/cms?collection=${collectionKey}&intent=create`
             }
             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-primary px-4 py-2 text-[13px] font-semibold text-white shadow-sm hover:bg-admin-brand-hover transition"
           >
@@ -290,14 +311,17 @@ export function CmsCollectionItemTable({
         <input
           type="search"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            setQ(e.target.value)
+            setPage(0)
+          }}
           placeholder={`Search ${label.toLowerCase()}…`}
           className="w-full rounded-lg border border-cms-rule bg-white pl-9 pr-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
           aria-label="Filter items"
         />
         {/* FIX-018: announce filter result count to screen readers. */}
         <span aria-live="polite" className="sr-only">
-          {q.trim() ? `${visible.length} ${visible.length === 1 ? 'result' : 'results'}` : ''}
+          {deferredQ.trim() ? `${visible.length} ${visible.length === 1 ? 'result' : 'results'}` : ''}
         </span>
       </div>
 
@@ -310,7 +334,10 @@ export function CmsCollectionItemTable({
             <button
               key={t.key}
               type="button"
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key)
+                setPage(0)
+              }}
               className={`relative -mb-px inline-flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium transition ${
                 active
                   ? 'text-slate-900 after:absolute after:inset-x-2 after:-bottom-px after:h-[2px] after:rounded-full after:bg-brand-primary'
@@ -392,7 +419,7 @@ export function CmsCollectionItemTable({
                 href={
                   collectionKey === 'media_assets'
                     ? `/admin/cms?collection=${collectionKey}#cms-media-upload`
-                    : `/admin/cms/new/${collectionKey}`
+                    : `/admin/cms?collection=${collectionKey}&intent=create`
                 }
                 className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-brand-primary px-4 py-2 text-[13px] font-semibold text-white shadow-sm hover:bg-admin-brand-hover transition"
               >
@@ -405,7 +432,7 @@ export function CmsCollectionItemTable({
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-cms-rule bg-white">
+        <div className="overflow-x-auto rounded-xl border border-cms-rule bg-white">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-cms-rule bg-cms-soft text-xs">
               <tr>
@@ -429,7 +456,7 @@ export function CmsCollectionItemTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-cms-rule">
-              {visible.map((row) => {
+              {paged.map((row) => {
                 const st = getStatusStyle(row.status)
                 const isChecked = selected.has(row.id)
                 const liveUrl = routePattern && row.slug ? routePattern.replace('[slug]', row.slug) : null
@@ -459,61 +486,68 @@ export function CmsCollectionItemTable({
                         {row.title}
                       </Link>
                       <p className="mt-0.5 truncate font-mono text-[11px] text-slate-500">/{row.slug}</p>
+                      {/* FIX-053: the Status column hides below md and the date columns
+                          below lg. Surface them inline under the title so status and
+                          recency stay visible (and the row stays scannable) on narrow
+                          viewports where those columns are dropped. */}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400 lg:hidden">
+                        <span className="md:hidden">
+                          <Badge variant={statusVariant(row.status)} />
+                        </span>
+                        <span>Updated {formatRelative(row.updatedAtIso)}</span>
+                      </div>
                     </td>
                     <td className="hidden px-4 py-3 md:table-cell">
                       <Badge variant={statusVariant(row.status)} />
                     </td>
                     <td className="hidden whitespace-nowrap px-4 py-3 text-slate-500 lg:table-cell">{formatRelative(row.createdAtIso)}</td>
                     <td className="hidden whitespace-nowrap px-4 py-3 text-slate-500 lg:table-cell">{formatRelative(row.updatedAtIso)}</td>
+                    {/* FIX-050: actions are always-visible buttons. The old
+                        hover-only "···" menu was clipped by the table's
+                        overflow-x scroll container and unreachable on
+                        touch/keyboard. */}
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
                         <Link
                           href={`/admin/cms?collection=${collectionKey}&slug=${encodeURIComponent(row.id)}`}
                           className="rounded-lg border border-cms-rule bg-white px-3 py-1.5 text-[12px] font-medium text-slate-700 hover:bg-gray-50 transition"
                         >
                           Edit
                         </Link>
-                        <div className="relative group/actions">
+                        {liveUrl ? (
+                          <a
+                            href={liveUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="View live"
+                            aria-label={`View ${row.title} live`}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-cms-rule bg-white text-slate-500 hover:bg-gray-50 transition"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => submitDuplicate(row.id)}
+                          disabled={pending}
+                          title="Duplicate"
+                          aria-label={`Duplicate ${row.title}`}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-cms-rule bg-white text-slate-500 hover:bg-gray-50 transition disabled:opacity-50"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                        {canDelete ? (
                           <button
                             type="button"
-                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-cms-rule bg-white text-slate-500 hover:bg-gray-50 transition text-base leading-none"
-                            aria-label="More actions"
+                            onClick={() => submitDelete(row.id, row.title)}
+                            disabled={pending}
+                            title="Delete"
+                            aria-label={`Delete ${row.title}`}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 transition disabled:opacity-50"
                           >
-                            ···
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
-                          <div className="absolute right-0 top-full z-10 mt-1 hidden min-w-[150px] rounded-xl border border-cms-rule bg-white py-1 shadow-lg group-hover/actions:block">
-                            {liveUrl ? (
-                              <a
-                                href={liveUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex items-center px-4 py-2 text-[13px] text-slate-700 hover:bg-gray-50"
-                              >
-                                View live ↗
-                              </a>
-                            ) : null}
-                            <button
-                              type="button"
-                              onClick={() => submitDuplicate(row.id)}
-                              disabled={pending}
-                              className="flex w-full items-center px-4 py-2 text-[13px] text-slate-700 hover:bg-gray-50 disabled:opacity-50"
-                            >
-                              <Copy className="mr-2 h-3.5 w-3.5" />
-                              Duplicate
-                            </button>
-                            {canDelete ? (
-                              <button
-                                type="button"
-                                onClick={() => submitDelete(row.id, row.title)}
-                                disabled={pending}
-                                className="flex w-full items-center px-4 py-2 text-[13px] text-red-600 hover:bg-red-50 disabled:opacity-50"
-                              >
-                                <Trash2 className="mr-2 h-3.5 w-3.5" />
-                                Delete
-                              </button>
-                            ) : null}
-                          </div>
-                        </div>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -523,6 +557,40 @@ export function CmsCollectionItemTable({
           </table>
         </div>
       )}
+
+      {/* Pagination footer */}
+      {visible.length > 0 ? (
+        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+          <p className="text-[13px] text-slate-500">
+            Showing <span className="font-medium text-slate-700">{rangeStart}</span>–
+            <span className="font-medium text-slate-700">{rangeEnd}</span> of{' '}
+            <span className="font-medium text-slate-700">{visible.length}</span>
+          </p>
+          {pageCount > 1 ? (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={safePage === 0}
+                className="rounded-lg border border-cms-rule bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-cms-soft disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <span className="px-3 text-[13px] tabular-nums text-slate-500">
+                Page {safePage + 1} of {pageCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                disabled={safePage >= pageCount - 1}
+                className="rounded-lg border border-cms-rule bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 hover:bg-cms-soft disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

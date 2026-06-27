@@ -30,8 +30,15 @@ export function AutosaveIndicator({ state, savedAt }: AutosaveIndicatorProps) {
       return
     }
     if (state === 'idle' && savedAt) {
-      const diff = Math.round((Date.now() - savedAt.getTime()) / 60_000)
-      setLabel(diff < 1 ? 'Autosaved just now' : `Autosaved ${diff}m ago`)
+      // Refresh the relative time on an interval so it doesn't read "just now"
+      // forever while the editor sits idle.
+      const render = () => {
+        const diff = Math.round((Date.now() - savedAt.getTime()) / 60_000)
+        setLabel(diff < 1 ? 'Autosaved just now' : `Autosaved ${diff}m ago`)
+      }
+      render()
+      const id = setInterval(render, 30_000)
+      return () => clearInterval(id)
     }
   }, [state, savedAt])
 

@@ -52,6 +52,22 @@ type Props = {
   aiContext?: AiContext
 }
 
+/**
+ * FIX-052: allow only safe URL schemes for editor-inserted links/images.
+ * Rejects javascript:/data:/vbscript:/file: (XSS vectors). Accepts http(s),
+ * mailto:, tel:, relative/anchor links, and bare domains (assumed https).
+ */
+function sanitizeEditorUrl(raw: string): string | null {
+  const url = raw.trim()
+  if (!url) return null
+  if (/^(\/|#|\.\/|\.\.\/)/.test(url)) return url
+  if (/^\s*(javascript|data|vbscript|file):/i.test(url)) return null
+  if (/^(https?:|mailto:|tel:)/i.test(url)) return url
+  // No recognized scheme but looks like a domain — assume https.
+  if (/^[\w-]+(\.[\w-]+)+([/?#].*)?$/.test(url)) return `https://${url}`
+  return null
+}
+
 function GroupLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="px-1 pb-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-slate-400">
@@ -157,7 +173,16 @@ export default function RichTextField({ name, initialValue, placeholder, aiConte
   const promptUrl = (current?: string, message = 'Enter URL'): string | null => {
     if (typeof window === 'undefined') return null
     const value = window.prompt(message, current ?? 'https://')
-    return value ? value.trim() : null
+    if (!value) return null
+    // FIX-052: only allow safe URL schemes for inserted links/images. Blocks
+    // javascript:/data:/vbscript:/file: (XSS). The server sanitizer is a backstop,
+    // but the editor must not author dangerous hrefs in the first place.
+    const safe = sanitizeEditorUrl(value)
+    if (!safe) {
+      window.alert('That URL isn’t allowed. Use an http(s), mailto:, tel: or relative link.')
+      return null
+    }
+    return safe
   }
 
   const setLink = () => {
@@ -169,20 +194,27 @@ export default function RichTextField({ name, initialValue, placeholder, aiConte
   }
   const insertImage = () => {
     if (!editor) return
-    const url = promptUrl('https://', 'Image URL')
+    const url = promptUrl(undefined, 'Image URL')
     if (!url) return
     editor.chain().focus().setImage({ src: url, alt: '' }).run()
   }
   const insertVideo = () => {
     if (!editor) return
-    const url = promptUrl('https://', 'Video URL (YouTube, Vimeo, …)')
+    const url = promptUrl(undefined, 'Video URL (YouTube, Vimeo, …)')
     if (!url) return
     editor
       .chain()
       .focus()
-      .insertContent(
-        `<p><a href="${url}" target="_blank" rel="noreferrer">${url}</a></p>`
-      )
+      .insertContent({
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: url,
+            marks: [{ type: 'link', attrs: { href: url, target: '_blank', rel: 'noreferrer' } }],
+          },
+        ],
+      })
       .run()
   }
   const insertTable = () => {
@@ -192,7 +224,10 @@ export default function RichTextField({ name, initialValue, placeholder, aiConte
   const applySource = (next: string) => {
     if (!editor) return
     editor.commands.setContent(next, { emitUpdate: true })
-    setHtml(next)
+    // FIX-052: persist what the editor actually parsed, not the raw source string.
+    // Storing the raw value diverged the hidden input from the rendered content, so
+    // toggling back to the visual editor silently discarded the user's raw edits.
+    setHtml(editor.getHTML())
   }
   const insertAiHtml = (incoming: string) => {
     if (!editor) return

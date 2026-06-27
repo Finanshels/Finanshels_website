@@ -1,4 +1,5 @@
 import 'server-only'
+import { cache } from 'react'
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -118,7 +119,12 @@ export function isLegacyEnvAuthEnabled(): boolean {
   return Boolean(getAdminPassword() || getEditorPassword())
 }
 
-async function readSessionFromCookies(): Promise<CmsSession | null> {
+// PERF: every admin page calls requireAdminAuth(), and a single render fans out
+// to sessionRole()/sessionDisplayName() plus server actions that re-check auth —
+// each previously re-reading the user doc from Firestore (getUserById). React
+// cache() memoizes this per server request, collapsing those repeats into one
+// Firestore read while staying request-scoped (cookies() is request-scoped too).
+const readSessionFromCookies = cache(async function readSessionFromCookiesUncached(): Promise<CmsSession | null> {
   const store = await cookies()
 
   const v2 = store.get(SESSION_COOKIE_NAME)?.value
@@ -152,7 +158,7 @@ async function readSessionFromCookies(): Promise<CmsSession | null> {
   }
 
   return null
-}
+})
 
 export async function getCurrentSession(): Promise<CmsSession | null> {
   return readSessionFromCookies()

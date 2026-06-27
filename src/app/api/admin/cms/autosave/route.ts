@@ -23,7 +23,6 @@ export async function POST(request: Request) {
 
   const collectionRaw = String(body.collection ?? '')
   const slug = String(body.slug ?? '').trim()
-  const currentStatus = String(body.currentStatus ?? 'draft')
 
   const definition = getCmsCollectionDefinition(collectionRaw)
   if (!definition || !slug) {
@@ -36,6 +35,9 @@ export async function POST(request: Request) {
 
   try {
     for (const field of fields) {
+      // FIX-051: autosave never writes workflow status — that's an explicit
+      // action. The client also strips it; this is defense in depth.
+      if (field.name === 'status') continue
       const raw = body[field.name]
       if (raw === undefined) continue
       if (field.type === 'multi_reference') {
@@ -54,10 +56,16 @@ export async function POST(request: Request) {
     throw err
   }
 
-  parsed.status = currentStatus
+  // FIX-051: do not set status here. upsert merges, so leaving it out preserves
+  // the stored workflow status instead of reverting it to a stale client value.
 
   try {
-    await upsertCmsDocument(definition.key as CmsCollectionKey, slug, parsed, role)
+    // PERF: autosave fires every few seconds. Don't snapshot a revision on each
+    // tick — that doubled writes and bloated `_revisions` (which slows every
+    // editor open). Explicit saves/publishes still create revision checkpoints.
+    await upsertCmsDocument(definition.key as CmsCollectionKey, slug, parsed, role, {
+      snapshotRevision: false,
+    })
   } catch (err) {
     console.error('[autosave] upsert failed', err)
     return NextResponse.json({ error: 'Save failed' }, { status: 500 })

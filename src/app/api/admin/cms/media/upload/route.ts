@@ -34,5 +34,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   revalidatePath('/admin/cms')
-  return NextResponse.json({ ok: true })
+  // Return the full result (incl. `url`) so inline field uploaders can fill the
+  // field. The media library caller only reads `ok`, so this is backward-compatible.
+  return NextResponse.json(result)
 }

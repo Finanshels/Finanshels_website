@@ -16,7 +16,8 @@ import {
   type CmsBlockType,
 } from '@/lib/cms/collectionDefinitions'
 
-type BlockValue = Record<string, unknown> & { type: string; id?: string }
+// id is always assigned by coerceInitial/defaultBlockValue, so it is required.
+type BlockValue = Record<string, unknown> & { type: string; id: string }
 
 type Props = {
   name: string
@@ -93,15 +94,71 @@ function parseTags(raw: string): string[] {
     .filter(Boolean)
 }
 
+/**
+ * Parse a comma-separated multi-reference input into a deduped id list.
+ * When options are available, only ids that exist in them are kept (drops
+ * typos/unknown ids). With no options loaded we keep the deduped input as-is.
+ */
+function parseMultiReference(raw: string, options: Array<{ id: string; label: string }>): string[] {
+  const deduped = [...new Set(parseTags(raw))]
+  if (options.length === 0) return deduped
+  const valid = new Set(options.map((o) => o.id))
+  return deduped.filter((id) => valid.has(id))
+}
+
+const SUMMARY_MAX_LEN = 60
+
+/** First non-empty, trimmed candidate string for the collapsed block header. */
+function blockSummary(block: BlockValue): string {
+  const candidates: string[] = []
+  if (typeof block.heading === 'string') candidates.push(block.heading.trim())
+  if (typeof block.eyebrow === 'string') candidates.push(block.eyebrow.trim())
+  if (typeof block.quote === 'string') candidates.push(block.quote.trim())
+  if (typeof block.html === 'string') candidates.push(block.html.replace(/<[^>]+>/g, '').trim())
+  const first = candidates.find((c) => c.length > 0) ?? ''
+  return first.slice(0, SUMMARY_MAX_LEN)
+}
+
 export default function PageBlocksEditor({ name, initialValue, referenceOptions = {} }: Props) {
   const [blocks, setBlocks] = useState<BlockValue[]>(() => coerceInitial(initialValue))
   const [openId, setOpenId] = useState<string | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
+  // Per-field JSON editing state keyed by `${blockId}:${fieldName}`.
+  // Holds the in-progress raw text + validity so invalid JSON is shown but
+  // never propagated into block state (last valid value is kept on save).
+  const [jsonDrafts, setJsonDrafts] = useState<Record<string, { raw: string; invalid: boolean }>>({})
 
   const serialised = useMemo(() => JSON.stringify(blocks), [blocks])
 
   const updateBlock = useCallback((id: string, patch: Record<string, unknown>) => {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)))
+  }, [])
+
+  const handleJsonChange = useCallback((blockId: string, fieldName: string, raw: string) => {
+    const key = `${blockId}:${fieldName}`
+    if (!raw.trim()) {
+      // Empty clears both the value and any prior error.
+      setJsonDrafts((prev) => {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
+      setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, [fieldName]: '' } : b)))
+      return
+    }
+    try {
+      const parsed = JSON.parse(raw)
+      // Valid: persist the parsed value and drop the draft/error state.
+      setJsonDrafts((prev) => {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
+      setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, [fieldName]: parsed } : b)))
+    } catch {
+      // Invalid: keep the raw text visible + flag error, but do NOT touch block state.
+      setJsonDrafts((prev) => ({ ...prev, [key]: { raw, invalid: true } }))
+    }
   }, [])
 
   const moveBlock = useCallback((id: string, direction: -1 | 1) => {
@@ -154,15 +211,10 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
           {blocks.map((block, index) => {
             const def = CMS_BLOCK_TYPE_MAP[block.type] ?? null
             const open = openId === block.id
-            const summary =
-              (typeof block.heading === 'string' && block.heading) ||
-              (typeof block.eyebrow === 'string' && block.eyebrow) ||
-              (typeof block.quote === 'string' && (block.quote as string).slice(0, 60)) ||
-              (typeof block.html === 'string' && (block.html as string).replace(/<[^>]+>/g, '').slice(0, 60)) ||
-              ''
+            const summary = blockSummary(block)
             return (
               <li
-                key={block.id ?? `${block.type}-${index}`}
+                key={block.id}
                 className="overflow-hidden rounded-2xl border border-cms-rule bg-white"
               >
                 <header className="flex items-center gap-2 border-b border-cms-rule bg-cms-soft px-3 py-2">
@@ -182,7 +234,7 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                     <button
                       type="button"
                       title="Move up"
-                      onClick={() => moveBlock(block.id ?? '', -1)}
+                      onClick={() => moveBlock(block.id, -1)}
                       className="rounded-md p-1.5 text-slate-500 hover:bg-white hover:text-slate-800"
                     >
                       <ChevronUp className="h-3.5 w-3.5" />
@@ -190,7 +242,7 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                     <button
                       type="button"
                       title="Move down"
-                      onClick={() => moveBlock(block.id ?? '', 1)}
+                      onClick={() => moveBlock(block.id, 1)}
                       className="rounded-md p-1.5 text-slate-500 hover:bg-white hover:text-slate-800"
                     >
                       <ChevronDown className="h-3.5 w-3.5" />
@@ -198,7 +250,7 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                     <button
                       type="button"
                       title="Duplicate"
-                      onClick={() => duplicateBlock(block.id ?? '')}
+                      onClick={() => duplicateBlock(block.id)}
                       className="rounded-md p-1.5 text-slate-500 hover:bg-white hover:text-slate-800"
                     >
                       <Copy className="h-3.5 w-3.5" />
@@ -206,14 +258,14 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                     <button
                       type="button"
                       title="Delete"
-                      onClick={() => removeBlock(block.id ?? '')}
+                      onClick={() => removeBlock(block.id)}
                       className="rounded-md p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-700"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setOpenId(open ? null : block.id ?? null)}
+                      onClick={() => setOpenId(open ? null : block.id)}
                       className="ml-1 inline-flex items-center gap-1 rounded-md border border-cms-rule bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:bg-cms-hover"
                     >
                       {open ? 'Close' : 'Edit'}
@@ -246,31 +298,42 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                               <textarea
                                 rows={field.name === 'html' ? 8 : 4}
                                 value={typeof value === 'string' ? value : ''}
-                                onChange={(e) => updateBlock(block.id ?? '', { [field.name]: e.target.value })}
+                                onChange={(e) => updateBlock(block.id, { [field.name]: e.target.value })}
                                 placeholder={field.placeholder}
                                 className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               />
                             ) : field.type === 'json' ? (
-                              <textarea
-                                rows={6}
-                                value={jsonStringify(value)}
-                                onChange={(e) => {
-                                  const raw = e.target.value
-                                  try {
-                                    const parsed = raw.trim() ? JSON.parse(raw) : ''
-                                    updateBlock(block.id ?? '', { [field.name]: parsed })
-                                  } catch {
-                                    updateBlock(block.id ?? '', { [field.name]: raw })
-                                  }
-                                }}
-                                placeholder={field.placeholder}
-                                spellCheck={false}
-                                className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
-                              />
+                              (() => {
+                                // While invalid, show the raw draft; otherwise show the stored value.
+                                const draft = jsonDrafts[`${block.id}:${field.name}`]
+                                const jsonInvalid = draft?.invalid === true
+                                return (
+                                  <>
+                                    <textarea
+                                      rows={6}
+                                      value={draft ? draft.raw : jsonStringify(value)}
+                                      onChange={(e) => handleJsonChange(block.id, field.name, e.target.value)}
+                                      placeholder={field.placeholder}
+                                      spellCheck={false}
+                                      aria-invalid={jsonInvalid}
+                                      className={`mt-2 w-full rounded-lg border bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none focus:ring-2 ${
+                                        jsonInvalid
+                                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                                          : 'border-cms-rule focus:border-brand-primary focus:ring-brand-primary/20'
+                                      }`}
+                                    />
+                                    {jsonInvalid ? (
+                                      <p className="mt-1 text-xs text-red-600">
+                                        Invalid JSON — fix the syntax. The last valid value is kept until this parses.
+                                      </p>
+                                    ) : null}
+                                  </>
+                                )
+                              })()
                             ) : field.type === 'select' && field.options?.length ? (
                               <select
                                 value={typeof value === 'string' ? value : ''}
-                                onChange={(e) => updateBlock(block.id ?? '', { [field.name]: e.target.value })}
+                                onChange={(e) => updateBlock(block.id, { [field.name]: e.target.value })}
                                 className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               >
                                 <option value="">— select —</option>
@@ -285,7 +348,7 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                                 <input
                                   type="checkbox"
                                   checked={value === true}
-                                  onChange={(e) => updateBlock(block.id ?? '', { [field.name]: e.target.checked })}
+                                  onChange={(e) => updateBlock(block.id, { [field.name]: e.target.checked })}
                                   className="h-4 w-4 cursor-pointer rounded border-slate-300 bg-white accent-[var(--brand-primary,#f16610)]"
                                 />
                                 Enabled
@@ -295,33 +358,51 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                                 type="text"
                                 value={tagsToString(value)}
                                 onChange={(e) =>
-                                  updateBlock(block.id ?? '', { [field.name]: parseTags(e.target.value) })
+                                  updateBlock(block.id, { [field.name]: parseTags(e.target.value) })
                                 }
                                 placeholder={field.placeholder}
                                 className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               />
                             ) : field.type === 'reference' ? (
-                              <select
-                                value={typeof value === 'string' ? value : ''}
-                                onChange={(e) => updateBlock(block.id ?? '', { [field.name]: e.target.value })}
-                                className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
-                              >
-                                <option value="">— select —</option>
-                                {(field.referenceCollection
+                              (() => {
+                                const current = typeof value === 'string' ? value : ''
+                                const baseOptions = field.referenceCollection
                                   ? referenceOptions[field.referenceCollection] ?? []
                                   : []
-                                ).map((opt) => (
-                                  <option key={opt.id} value={opt.id}>
-                                    {opt.label}
-                                  </option>
-                                ))}
-                              </select>
+                                // Server caps options at 200; if the saved id isn't in the
+                                // list, inject it so the value isn't blanked out and lost on save.
+                                const mergedOptions =
+                                  current && !baseOptions.some((o) => o.id === current)
+                                    ? [{ id: current, label: `${current} (not in list)` }, ...baseOptions]
+                                    : baseOptions
+                                return (
+                                  <select
+                                    value={current}
+                                    onChange={(e) => updateBlock(block.id, { [field.name]: e.target.value })}
+                                    className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
+                                  >
+                                    <option value="">— select —</option>
+                                    {mergedOptions.map((opt) => (
+                                      <option key={opt.id} value={opt.id}>
+                                        {opt.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )
+                              })()
                             ) : field.type === 'multi_reference' ? (
                               <input
                                 type="text"
                                 value={tagsToString(value)}
                                 onChange={(e) =>
-                                  updateBlock(block.id ?? '', { [field.name]: parseTags(e.target.value) })
+                                  updateBlock(block.id, {
+                                    [field.name]: parseMultiReference(
+                                      e.target.value,
+                                      field.referenceCollection
+                                        ? referenceOptions[field.referenceCollection] ?? []
+                                        : [],
+                                    ),
+                                  })
                                 }
                                 placeholder="id-one, id-two"
                                 list={`block-${block.id}-${field.name}-suggest`}
@@ -331,7 +412,7 @@ export default function PageBlocksEditor({ name, initialValue, referenceOptions 
                               <input
                                 type={fieldInputType(field)}
                                 value={typeof value === 'string' || typeof value === 'number' ? String(value) : ''}
-                                onChange={(e) => updateBlock(block.id ?? '', { [field.name]: e.target.value })}
+                                onChange={(e) => updateBlock(block.id, { [field.name]: e.target.value })}
                                 placeholder={field.placeholder}
                                 className="mt-2 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                               />

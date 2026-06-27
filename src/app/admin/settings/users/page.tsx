@@ -45,7 +45,9 @@ type SearchParams = Promise<{
 
 const SETTINGS_PATH = '/admin/settings/users'
 
-function safeRedirect(qs: string) {
+// Returns `never`: redirect() throws, so callers can rely on this halting
+// execution. This lets TS prove that code after a guard is unreachable.
+function safeRedirect(qs: string): never {
   redirect(`${SETTINGS_PATH}?${qs}`)
 }
 
@@ -103,12 +105,12 @@ async function inviteUserAction(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim()
   const role = String(formData.get('role') ?? 'editor')
 
-  if (!isValidRole(role)) safeRedirect(`error=invalid-role`)
+  if (!isValidRole(role)) return safeRedirect(`error=invalid-role`)
   if (role === 'owner' && actorRole !== 'owner') {
-    safeRedirect(`error=only-owner-can-create-owner`)
+    return safeRedirect(`error=only-owner-can-create-owner`)
   }
 
-  let issued: { rawToken: string; expiresAt: Date; userEmail: string; userName: string } | null = null
+  let issued: { rawToken: string; expiresAt: Date; userEmail: string; userName: string }
   try {
     const result = await createInvitedUser({
       email,
@@ -124,35 +126,34 @@ async function inviteUserAction(formData: FormData) {
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to create user'
-    safeRedirect(`error=create-failed&msg=${encodeURIComponent(msg)}`)
+    // `never` return halts here — TS knows `issued` is assigned below.
+    return safeRedirect(`error=create-failed&msg=${encodeURIComponent(msg)}`)
   }
 
-  if (!issued) safeRedirect(`error=create-failed&msg=${encodeURIComponent('Unknown error')}`)
-
   const send = await sendInviteEmailFor({
-    recipientEmail: issued!.userEmail,
-    recipientName: issued!.userName,
+    recipientEmail: issued.userEmail,
+    recipientName: issued.userName,
     inviterName,
     role: role as CmsUserRole,
-    rawToken: issued!.rawToken,
-    expiresAt: issued!.expiresAt,
+    rawToken: issued.rawToken,
+    expiresAt: issued.expiresAt,
   })
 
   revalidatePath(SETTINGS_PATH)
 
   if (send.delivered) {
-    safeRedirect(`ok=invited&msg=${encodeURIComponent(email)}`)
-  } else {
-    // Email couldn't be sent — surface the URL so the admin can copy/paste it.
-    console.warn('[cms-invite] Email send failed:', send.reason, '→ accept URL:', send.url)
-    const qs = new URLSearchParams({
-      ok: 'invited_no_email',
-      msg: send.reason ?? 'Email send failed',
-      inviteUrl: send.url,
-      inviteEmail: issued!.userEmail,
-    })
-    redirect(`${SETTINGS_PATH}?${qs.toString()}`)
+    return safeRedirect(`ok=invited&msg=${encodeURIComponent(email)}`)
   }
+
+  // Email couldn't be sent — surface the URL so the admin can copy/paste it.
+  console.warn('[cms-invite] Email send failed:', send.reason, '→ accept URL:', send.url)
+  const qs = new URLSearchParams({
+    ok: 'invited_no_email',
+    msg: send.reason ?? 'Email send failed',
+    inviteUrl: send.url,
+    inviteEmail: issued.userEmail,
+  })
+  redirect(`${SETTINGS_PATH}?${qs.toString()}`)
 }
 
 async function resendInviteAction(formData: FormData) {
@@ -162,13 +163,13 @@ async function resendInviteAction(formData: FormData) {
   const inviterName = sessionDisplayName(session)
 
   const id = String(formData.get('userId') ?? '')
-  if (!id) safeRedirect(`error=invalid-input`)
+  if (!id) return safeRedirect(`error=invalid-input`)
 
   const target = await getUserById(id)
-  if (!target) safeRedirect(`error=not-found`)
-  if (target!.status === 'active') safeRedirect(`error=already-accepted`)
-  if (target!.role === 'owner' && actorRole !== 'owner') {
-    safeRedirect(`error=only-owner-can-modify-owner`)
+  if (!target) return safeRedirect(`error=not-found`)
+  if (target.status === 'active') return safeRedirect(`error=already-accepted`)
+  if (target.role === 'owner' && actorRole !== 'owner') {
+    return safeRedirect(`error=only-owner-can-modify-owner`)
   }
 
   let issued: { rawToken: string; expiresAt: Date }
@@ -176,32 +177,33 @@ async function resendInviteAction(formData: FormData) {
     issued = await regenerateInviteToken(id)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to regenerate invite'
-    safeRedirect(`error=create-failed&msg=${encodeURIComponent(msg)}`)
+    // `never` return halts here — TS knows `issued` is assigned below.
+    return safeRedirect(`error=create-failed&msg=${encodeURIComponent(msg)}`)
   }
 
   const send = await sendInviteEmailFor({
-    recipientEmail: target!.email,
-    recipientName: target!.name,
+    recipientEmail: target.email,
+    recipientName: target.name,
     inviterName,
-    role: target!.role,
-    rawToken: issued!.rawToken,
-    expiresAt: issued!.expiresAt,
+    role: target.role,
+    rawToken: issued.rawToken,
+    expiresAt: issued.expiresAt,
   })
 
   revalidatePath(SETTINGS_PATH)
 
   if (send.delivered) {
-    safeRedirect(`ok=invite-resent&msg=${encodeURIComponent(target!.email)}`)
-  } else {
-    console.warn('[cms-invite] Resend failed:', send.reason, '→ accept URL:', send.url)
-    const qs = new URLSearchParams({
-      ok: 'invited_no_email',
-      msg: send.reason ?? 'Email send failed',
-      inviteUrl: send.url,
-      inviteEmail: target!.email,
-    })
-    redirect(`${SETTINGS_PATH}?${qs.toString()}`)
+    return safeRedirect(`ok=invite-resent&msg=${encodeURIComponent(target.email)}`)
   }
+
+  console.warn('[cms-invite] Resend failed:', send.reason, '→ accept URL:', send.url)
+  const qs = new URLSearchParams({
+    ok: 'invited_no_email',
+    msg: send.reason ?? 'Email send failed',
+    inviteUrl: send.url,
+    inviteEmail: target.email,
+  })
+  redirect(`${SETTINGS_PATH}?${qs.toString()}`)
 }
 
 async function updateRoleAction(formData: FormData) {
@@ -212,23 +214,23 @@ async function updateRoleAction(formData: FormData) {
 
   const id = String(formData.get('userId') ?? '')
   const role = String(formData.get('role') ?? '')
-  if (!id || !isValidRole(role)) safeRedirect(`error=invalid-input`)
+  if (!id || !isValidRole(role)) return safeRedirect(`error=invalid-input`)
 
   const target = await getUserById(id)
-  if (!target) safeRedirect(`error=not-found`)
+  if (!target) return safeRedirect(`error=not-found`)
 
-  if (target!.role === 'owner' && actorRole !== 'owner') {
-    safeRedirect(`error=only-owner-can-modify-owner`)
+  if (target.role === 'owner' && actorRole !== 'owner') {
+    return safeRedirect(`error=only-owner-can-modify-owner`)
   }
   if (role === 'owner' && actorRole !== 'owner') {
-    safeRedirect(`error=only-owner-can-promote-to-owner`)
+    return safeRedirect(`error=only-owner-can-promote-to-owner`)
   }
-  if (target!.role === 'owner' && role !== 'owner') {
+  if (target.role === 'owner' && role !== 'owner') {
     const owners = await countOwners()
-    if (owners <= 1) safeRedirect(`error=last-owner-protected`)
+    if (owners <= 1) return safeRedirect(`error=last-owner-protected`)
   }
-  if (target!.id === actorId && role !== actorRole && ROLE_RANK[role as CmsUserRole] < ROLE_RANK[actorRole]) {
-    safeRedirect(`error=cannot-self-demote`)
+  if (target.id === actorId && role !== actorRole && ROLE_RANK[role as CmsUserRole] < ROLE_RANK[actorRole]) {
+    return safeRedirect(`error=cannot-self-demote`)
   }
 
   await updateUserRoleAndStatus(id, { role: role as CmsUserRole })
@@ -244,18 +246,18 @@ async function updateStatusAction(formData: FormData) {
 
   const id = String(formData.get('userId') ?? '')
   const status = String(formData.get('status') ?? '')
-  if (!id || (status !== 'active' && status !== 'disabled')) safeRedirect(`error=invalid-input`)
+  if (!id || (status !== 'active' && status !== 'disabled')) return safeRedirect(`error=invalid-input`)
 
   const target = await getUserById(id)
-  if (!target) safeRedirect(`error=not-found`)
+  if (!target) return safeRedirect(`error=not-found`)
 
-  if (target!.id === actorId) safeRedirect(`error=cannot-disable-self`)
-  if (target!.role === 'owner' && actorRole !== 'owner') {
-    safeRedirect(`error=only-owner-can-modify-owner`)
+  if (target.id === actorId) return safeRedirect(`error=cannot-disable-self`)
+  if (target.role === 'owner' && actorRole !== 'owner') {
+    return safeRedirect(`error=only-owner-can-modify-owner`)
   }
-  if (target!.role === 'owner' && status === 'disabled') {
+  if (target.role === 'owner' && status === 'disabled') {
     const owners = await countOwners()
-    if (owners <= 1) safeRedirect(`error=last-owner-protected`)
+    if (owners <= 1) return safeRedirect(`error=last-owner-protected`)
   }
 
   await updateUserRoleAndStatus(id, { status: status as CmsUserStatus })
@@ -270,24 +272,24 @@ async function resetPasswordAction(formData: FormData) {
 
   const id = String(formData.get('userId') ?? '')
   const password = String(formData.get('newPassword') ?? '')
-  if (!id) safeRedirect(`error=invalid-input`)
-  if (password.length < 8) safeRedirect(`error=weak-password`)
+  if (!id) return safeRedirect(`error=invalid-input`)
+  if (password.length < 8) return safeRedirect(`error=weak-password`)
 
   const target = await getUserById(id)
-  if (!target) safeRedirect(`error=not-found`)
-  if (target!.role === 'owner' && actorRole !== 'owner') {
-    safeRedirect(`error=only-owner-can-modify-owner`)
+  if (!target) return safeRedirect(`error=not-found`)
+  if (target.role === 'owner' && actorRole !== 'owner') {
+    return safeRedirect(`error=only-owner-can-modify-owner`)
   }
 
   try {
     await resetUserPassword(id, password)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Failed to reset password'
-    safeRedirect(`error=reset-failed&msg=${encodeURIComponent(msg)}`)
+    return safeRedirect(`error=reset-failed&msg=${encodeURIComponent(msg)}`)
   }
 
   revalidatePath(SETTINGS_PATH)
-  safeRedirect(`ok=password-reset`)
+  return safeRedirect(`ok=password-reset`)
 }
 
 async function deleteUserAction(formData: FormData) {
@@ -297,23 +299,23 @@ async function deleteUserAction(formData: FormData) {
   const actorId = sessionUserId(session)
 
   const id = String(formData.get('userId') ?? '')
-  if (!id) safeRedirect(`error=invalid-input`)
+  if (!id) return safeRedirect(`error=invalid-input`)
 
   const target = await getUserById(id)
-  if (!target) safeRedirect(`error=not-found`)
+  if (!target) return safeRedirect(`error=not-found`)
 
-  if (target!.id === actorId) safeRedirect(`error=cannot-delete-self`)
-  if (target!.role === 'owner' && actorRole !== 'owner') {
-    safeRedirect(`error=only-owner-can-modify-owner`)
+  if (target.id === actorId) return safeRedirect(`error=cannot-delete-self`)
+  if (target.role === 'owner' && actorRole !== 'owner') {
+    return safeRedirect(`error=only-owner-can-modify-owner`)
   }
-  if (target!.role === 'owner') {
+  if (target.role === 'owner') {
     const owners = await countOwners()
-    if (owners <= 1) safeRedirect(`error=last-owner-protected`)
+    if (owners <= 1) return safeRedirect(`error=last-owner-protected`)
   }
 
   await deleteUser(id)
   revalidatePath(SETTINGS_PATH)
-  safeRedirect(`ok=deleted`)
+  return safeRedirect(`ok=deleted`)
 }
 
 function fmtDate(d?: Date): string {

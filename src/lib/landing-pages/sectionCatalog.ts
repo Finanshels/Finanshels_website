@@ -25,9 +25,11 @@ export type SectionFieldType =
   | 'url'
   | 'number'
   | 'select'
-  | 'json'
   | 'image'
   | 'color'
+  | 'icon' // Lucide icon picker — emits kebab-case names compatible with getLucideIcon()
+  | 'repeater' // array of objects (itemFields) or primitives (itemPrimitive) edited as cards
+  | 'json' // RETAINED as a hidden legacy escape hatch only; never assigned to new catalog fields
 
 export type SectionFieldDef = {
   name: string
@@ -38,6 +40,19 @@ export type SectionFieldDef = {
   placeholder?: string
   description?: string
   defaultValue?: string | number | boolean
+  /** repeater: human label for one item, e.g. "Testimonial". */
+  itemLabel?: string
+  /** repeater of objects: the sub-schema for each item. */
+  itemFields?: SectionFieldDef[]
+  /** repeater of primitives: edit a `string[]` or `boolean[]` instead of objects. */
+  itemPrimitive?: 'string' | 'boolean'
+  /** repeater bounds (advisory; UI hints, not hard validation). */
+  min?: number
+  max?: number
+  /** text/textarea: recommended word/character budget shown as a live counter hint. */
+  recommendedRange?: [number, number]
+  /** text/textarea: short coaching line, e.g. "6–9 words converts best". */
+  guidance?: string
 }
 
 export type SectionCatalogEntry = {
@@ -108,11 +123,11 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
       urgencyDeadline: '',
     },
     fields: [
-      { name: 'eyebrow', label: 'Eyebrow text', type: 'text' },
-      { name: 'heading', label: 'Headline', type: 'text', required: true },
-      { name: 'subheading', label: 'Sub-headline', type: 'textarea' },
-      { name: 'bullets', label: 'Bullet list (JSON array of strings)', type: 'json' },
-      { name: 'imageUrl', label: 'Image URL (split / centered variants)', type: 'image' },
+      { name: 'eyebrow', label: 'Eyebrow text', type: 'text', guidance: 'Small label above the headline.' },
+      { name: 'heading', label: 'Headline', type: 'text', required: true, recommendedRange: [6, 12], guidance: 'Lead with the outcome, not the service.' },
+      { name: 'subheading', label: 'Sub-headline', type: 'textarea', recommendedRange: [10, 24] },
+      { name: 'bullets', label: 'Bullets', type: 'repeater', itemPrimitive: 'string', itemLabel: 'Bullet', max: 5, placeholder: 'e.g. Free consultation in 24h' },
+      { name: 'imageUrl', label: 'Image (split / centered variants)', type: 'image' },
       { name: 'videoUrl', label: 'Video URL (video variant — YouTube/Vimeo/MP4)', type: 'url' },
       { name: 'formHeading', label: 'Form heading', type: 'text' },
       { name: 'formSubheading', label: 'Form sub-heading', type: 'text' },
@@ -135,7 +150,16 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     fields: [
       { name: 'heading', label: 'Heading', type: 'text' },
       { name: 'ratingLabel', label: 'Rating chip text', type: 'text' },
-      { name: 'logos', label: 'Logos (JSON array of {src,alt})', type: 'json' },
+      {
+        name: 'logos',
+        label: 'Logos',
+        type: 'repeater',
+        itemLabel: 'Logo',
+        itemFields: [
+          { name: 'src', label: 'Logo image', type: 'image', required: true },
+          { name: 'alt', label: 'Alt text', type: 'text', required: true },
+        ],
+      },
     ],
   },
   {
@@ -150,7 +174,17 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     },
     fields: [
       { name: 'heading', label: 'Heading', type: 'text' },
-      { name: 'items', label: 'Items (JSON array of {value,label})', type: 'json' },
+      {
+        name: 'items',
+        label: 'Stats',
+        type: 'repeater',
+        itemLabel: 'Stat',
+        max: 6,
+        itemFields: [
+          { name: 'value', label: 'Number', type: 'text', required: true, placeholder: '7,000+' },
+          { name: 'label', label: 'Label', type: 'text', required: true, placeholder: 'UAE businesses served' },
+        ],
+      },
     ],
   },
   {
@@ -170,7 +204,21 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     fields: [
       { name: 'heading', label: 'Heading', type: 'text' },
       { name: 'subheading', label: 'Sub-heading', type: 'text' },
-      { name: 'items', label: 'Quotes (JSON array of {quote,author,role,company,imageUrl?})', type: 'json' },
+      {
+        name: 'items',
+        label: 'Testimonials',
+        type: 'repeater',
+        itemLabel: 'Testimonial',
+        min: 1,
+        max: 12,
+        itemFields: [
+          { name: 'quote', label: 'Quote', type: 'textarea', required: true },
+          { name: 'author', label: 'Author', type: 'text', required: true },
+          { name: 'role', label: 'Role', type: 'text' },
+          { name: 'company', label: 'Company', type: 'text' },
+          { name: 'imageUrl', label: 'Avatar', type: 'image' },
+        ],
+      },
     ],
   },
   {
@@ -210,7 +258,16 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     },
     fields: [
       { name: 'heading', label: 'Heading', type: 'text' },
-      { name: 'logos', label: 'Logos (JSON array of {src,alt})', type: 'json' },
+      {
+        name: 'logos',
+        label: 'Logos',
+        type: 'repeater',
+        itemLabel: 'Logo',
+        itemFields: [
+          { name: 'src', label: 'Logo image', type: 'image', required: true },
+          { name: 'alt', label: 'Alt text', type: 'text', required: true },
+        ],
+      },
     ],
   },
   {
@@ -228,8 +285,19 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     fields: [
       { name: 'heading', label: 'Heading', type: 'text' },
       { name: 'subheading', label: 'Sub-heading', type: 'textarea' },
-      { name: 'columns', label: 'Columns (2/3/4)', type: 'number' },
-      { name: 'items', label: 'Items (JSON array of {icon,title,description})', type: 'json' },
+      { name: 'columns', label: 'Columns per row', type: 'select', options: ['2', '3', '4'] },
+      {
+        name: 'items',
+        label: 'Features',
+        type: 'repeater',
+        itemLabel: 'Feature',
+        max: 12,
+        itemFields: [
+          { name: 'icon', label: 'Icon', type: 'icon' },
+          { name: 'title', label: 'Title', type: 'text', required: true },
+          { name: 'description', label: 'Description', type: 'textarea' },
+        ],
+      },
     ],
   },
   {
@@ -246,7 +314,19 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     fields: [
       { name: 'heading', label: 'Heading', type: 'text' },
       { name: 'subheading', label: 'Sub-heading', type: 'textarea' },
-      { name: 'items', label: 'Steps (JSON array of {number,icon,title,description})', type: 'json' },
+      {
+        name: 'items',
+        label: 'Steps',
+        type: 'repeater',
+        itemLabel: 'Step',
+        max: 6,
+        itemFields: [
+          { name: 'number', label: 'Step number', type: 'text', placeholder: '1' },
+          { name: 'icon', label: 'Icon', type: 'icon' },
+          { name: 'title', label: 'Title', type: 'text', required: true },
+          { name: 'description', label: 'Description', type: 'textarea' },
+        ],
+      },
     ],
   },
   {
@@ -271,9 +351,27 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     fields: [
       { name: 'heading', label: 'Heading', type: 'text' },
       { name: 'subheading', label: 'Sub-heading', type: 'textarea' },
-      { name: 'columns', label: 'Column headers (JSON array)', type: 'json' },
-      { name: 'highlightColumn', label: 'Highlighted column index', type: 'number' },
-      { name: 'rows', label: 'Rows (JSON array of {label, values: boolean[]})', type: 'json' },
+      {
+        name: 'columns',
+        label: 'Column headers',
+        type: 'repeater',
+        itemPrimitive: 'string',
+        itemLabel: 'Column',
+        max: 5,
+        description: 'e.g. Finanshels · Other firms · DIY',
+      },
+      { name: 'highlightColumn', label: 'Highlighted column index (0 = first)', type: 'number' },
+      {
+        name: 'rows',
+        label: 'Rows',
+        type: 'repeater',
+        itemLabel: 'Row',
+        description: 'One checkbox per column, left to right.',
+        itemFields: [
+          { name: 'label', label: 'Row label', type: 'text', required: true },
+          { name: 'values', label: 'Has feature (per column)', type: 'repeater', itemPrimitive: 'boolean', itemLabel: 'Column' },
+        ],
+      },
     ],
   },
   {
@@ -309,7 +407,23 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     fields: [
       { name: 'heading', label: 'Heading', type: 'text' },
       { name: 'subheading', label: 'Sub-heading', type: 'textarea' },
-      { name: 'tiers', label: 'Tiers (JSON array)', type: 'json' },
+      {
+        name: 'tiers',
+        label: 'Pricing tiers',
+        type: 'repeater',
+        itemLabel: 'Tier',
+        min: 1,
+        max: 3,
+        itemFields: [
+          { name: 'name', label: 'Tier name', type: 'text', required: true },
+          { name: 'price', label: 'Price', type: 'text', required: true, placeholder: 'AED 499' },
+          { name: 'priceSuffix', label: 'Price suffix', type: 'text', placeholder: '/month' },
+          { name: 'description', label: 'Description', type: 'textarea' },
+          { name: 'features', label: 'Features', type: 'repeater', itemPrimitive: 'string', itemLabel: 'Feature' },
+          { name: 'ctaLabel', label: 'Button label', type: 'text' },
+          { name: 'highlighted', label: 'Highlight this tier', type: 'boolean' },
+        ],
+      },
     ],
   },
   {
@@ -408,7 +522,17 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     fields: [
       { name: 'heading', label: 'Heading', type: 'text' },
       { name: 'subheading', label: 'Sub-heading', type: 'textarea' },
-      { name: 'items', label: 'Items (JSON array of {question,answer})', type: 'json' },
+      {
+        name: 'items',
+        label: 'Questions',
+        type: 'repeater',
+        itemLabel: 'Question',
+        max: 20,
+        itemFields: [
+          { name: 'question', label: 'Question', type: 'text', required: true },
+          { name: 'answer', label: 'Answer', type: 'textarea', required: true },
+        ],
+      },
     ],
   },
   {
@@ -425,7 +549,7 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     fields: [
       { name: 'heading', label: 'Heading', type: 'text', required: true },
       { name: 'body', label: 'Body text', type: 'textarea', required: true },
-      { name: 'iconName', label: 'Lucide icon name', type: 'text' },
+      { name: 'iconName', label: 'Icon', type: 'icon' },
     ],
   },
   {
@@ -443,7 +567,17 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
       ],
     },
     fields: [
-      { name: 'items', label: 'Items (JSON array of {icon,text})', type: 'json' },
+      {
+        name: 'items',
+        label: 'Badges',
+        type: 'repeater',
+        itemLabel: 'Badge',
+        max: 6,
+        itemFields: [
+          { name: 'icon', label: 'Icon', type: 'icon' },
+          { name: 'text', label: 'Text', type: 'text', required: true },
+        ],
+      },
     ],
   },
 ]

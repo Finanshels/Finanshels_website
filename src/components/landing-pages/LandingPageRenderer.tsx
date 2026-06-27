@@ -24,6 +24,7 @@ import LandingFooter from './LandingFooter'
 import StickyCtaBar from './StickyCtaBar'
 import FloatingWhatsAppButton from './FloatingWhatsAppButton'
 import GtagScripts from './GtagScripts'
+import { SectionFrame } from './SectionFrame'
 import type { CtaConfig } from './CtaButtons'
 
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
@@ -37,9 +38,18 @@ function normalizeAccent(input: unknown): string | null {
 export default function LandingPageRenderer({
   page,
   isPreview = false,
+  editMode = false,
+  selectedId = null,
+  onSelectSection,
+  onHoverSection,
 }: {
   page: LandingPageDoc
   isPreview?: boolean
+  /** Studio live-preview only: wraps each section so it can be clicked to edit. */
+  editMode?: boolean
+  selectedId?: string | null
+  onSelectSection?: (id: string) => void
+  onHoverSection?: (id: string | null) => void
 }) {
   const baseCta = buildCtaLinks(page)
   const cta: CtaConfig = {
@@ -67,8 +77,8 @@ export default function LandingPageRenderer({
 
   return (
     <div style={rootStyle} className={accent ? 'lp-themed' : undefined}>
-      {page.google_ads_conversion_id ? <GtagScripts conversionId={page.google_ads_conversion_id} /> : null}
-      {isPreview ? (
+      {!editMode && page.google_ads_conversion_id ? <GtagScripts conversionId={page.google_ads_conversion_id} /> : null}
+      {isPreview && !editMode ? (
         <div className="bg-amber-500 text-slate-900 text-center text-xs font-semibold py-1.5 px-4">
           PREVIEW · this landing page is unpublished
         </div>
@@ -92,7 +102,21 @@ export default function LandingPageRenderer({
           />
         ) : null}
 
-        {sections.map((sec) => renderSection(sec, page, cta, formProps))}
+        {sections.map((sec) => {
+          const node = renderSection(sec, page, cta, formProps)
+          if (!editMode) return node
+          return (
+            <SectionFrame
+              key={sec.id}
+              sectionId={sec.id}
+              selected={selectedId === sec.id}
+              onSelect={onSelectSection}
+              onHover={onHoverSection}
+            >
+              {node}
+            </SectionFrame>
+          )
+        })}
 
         {/* If no form section anywhere, append a final-cta automatically */}
         {!hasAnyForm ? (

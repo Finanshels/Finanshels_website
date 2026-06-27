@@ -3,7 +3,9 @@ import { revalidatePath } from 'next/cache'
 import { notFound, redirect } from 'next/navigation'
 import ConfirmDeleteForm from '@/components/cms/admin/landing-pages/ConfirmDeleteForm'
 import LandingPageEditor from '@/components/cms/admin/landing-pages/LandingPageEditor'
+import type { MediaPickerItem } from '@/components/cms/admin/MediaPickerModal'
 import { requireAdminAuth, sessionDisplayName } from '@/lib/cms/adminAuth'
+import { listCmsMediaLibraryItems } from '@/lib/cms/collectionRepository'
 import { deleteLandingPage, getLandingPageById, updateLandingPage } from '@/lib/landing-pages/repository'
 import type { LandingPageWriteInput } from '@/lib/landing-pages/repository'
 
@@ -62,8 +64,15 @@ export default async function EditLandingPage({
   const page = await getLandingPageById(id)
   if (!page) notFound()
 
+  // Media library for inline image pickers (upload + browse, no URL pasting).
+  const mediaRaw = await listCmsMediaLibraryItems()
+  const mediaItems: MediaPickerItem[] = mediaRaw
+    .filter((m) => Boolean(m.assetUrl))
+    .map((m) => ({ url: m.assetUrl, title: m.title, mimeType: m.mimeType }))
+  const bucketConfigured = Boolean(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET)
+
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+    <div className="mx-auto max-w-[1680px] px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex items-center justify-between gap-4 mb-4">
         <div>
           <Link href="/admin/cms/landing-pages" className="text-xs text-slate-500 hover:text-slate-700">← All landing pages</Link>
@@ -101,7 +110,12 @@ export default async function EditLandingPage({
         </div>
       ) : null}
 
-      <LandingPageEditor page={page} saveAction={saveAction} />
+      <LandingPageEditor
+        page={page}
+        saveAction={saveAction}
+        mediaItems={mediaItems}
+        bucketConfigured={bucketConfigured}
+      />
     </div>
   )
 }

@@ -33,7 +33,9 @@ export function AiGeneratePopover({
 }: AiGeneratePopoverProps) {
   const ref = useRef<HTMLDivElement>(null)
   const { text, status, error, generate, stop, reset } = useAiGeneration()
-  const [selected, setSelected] = useState('')
+  // FIX-052: track the selection by index, not by option text. The option strings
+  // change as the stream arrives, so a text-keyed selection silently deselected.
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
 
   // Auto-start once on mount.
   useEffect(() => {
@@ -65,8 +67,12 @@ export function AiGeneratePopover({
   }, [onClose, stop])
 
   const isLoading = status === 'loading'
-  const options = multiChoice ? parseOptions(text) : []
-  const chosen = multiChoice ? selected : text.trim()
+  // FIX-052: only expose selectable options once streaming is DONE. Parsing the
+  // partial stream made the option list shift mid-flight; while loading we show
+  // the raw streaming text instead.
+  const optionsReady = multiChoice && !isLoading
+  const options = optionsReady ? parseOptions(text) : []
+  const chosen = multiChoice ? (selectedIdx != null ? options[selectedIdx] ?? '' : '') : text.trim()
   const charCount = chosen.length
 
   const charColor = (() => {
@@ -110,16 +116,15 @@ export function AiGeneratePopover({
       <div className="max-h-72 overflow-y-auto px-4 py-3">
         {error ? (
           <p className="text-[13px] text-red-600">{error}</p>
-        ) : multiChoice ? (
+        ) : multiChoice && optionsReady ? (
           <div className="space-y-2">
-            {options.map((opt) => (
-              <label key={opt} className="group flex cursor-pointer items-start gap-2.5">
+            {options.map((opt, i) => (
+              <label key={`${i}-${opt}`} className="group flex cursor-pointer items-start gap-2.5">
                 <input
                   type="radio"
                   name="ai-option"
-                  value={opt}
-                  checked={selected === opt}
-                  onChange={() => setSelected(opt)}
+                  checked={selectedIdx === i}
+                  onChange={() => setSelectedIdx(i)}
                   className="mt-0.5 accent-brand-primary"
                 />
                 <span className="text-[13px] leading-snug text-slate-700 transition group-hover:text-slate-900">
@@ -127,10 +132,7 @@ export function AiGeneratePopover({
                 </span>
               </label>
             ))}
-            {isLoading && (
-              <p className="animate-pulse text-[12px] text-slate-400">Generating options…</p>
-            )}
-            {!isLoading && options.length === 0 && (
+            {options.length === 0 && (
               <p className="text-[13px] text-slate-400">No options returned. Try regenerating.</p>
             )}
           </div>
@@ -150,7 +152,7 @@ export function AiGeneratePopover({
           <button
             type="button"
             onClick={() => {
-              setSelected('')
+              setSelectedIdx(null)
               reset()
               void generate(payload)
             }}

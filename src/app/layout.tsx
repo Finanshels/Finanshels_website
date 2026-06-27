@@ -1,19 +1,17 @@
 import type { Metadata, Viewport } from 'next'
-import { Fraunces, Plus_Jakarta_Sans } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import '../styles/globals.css'
 import AppChrome from '../components/layout/AppChrome'
 import CookieConsent from '../components/layout/CookieConsent'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 
-const fontSans = Plus_Jakarta_Sans({
+// Inter is the single brand typeface — used for both body and headings. The
+// Tailwind `display` family also points at --font-sans, so `font-display`
+// headings render Inter site-wide. Variable font: all weights (400–800) ship
+// in one download. (The /home4 variant keeps its own bespoke faces.)
+const fontSans = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
-  display: 'swap',
-})
-
-const fontDisplay = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-display',
   display: 'swap',
 })
 
@@ -93,7 +91,7 @@ const organizationSchema = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fontSans.variable} ${fontDisplay.variable}`}>
+    <html lang="en" className={`${fontSans.variable}`}>
       <body className="font-sans antialiased bg-white text-slate-900">
         <script
           type="application/ld+json"

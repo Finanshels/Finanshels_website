@@ -1130,6 +1130,19 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
  */
 type CmsHiddenFields = { legacyAliases: string[]; strip: string[] }
 
+// Marketing page-layout fields injected into every collection by
+// globalContentLayoutFields(). Profile/label collections that have no public
+// route never render a hero or long-form body, so they strip the whole set.
+const PROFILE_LAYOUT_STRIP = [
+  'hero_heading',
+  'hero_subheading',
+  'body',
+  'sections',
+  'sidebar_cta_enabled',
+  'primary_cta_variant',
+  'template_variant',
+]
+
 const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFields>> = {
   blog_posts: {
     legacyAliases: ['authorName', 'heroImageUrl', 'bodyHtml', 'category'],
@@ -1202,7 +1215,24 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
   team_members: {
     legacyAliases: ['name', 'role', 'bio', 'photoUrl', 'linkedinUrl', 'twitterUrl'],
     // From TEAM-003: keeps full_name / short_bio / photo / linkedin_url etc.
-    strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link', 'updated_at'],
+    // CLEANUP: team_members has no public route (FIX-048), so the marketing
+    // page-layout fields (hero/body/CTA) and the generic `tags` (replaced by
+    // `expertise_tags`) are pure noise. The SEO/AEO/GEO/blocks/card/listing/
+    // detail/relations sections are suppressed in SUPPRESSED_SECTIONS_BY_COLLECTION.
+    strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link', 'updated_at', 'tags', ...PROFILE_LAYOUT_STRIP],
+  },
+  // CLEANUP: videos are embedded on resource pages, not standalone SEO routes —
+  // strip the global publish duplicates + page-layout fields. `thumbnail_image`
+  // is kept because the videos collection defines its own.
+  videos: {
+    legacyAliases: [],
+    strip: ['title', 'excerpt', 'short_description', 'featured_image', 'icon', 'author', 'published_at', 'updated_at', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link', ...PROFILE_LAYOUT_STRIP],
+  },
+  // CLEANUP: review_sources is a label/reference entity (Google, Trustpilot) —
+  // only slug/source_name/icon/source_url matter. `icon` is kept (its own field).
+  review_sources: {
+    legacyAliases: [],
+    strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'author', 'published_at', 'updated_at', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link', 'sort_order', ...PROFILE_LAYOUT_STRIP],
   },
   // FIX-022: media_assets is a utility (library), not editorial content. Strip
   // global publish fields that are meaningless here: locale/excerpt/featured-image
@@ -1241,6 +1271,12 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
  */
 const SUPPRESSED_SECTIONS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsSectionKey[]>> = {
   media_assets: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
+  // CLEANUP: profile/label collections have no public route, so card/listing/
+  // detail/blocks/relations and the SEO/AEO/GEO answer-engine tabs never render
+  // anywhere — drop them so the editor only sees the real fields.
+  team_members: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
+  videos: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
+  review_sources: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
   // CMO-redesign: card/listing duplicate publish + index settings respectively;
   // detail keeps only the three knobs promoted into publish above.
   blog_posts: ['card', 'listing', 'detail'],

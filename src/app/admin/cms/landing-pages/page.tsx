@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import ConfirmDeleteForm from '@/components/cms/admin/landing-pages/ConfirmDeleteForm'
+import CreateLandingPageForm from '@/components/cms/admin/landing-pages/CreateLandingPageForm'
 import { requireAdminAuth, sessionDisplayName } from '@/lib/cms/adminAuth'
 import {
   createLandingPage,
@@ -10,10 +11,14 @@ import {
   findAvailableSlug,
   listLandingPages,
 } from '@/lib/landing-pages/repository'
+import { getLandingPageTemplate, landingPageTemplateMetas } from '@/lib/landing-pages/templates'
+import { draftLandingPage } from '@/lib/landing-pages/aiDraft'
+import { isAiConfigured } from '@/lib/cms/ai/models'
 import { DEFAULT_CONVERSION_LABELS, DEFAULT_SEO, DEFAULT_THEME } from '@/lib/landing-pages/types'
 import { SERVICE_INTERESTS, getServiceInterestLabel } from '@/lib/landing-pages/serviceInterests'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 async function createLandingPageAction(formData: FormData) {
   'use server'
@@ -21,6 +26,10 @@ async function createLandingPageAction(formData: FormData) {
   const internalName = String(formData.get('internal_name') ?? '').trim()
   const serviceInterest = String(formData.get('service_interest') ?? '').trim()
   if (!internalName) redirect('/admin/cms/landing-pages?error=missing_internal_name')
+
+  const templateId = String(formData.get('template') ?? '').trim()
+  const built = templateId ? getLandingPageTemplate(templateId)?.build() : null
+
   const slug = await findAvailableSlug(internalName)
   const id = await createLandingPage(
     {
@@ -35,9 +44,58 @@ async function createLandingPageAction(formData: FormData) {
       whatsapp_prefilled_message: '',
       form_destination_emails: [],
       thank_you_redirect_url: '',
-      sections: [],
-      theme: { ...DEFAULT_THEME },
-      seo: { ...DEFAULT_SEO, title: internalName },
+      sections: built?.sections ?? [],
+      theme: { ...DEFAULT_THEME, ...(built?.theme ?? {}) },
+      seo: { ...DEFAULT_SEO, ...(built?.seo ?? {}), title: internalName },
+    },
+    sessionDisplayName(session)
+  )
+  revalidatePath('/admin/cms/landing-pages')
+  redirect(`/admin/cms/landing-pages/${id}`)
+}
+
+async function draftWithAiAction(formData: FormData) {
+  'use server'
+  const session = await requireAdminAuth('editor')
+  const internalName = String(formData.get('internal_name') ?? '').trim()
+  const serviceInterest = String(formData.get('service_interest') ?? '').trim()
+  const goal = String(formData.get('goal') ?? '').trim()
+  if (!internalName) redirect('/admin/cms/landing-pages?error=missing_internal_name')
+  if (!goal) redirect('/admin/cms/landing-pages?error=missing_goal')
+  if (!isAiConfigured()) redirect('/admin/cms/landing-pages?error=AI%20is%20not%20configured')
+
+  let drafted
+  try {
+    drafted = await draftLandingPage({
+      goal,
+      service: serviceInterest,
+      audience: String(formData.get('audience') ?? '').trim() || undefined,
+      offer: String(formData.get('offer') ?? '').trim() || undefined,
+      tone: String(formData.get('tone') ?? '').trim() || undefined,
+    })
+  } catch (err) {
+    const msg = encodeURIComponent(err instanceof Error ? err.message : 'AI drafting failed')
+    redirect(`/admin/cms/landing-pages?error=${msg}`)
+    return
+  }
+
+  const slug = await findAvailableSlug(internalName)
+  const id = await createLandingPage(
+    {
+      slug,
+      internal_name: internalName,
+      status: 'draft',
+      service_interest: serviceInterest,
+      google_ads_conversion_id: '',
+      conversion_labels: { ...DEFAULT_CONVERSION_LABELS },
+      primary_phone: '',
+      whatsapp_number: '',
+      whatsapp_prefilled_message: '',
+      form_destination_emails: [],
+      thank_you_redirect_url: '',
+      sections: drafted.sections,
+      theme: { ...DEFAULT_THEME, ...drafted.theme },
+      seo: { ...DEFAULT_SEO, ...drafted.seo, title: drafted.seo.title || internalName },
     },
     sessionDisplayName(session)
   )
@@ -97,23 +155,13 @@ export default async function LandingPagesAdminList({
 
       <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
         <h2 className="text-sm font-semibold text-slate-900 mb-3">Create a new landing page</h2>
-        <form action={createLandingPageAction} className="flex flex-col md:flex-row gap-2">
-          <input
-            name="internal_name"
-            placeholder="Internal name (e.g. Corporate Tax — Q2 2026)"
-            required
-            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-          />
-          <select name="service_interest" required defaultValue="" className="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <option value="" disabled>Service interest</option>
-            {SERVICE_INTERESTS.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
-          <button className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
-            Create
-          </button>
-        </form>
+        <CreateLandingPageForm
+          action={createLandingPageAction}
+          draftAction={draftWithAiAction}
+          aiConfigured={isAiConfigured()}
+          serviceInterests={SERVICE_INTERESTS}
+          templates={landingPageTemplateMetas()}
+        />
       </div>
 
       <form className="flex flex-wrap gap-2 mb-4 text-sm" method="get">

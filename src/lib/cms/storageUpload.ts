@@ -2,35 +2,15 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { getStorage } from 'firebase-admin/storage'
 import { getAdminApp } from './firestore'
+import { CMS_MEDIA_ALLOWED_MIME } from './mediaUploadLimits'
 
 /**
- * Types accepted by the CMS media dropzone — keep in sync with persistMediaAssetUpload's
- * MIME catalogue and the admin UI hint text. FIX-014 expanded this from images+PDF only
- * to also accept the video and office-document MIMEs the persist layer already
- * categorises; before that, every non-image upload was buffered, the persist layer
- * accepted it, and the storage layer then rejected it with a confusing error.
+ * Authoritative server-side accept gate. FIX-052: the accepted MIME list now
+ * lives in the client-safe `mediaUploadLimits.ts` so the dropzone `accept`
+ * attribute, the client pre-check, and this server gate can't drift apart. This
+ * layer still re-verifies the MIME and the binary magic bytes below.
  */
-const ALLOWED_MIME = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/gif',
-  'image/webp',
-  'image/svg+xml',
-  'video/mp4',
-  'video/webm',
-  'video/quicktime',
-  'video/x-m4v',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'text/csv',
-  'text/plain',
-  'application/rtf',
-])
+const ALLOWED_MIME = new Set(CMS_MEDIA_ALLOWED_MIME)
 
 /**
  * FIX-014: minimum-viable SVG sanitizer. We do NOT use sanitize-html here because
@@ -232,4 +212,27 @@ export async function uploadCmsMediaBytes(params: {
   const encodedPath = encodeURIComponent(objectPath)
   const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${downloadToken}`
   return { url, byteSize: buffer.byteLength }
+}
+
+/**
+ * FIX-052: delete the underlying Storage object for a media asset's download URL.
+ * Deleting a `media_assets` doc previously removed only the Firestore record,
+ * orphaning the blob forever (storage cost + the file stayed publicly reachable).
+ * Best-effort: foreign/external URLs (no `/o/<path>`) and already-gone objects are
+ * ignored so this can never block the Firestore delete.
+ */
+export async function deleteCmsMediaObject(assetUrl: string): Promise<void> {
+  const url = (assetUrl || '').trim()
+  if (!url) return
+  // Only our own Firebase/GCS download URLs carry a `/o/<encoded-path>` segment.
+  if (!/firebasestorage\.googleapis\.com|storage\.googleapis\.com/.test(url)) return
+  const match = url.match(/\/o\/([^?]+)/)
+  if (!match) return
+  const objectPath = decodeURIComponent(match[1])
+  if (!objectPath) return
+
+  const app = getAdminApp()
+  if (!app) return
+  const bucket = getStorage(app).bucket(storageBucketId())
+  await bucket.file(objectPath).delete({ ignoreNotFound: true })
 }

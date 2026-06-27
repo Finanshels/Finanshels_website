@@ -1,17 +1,36 @@
 'use client'
 
-// FIX-039: single field-editor used by both the create flow (CmsCreateForm)
-// and the edit flow (admin/cms/page.tsx). Previously the create form had its
-// own primitive FieldInput that only handled 11 of 17 field types — `blocks`,
-// `json`, `rows`, `icon`, `image`, `file`, `tags`, and `multi_reference` all
-// fell through to a plain `<input type="text">`, which is why editors said
-// "fields are not easy to use" on the create path.
+// FIX-039: single field-editor used across the CMS editor (admin/cms/page.tsx)
+// for both create (?intent=create) and edit (?slug=…) modes. Every CmsFieldType
+// renders through one switch here, so `blocks`, `json`, `rows`, `icon`, `image`,
+// `file`, `tags`, and `multi_reference` get their real editors instead of falling
+// through to a plain `<input type="text">`.
 
-import PageBlocksEditor from '@/components/cms/admin/PageBlocksEditor'
-import RichTextField from '@/components/cms/admin/RichTextField'
+import { lazy, Suspense, useState } from 'react'
 import { CmsMultiReferencePick } from '@/components/cms/admin/CmsMultiReferencePick'
+import { MediaField } from '@/components/cms/admin/MediaField'
 import type { CmsFieldDefinition } from '@/lib/cms/collectionDefinitions'
 import type { AiContext } from '@/lib/cms/ai/fieldMap'
+
+// PERF: the Tiptap rich-text editor (StarterKit + ~13 extensions + ProseMirror)
+// and the page-blocks editor are the two heaviest things in the admin bundle,
+// and they were eagerly imported on every create/edit page — even for
+// collections that render neither. Code-split them so they download only when a
+// field actually needs them. The Suspense fallback below renders a hidden input
+// that preserves the field's value, so submitting/autosaving before the chunk
+// finishes loading can never wipe content.
+const PageBlocksEditor = lazy(() => import('@/components/cms/admin/PageBlocksEditor'))
+const RichTextField = lazy(() => import('@/components/cms/admin/RichTextField'))
+
+/** Value-preserving placeholder shown while a heavy editor chunk loads. */
+function EditorLoadingFallback({ name, value }: { name: string; value: string }) {
+  return (
+    <div className="mt-2">
+      <input type="hidden" name={name} defaultValue={value} />
+      <div className="h-[260px] animate-pulse rounded-xl border border-cms-rule bg-cms-soft" />
+    </div>
+  )
+}
 
 export type ReferenceOption = { id: string; label: string }
 
@@ -77,9 +96,12 @@ export function FieldEditor({
   aiContext,
 }: Props) {
   const hint = fieldHint(field)
+  // Live tag-chip preview: track the input so chips update as the user types,
+  // instead of only refreshing after a save/reload.
+  const [tagDraft, setTagDraft] = useState(value)
   const tagPreview =
     field.type === 'tags'
-      ? value
+      ? tagDraft
           .split(',')
           .map((item) => item.trim())
           .filter(Boolean)
@@ -87,23 +109,29 @@ export function FieldEditor({
 
   if (field.type === 'blocks') {
     return (
-      <PageBlocksEditor
-        name={field.name}
-        initialValue={value}
-        referenceOptions={referenceOptions}
-      />
+      <Suspense fallback={<EditorLoadingFallback name={field.name} value={value} />}>
+        <PageBlocksEditor
+          key={`${documentHydrationKey}:${field.name}`}
+          name={field.name}
+          initialValue={value}
+          referenceOptions={referenceOptions}
+        />
+      </Suspense>
     )
   }
 
   if (field.type === 'textarea' || field.type === 'json' || field.type === 'rows') {
     if (field.type === 'textarea' && isLongBodyField(field)) {
       return (
-        <RichTextField
-          name={field.name}
-          initialValue={value}
-          placeholder={field.placeholder}
-          aiContext={aiContext}
-        />
+        <Suspense fallback={<EditorLoadingFallback name={field.name} value={value} />}>
+          <RichTextField
+            key={`${documentHydrationKey}:${field.name}`}
+            name={field.name}
+            initialValue={value}
+            placeholder={field.placeholder}
+            aiContext={aiContext}
+          />
+        </Suspense>
       )
     }
     const isCode = field.type === 'json' || field.type === 'rows'
@@ -132,7 +160,12 @@ export function FieldEditor({
     const defaultOption = typeof field.defaultValue === 'string' ? field.defaultValue : field.options[0]
     return (
       <>
-        <select name={field.name} required={field.required} defaultValue={value || defaultOption} className={inputClass}>
+        <select
+          name={field.name}
+          required={field.required}
+          defaultValue={value !== '' ? value : field.options.includes('') ? '' : defaultOption}
+          className={inputClass}
+        >
           {field.options.map((opt) => (
             <option key={opt} value={opt}>
               {opt || '— none —'}
@@ -215,16 +248,30 @@ export function FieldEditor({
     )
   }
 
+  if (field.type === 'image' || field.type === 'file') {
+    return (
+      <MediaField
+        name={field.name}
+        initialValue={value}
+        kind={field.type === 'image' ? 'image' : 'file'}
+        required={field.required}
+        placeholder={field.placeholder}
+        suggestions={mediaAssetUrls}
+        hint={hint}
+      />
+    )
+  }
+
   const inputType =
-    field.type === 'url' || field.type === 'image' || field.type === 'file'
+    field.type === 'url'
       ? 'url'
       : field.type === 'number'
       ? 'number'
       : field.type === 'email'
       ? 'email'
       : 'text'
-  const showAssetSuggestions =
-    (field.type === 'url' || field.type === 'image' || field.type === 'file') && mediaAssetUrls.length > 0
+  // image/file are handled above by MediaField; only plain `url` keeps the datalist.
+  const showAssetSuggestions = field.type === 'url' && mediaAssetUrls.length > 0
   return (
     <>
       <input
@@ -233,6 +280,7 @@ export function FieldEditor({
         name={field.name}
         required={field.required}
         defaultValue={value}
+        onChange={field.type === 'tags' ? (e) => setTagDraft(e.target.value) : undefined}
         placeholder={field.placeholder}
         list={showAssetSuggestions ? `${field.name}-asset-suggestions` : undefined}
         className={inputClass}

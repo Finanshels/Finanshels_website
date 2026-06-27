@@ -26,7 +26,7 @@ export function AdminSidebar({ activeKey, collectionCounts, session }: AdminSide
   const initial = (userName ?? 'U').charAt(0).toUpperCase()
 
   return (
-    <aside className="flex min-h-0 flex-col overflow-y-auto rounded-2xl border border-cms-rule bg-white px-3 py-4 shadow-sm">
+    <aside className="flex flex-col rounded-2xl border border-cms-rule bg-white px-3 py-4 shadow-sm lg:sticky lg:top-3 lg:max-h-[calc(100dvh_-_1.5rem)] lg:overflow-y-auto">
 
       {/* Branding */}
       <div className="mb-5 px-2">

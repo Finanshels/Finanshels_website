@@ -1,51 +1,31 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { useEffect } from 'react'
 import { ChatWidget } from '../chat/ChatWidget'
 import Footer from './Footer'
 import Navbar from './Navbar'
 
 /**
- * Admin routes need the full viewport for the CMS; the marketing shell (nav + footer)
- * was stealing height and making `100vh` math wrong, leaving a huge white band.
+ * Admin routes render without the marketing shell (nav + footer), which was
+ * stealing height and making `100vh` math wrong.
  *
- * FIX-046: lock <html> and <body> to the viewport while on admin routes. The
- * editor shell already uses `h-dvh overflow-hidden`, but any descendant that
- * lands outside its containing block (popovers, absolutely-positioned menus,
- * tooltips) could still extend the document height and produce a tall blank
- * scroll band below the UI. Pinning the document at the body level guarantees
- * no page scroll regardless of what individual editor widgets do.
+ * FIX-050: admin pages must scroll. The previous FIX-046 locked <html>/<body>
+ * to `overflow:hidden; height:100dvh` and wrapped every admin route in
+ * `h-dvh overflow-hidden`. That suited the editor (an app-like fixed shell with
+ * its own internal scroll panes) but TRAPPED every other admin page — listings,
+ * settings, lists — clipping anything past one viewport with no way to scroll
+ * (reported: "where the fuck is scrolling"). The wrapper is now `min-h-dvh` and
+ * scrolls normally; the CMS editor view keeps its own self-contained
+ * `h-dvh overflow-hidden` shell (see src/app/admin/cms/page.tsx), so it stays
+ * pinned to the viewport while listings/settings scroll the page.
  */
 export default function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isAdmin = pathname.startsWith('/admin')
   const isLandingPage = pathname.startsWith('/landing-pages')
 
-  useEffect(() => {
-    if (!isAdmin) return
-    const html = document.documentElement
-    const body = document.body
-    const prev = {
-      htmlOverflow: html.style.overflow,
-      htmlHeight: html.style.height,
-      bodyOverflow: body.style.overflow,
-      bodyHeight: body.style.height,
-    }
-    html.style.overflow = 'hidden'
-    html.style.height = '100dvh'
-    body.style.overflow = 'hidden'
-    body.style.height = '100dvh'
-    return () => {
-      html.style.overflow = prev.htmlOverflow
-      html.style.height = prev.htmlHeight
-      body.style.overflow = prev.bodyOverflow
-      body.style.height = prev.bodyHeight
-    }
-  }, [isAdmin])
-
   if (isAdmin) {
-    return <div className="h-dvh overflow-hidden bg-[#f7f3ee]">{children}</div>
+    return <div className="min-h-dvh bg-[#f7f3ee]">{children}</div>
   }
 
   if (isLandingPage) {

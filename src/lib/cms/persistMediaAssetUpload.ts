@@ -100,15 +100,21 @@ export function filenameHumanTitle(name: string): string {
   return spaced || 'Untitled asset'
 }
 
+export type PersistMediaAssetUploadResult =
+  | { ok: true; url: string; title: string; assetType: CmsMediaAssetType; mimeType: string }
+  | { ok: false; error: string }
+
 /**
  * Validates, uploads to Firebase Storage, and persists a Firestore `media_assets` doc.
+ * On success returns the public `url` so inline field uploaders can fill the field
+ * directly (the media library only reads `ok`, so the extra fields are inert there).
  * Does not touch cache tags — callers should run `revalidatePath` when appropriate.
  */
 export async function persistMediaAssetUpload(
   file: ReadableUploadFile,
   updatedByRole: string,
   options: PersistMediaAssetUploadOptions = {}
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<PersistMediaAssetUploadResult> {
   try {
     if (!(file.size > 0)) {
       return { ok: false, error: 'Empty file.' }
@@ -160,7 +166,7 @@ export async function persistMediaAssetUpload(
       updatedByRole
     )
 
-    return { ok: true }
+    return { ok: true, url, title, assetType, mimeType: contentType }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Upload failed.'
     return { ok: false, error: msg }

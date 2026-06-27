@@ -1,14 +1,20 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileText, ImageIcon, Link2, Loader2, Search, Trash2, Upload } from 'lucide-react'
 import type { CmsMediaLibraryItem } from '@/lib/cms/collectionRepository'
-import { CMS_MEDIA_UPLOAD_MAX_BYTES } from '@/lib/cms/mediaUploadLimits'
+import {
+  CMS_MEDIA_UPLOAD_MAX_BYTES,
+  CMS_MEDIA_ACCEPT_ATTR,
+  CMS_MEDIA_ALLOWED_MIME,
+} from '@/lib/cms/mediaUploadLimits'
 
 const MEDIA_UPLOAD_API = '/api/admin/cms/media/upload'
 const MEDIA_UPLOAD_MAX_MB = Math.round(CMS_MEDIA_UPLOAD_MAX_BYTES / (1024 * 1024))
+// Match the collection listing table's page size.
+const MEDIA_PAGE_SIZE = 24
 
 type Props = {
   items: CmsMediaLibraryItem[]
@@ -27,8 +33,7 @@ function formatBytes(n: number): string {
   return `${mb >= 100 ? mb.toFixed(0) : mb.toFixed(1)} MB`
 }
 
-const ACCEPT =
-  '.png,.jpg,.jpeg,.gif,.webp,.svg,.pdf,image/png,image/jpeg,image/gif,image/webp,image/svg+xml,application/pdf'
+const ACCEPT = CMS_MEDIA_ACCEPT_ATTR
 
 export function CmsMediaLibrary({
   items,
@@ -45,6 +50,8 @@ export function CmsMediaLibrary({
   const [toast, setToast] = useState<string | null>(null)
   const [uploadNotes, setUploadNotes] = useState<string | null>(null)
 
+  const [page, setPage] = useState(0)
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return items
@@ -56,34 +63,83 @@ export function CmsMediaLibrary({
     )
   }, [items, query])
 
+  // Reset to the first page whenever the search query changes.
+  useEffect(() => {
+    setPage(0)
+  }, [query])
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / MEDIA_PAGE_SIZE))
+  // Clamp so shrinking results never strand the user on an empty page.
+  const safePage = Math.min(page, pageCount - 1)
+  useEffect(() => {
+    if (page !== safePage) setPage(safePage)
+  }, [page, safePage])
+
+  const pageStart = safePage * MEDIA_PAGE_SIZE
+  const pageItems = filtered.slice(pageStart, pageStart + MEDIA_PAGE_SIZE)
+  const showingFrom = filtered.length === 0 ? 0 : pageStart + 1
+  const showingTo = Math.min(pageStart + MEDIA_PAGE_SIZE, filtered.length)
+
   const runUploadBatch = useCallback(
     async (files: File[]) => {
       if (!files.length || !cmsConfigured || !bucketConfigured) return
       setUploadNotes(null)
+
+      // FIX-052: validate client-side first so oversized/unsupported files don't
+      // waste a round-trip, and NEVER abort the whole batch on one bad file —
+      // collect per-file results and report them together.
+      const allowed = new Set(CMS_MEDIA_ALLOWED_MIME)
+      const notes: string[] = []
+      const accepted: File[] = []
+      for (const f of files) {
+        if (f.size > CMS_MEDIA_UPLOAD_MAX_BYTES) {
+          notes.push(`${f.name}: too large (max ${MEDIA_UPLOAD_MAX_MB} MB)`)
+        } else if (f.type && !allowed.has(f.type)) {
+          notes.push(`${f.name}: unsupported type`)
+        } else {
+          accepted.push(f)
+        }
+      }
+
+      if (accepted.length === 0) {
+        setUploadNotes(notes.join(' · ') || 'No files to upload.')
+        return
+      }
+
       setUploading(true)
+      let ok = 0
       try {
-        for (let i = 0; i < files.length; i++) {
-          const f = files[i]
+        for (const f of accepted) {
           const fd = new FormData()
           fd.append('file', f)
-          const res = await fetch(MEDIA_UPLOAD_API, {
-            method: 'POST',
-            body: fd,
-            credentials: 'same-origin',
-          })
-          let payload: { ok?: boolean; error?: string } | null = null
           try {
-            payload = (await res.json()) as { ok?: boolean; error?: string }
+            const res = await fetch(MEDIA_UPLOAD_API, {
+              method: 'POST',
+              body: fd,
+              credentials: 'same-origin',
+            })
+            let payload: { ok?: boolean; error?: string } | null = null
+            try {
+              payload = (await res.json()) as { ok?: boolean; error?: string }
+            } catch {
+              payload = null
+            }
+            if (!res.ok || !payload?.ok) {
+              notes.push(`${f.name}: ${payload?.error ?? `failed (${res.status})`}`)
+            } else {
+              ok += 1
+            }
           } catch {
-            payload = null
-          }
-          if (!res.ok || !payload?.ok) {
-            setUploadNotes(payload?.error ?? `Upload failed (${res.status}).`)
-            break
+            notes.push(`${f.name}: network error`)
           }
         }
       } finally {
         setUploading(false)
+        if (ok > 0) {
+          setToast(`${ok} file${ok === 1 ? '' : 's'} uploaded.`)
+          window.setTimeout(() => setToast(null), 2400)
+        }
+        setUploadNotes(notes.length ? notes.join(' · ') : null)
         router.refresh()
       }
     },
@@ -129,7 +185,11 @@ export function CmsMediaLibrary({
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-sm">
         <div
           id="cms-media-upload"
-          role="presentation"
+          // Keyboard-operable upload affordance: Enter/Space open the file picker.
+          role="button"
+          tabIndex={uploadDisabledReason ? -1 : 0}
+          aria-disabled={Boolean(uploadDisabledReason)}
+          aria-label="Upload files — drop here or activate to browse"
           onDragOver={(e) => {
             e.preventDefault()
             setDragOver(true)
@@ -147,6 +207,13 @@ export function CmsMediaLibrary({
           } ${uploadDisabledReason ? 'opacity-70' : 'cursor-pointer'}`}
           onClick={() => {
             if (!uploadDisabledReason) inputRef.current?.click()
+          }}
+          onKeyDown={(e) => {
+            if (uploadDisabledReason) return
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              inputRef.current?.click()
+            }
           }}
         >
           <input
@@ -213,7 +280,7 @@ export function CmsMediaLibrary({
           </p>
 
           <ul className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {filtered.map((item) => {
+            {pageItems.map((item) => {
               const assetPath = item.assetUrl.split('?')[0] ?? ''
               const isImg = /\.(png|jpe?g|gif|webp|svg)$/i.test(assetPath) ||
                 /^image\//.test(item.mimeType ?? '')
@@ -255,7 +322,7 @@ export function CmsMediaLibrary({
                     >
                       {item.title}
                     </Link>
-                    <p className="truncate text-[11px] font-mono text-slate-500" title={item.assetUrl}>
+                    <p className="truncate text-[11px] font-mono text-slate-500" title={item.title}>
                       {item.byteSize != null ? formatBytes(item.byteSize) : '—'}
                     </p>
                     <div className="mt-auto flex gap-2">
@@ -267,7 +334,17 @@ export function CmsMediaLibrary({
                         <Link2 className="h-3.5 w-3.5" aria-hidden /> Copy URL
                       </button>
                       {canDelete ? (
-                        <form action={deleteAction} className="shrink-0">
+                        <form
+                          action={deleteAction}
+                          className="shrink-0"
+                          onSubmit={(e) => {
+                            // FIX-052: media delete is destructive (removes the
+                            // Firestore doc AND the Storage blob) — confirm first.
+                            if (!window.confirm(`Delete "${item.title}"? This also removes the file from storage and cannot be undone.`)) {
+                              e.preventDefault()
+                            }
+                          }}
+                        >
                           <input type="hidden" name="collection" value="media_assets" />
                           <input type="hidden" name="id" value={item.id} />
                           <button
@@ -286,13 +363,37 @@ export function CmsMediaLibrary({
             })}
           </ul>
 
-          {!filtered.length ? (
+          {filtered.length > 0 ? (
+            <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
+              <p className="text-xs text-slate-500">
+                Showing {showingFrom}–{showingTo} of {filtered.length}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={safePage === 0}
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                  disabled={safePage >= pageCount - 1}
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          ) : (
             <p className="mt-12 text-center text-sm text-slate-500">
               {items.length === 0
                 ? 'No files yet — upload files above.'
                 : 'No matches — try another search.'}
             </p>
-          ) : null}
+          )}
         </div>
       </div>
     </div>

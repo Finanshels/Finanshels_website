@@ -1,8 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { SECTION_CATALOG, getSectionCatalogEntry, type SectionCatalogEntry, type SectionFieldDef } from '@/lib/landing-pages/sectionCatalog'
+import { ChevronDown, ChevronUp, Copy, GripVertical, Monitor, Plus, Smartphone, Tablet, Trash2 } from 'lucide-react'
+import { SECTION_CATALOG, getSectionCatalogEntry, type SectionCatalogEntry } from '@/lib/landing-pages/sectionCatalog'
 import { SERVICE_INTERESTS } from '@/lib/landing-pages/serviceInterests'
+import { MediaLibraryProvider } from '@/components/cms/admin/MediaLibraryProvider'
+import type { MediaPickerItem } from '@/components/cms/admin/MediaPickerModal'
+import { FieldEditor } from './fields/FieldEditor'
+import { LucideIcon } from './fields/lucideClient'
+import { useLivePreview } from './useLivePreview'
 import type {
   HeroVariant,
   LandingPageDoc,
@@ -21,6 +27,22 @@ function slugify(input: string): string {
 }
 
 type Tab = 'content' | 'settings' | 'seo'
+
+type DeviceKey = 'desktop' | 'tablet' | 'mobile'
+
+/**
+ * Device frames render the page at its TRUE viewport width, then scale-to-fit
+ * the available pane. This is the only way "Desktop" shows the real desktop
+ * layout instead of reflowing to the narrow editor pane.
+ */
+const DEVICES: Array<{ key: DeviceKey; label: string; width: number; Icon: React.ComponentType<{ className?: string }> }> = [
+  { key: 'desktop', label: 'Desktop', width: 1280, Icon: Monitor },
+  { key: 'tablet', label: 'Tablet', width: 834, Icon: Tablet },
+  { key: 'mobile', label: 'Mobile', width: 390, Icon: Smartphone },
+]
+
+/** Catalog grouping order for the "Add a section" picker. */
+const SECTION_GROUPS = ['Hero', 'Trust', 'Value', 'Conversion', 'Objection'] as const
 
 type EditorState = {
   slug: string
@@ -112,9 +134,13 @@ function genId(): string {
 export default function LandingPageEditor({
   page,
   saveAction,
+  mediaItems,
+  bucketConfigured,
 }: {
   page: LandingPageDoc
   saveAction: (formData: FormData) => void | Promise<void>
+  mediaItems: MediaPickerItem[]
+  bucketConfigured: boolean
 }) {
   const [tab, setTab] = useState<Tab>('content')
   const [state, setState] = useState<EditorState>(() => pageToState(page))
@@ -162,91 +188,192 @@ export default function LandingPageEditor({
     setState((s) => ({ ...s, slug: v }))
   }, [])
 
+  // ----- Live preview bridge -----
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const [device, setDevice] = useState<DeviceKey>('desktop')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  // A full LandingPageDoc reflecting unsaved edits, pushed into the iframe.
+  const previewPage = useMemo<LandingPageDoc>(
+    () => ({ ...page, ...stateToPayload(state) }) as LandingPageDoc,
+    [page, state],
+  )
+
+  const handleSelectFromPreview = useCallback((sectionId: string) => {
+    setSelectedId(sectionId)
+    setTab('content')
+  }, [])
+
+  useLivePreview({ iframeRef, page: previewPage, selectedId, onSelect: handleSelectFromPreview })
+
+  // ----- Scale-to-fit device frame -----
+  // Measure the available pane width and the viewport height, then render the
+  // iframe at its real device width scaled down to fit. The visible canvas keeps
+  // a constant height; the iframe scrolls internally.
+  const canvasRef = useRef<HTMLDivElement | null>(null)
+  const [paneWidth, setPaneWidth] = useState(0)
+  const [canvasHeight, setCanvasHeight] = useState(640)
+
+  useEffect(() => {
+    const el = canvasRef.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width
+      if (w) setPaneWidth(w)
+    })
+    ro.observe(el)
+    function onResize() {
+      setCanvasHeight(Math.max(520, Math.round(window.innerHeight - 230)))
+    }
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', onResize)
+    }
+  }, [])
+
+  const deviceWidth = DEVICES.find((d) => d.key === device)?.width ?? 1280
+  const scale = paneWidth > 0 ? Math.min(1, paneWidth / deviceWidth) : 1
+  const zoomPct = Math.round(scale * 100)
+
   return (
-    <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-      <div>
-        <div className="flex items-center gap-1 mb-4 border-b border-slate-200">
-          {(['content', 'settings', 'seo'] as Tab[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-                tab === t
-                  ? 'border-slate-900 text-slate-900'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              {t === 'content' ? 'Content' : t === 'settings' ? 'Settings' : 'SEO'}
-            </button>
-          ))}
-        </div>
+    <MediaLibraryProvider initialItems={mediaItems} bucketConfigured={bucketConfigured}>
+      <div className="flex flex-col gap-4">
+        {/* Topbar: device toggle + save controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+          <div className="inline-flex items-center gap-0.5 rounded-lg border border-slate-200 p-0.5">
+            {DEVICES.map((d) => (
+              <button
+                key={d.key}
+                type="button"
+                onClick={() => setDevice(d.key)}
+                aria-label={d.label}
+                aria-pressed={device === d.key}
+                title={d.label}
+                className={`rounded-md p-1.5 ${device === d.key ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+              >
+                <d.Icon className="h-4 w-4" />
+              </button>
+            ))}
+          </div>
 
-        {tab === 'content' ? (
-          <ContentTab state={state} setState={setState} />
-        ) : tab === 'settings' ? (
-          <SettingsTab state={state} setState={setState} setSlug={setSlug} />
-        ) : (
-          <SeoTab state={state} setState={setState} />
-        )}
-      </div>
-
-      <aside className="bg-white rounded-xl border border-slate-200 p-4 h-fit sticky top-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3 flex items-center justify-between">
-          <span>Save &amp; publish</span>
-          {isDirty ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-semibold px-2 py-0.5">
-              <span className="size-1.5 rounded-full bg-amber-500" />
-              Unsaved
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.5">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
-              Saved
-            </span>
-          )}
-        </h3>
-        <form ref={formRef} action={saveAction} className="space-y-3">
-          <input type="hidden" name="id" value={page.id} />
-          <input type="hidden" name="payload" value={payload} />
-
-          <label className="block text-sm">
-            <span className="text-slate-700 font-medium">Status</span>
+          <form ref={formRef} action={saveAction} className="flex flex-wrap items-center gap-2">
+            <input type="hidden" name="id" value={page.id} />
+            <input type="hidden" name="payload" value={payload} />
+            {isDirty ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                <span className="size-1.5 rounded-full bg-amber-500" /> Unsaved
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
+                <span className="size-1.5 rounded-full bg-emerald-500" /> Saved
+              </span>
+            )}
             <select
               value={state.status}
               onChange={(e) => setState((s) => ({ ...s, status: e.target.value as LandingPageStatus }))}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
+              aria-label="Status"
             >
               <option value="draft">Draft</option>
               <option value="published">Published</option>
               <option value="archived">Archived</option>
             </select>
-          </label>
+            <a
+              href={`/landing-pages/${state.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Open ↗
+            </a>
+            <button
+              disabled={!isDirty}
+              className="rounded-lg bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              title="Cmd/Ctrl+S"
+            >
+              {isDirty ? 'Save' : 'Saved'}
+            </button>
+          </form>
+        </div>
 
-          <button
-            disabled={!isDirty}
-            className="w-full inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Cmd/Ctrl+S"
-          >
-            {isDirty ? 'Save changes' : 'No changes'}
-          </button>
-
-          <div className="text-[11px] text-slate-500 leading-relaxed pt-2 border-t border-slate-100">
-            <p>Default: <strong>noindex, nofollow</strong>. Pages are excluded from sitemap.</p>
-            <p className="mt-1.5">Service interest sent to Zoho: <code className="bg-slate-100 rounded px-1">{state.service_interest || '—'}</code></p>
-            <p className="mt-1.5">Tip: <kbd className="bg-slate-100 rounded px-1">⌘/Ctrl + S</kbd> to save.</p>
+        {/* Two-pane: live preview + inspector */}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(380px,440px)] lg:items-start">
+          <div className="lg:sticky lg:top-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-100 p-3">
+              <div ref={canvasRef} className="flex justify-center" style={{ height: canvasHeight }}>
+                <div
+                  className="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5"
+                  style={{ width: deviceWidth * scale, height: canvasHeight }}
+                >
+                  <iframe
+                    ref={iframeRef}
+                    title="Live preview"
+                    src={`/admin/cms/landing-pages/${page.id}/preview`}
+                    style={{
+                      width: deviceWidth,
+                      height: scale > 0 ? canvasHeight / scale : canvasHeight,
+                      border: 0,
+                      transform: `scale(${scale})`,
+                      transformOrigin: 'top left',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <p className="mt-1.5 text-center text-[11px] text-slate-400">
+              {DEVICES.find((d) => d.key === device)?.label} · {deviceWidth}px{zoomPct < 100 ? ` · ${zoomPct}%` : ''} · click any section to edit it
+            </p>
           </div>
-        </form>
-      </aside>
-    </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white">
+            <div className="flex items-center gap-1 border-b border-slate-200 px-2">
+              {(['content', 'settings', 'seo'] as Tab[]).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTab(t)}
+                  className={`-mb-px border-b-2 px-3 py-2.5 text-sm font-medium ${
+                    tab === t ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  {t === 'content' ? 'Content' : t === 'settings' ? 'Settings' : 'SEO'}
+                </button>
+              ))}
+            </div>
+            <div className="p-3">
+              {tab === 'content' ? (
+                <ContentTab state={state} setState={setState} selectedId={selectedId} onSelect={setSelectedId} />
+              ) : tab === 'settings' ? (
+                <SettingsTab state={state} setState={setState} setSlug={setSlug} />
+              ) : (
+                <SeoTab state={state} setState={setState} />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </MediaLibraryProvider>
   )
 }
 
 // ---------------- Content tab ----------------
 
-function ContentTab({ state, setState }: { state: EditorState; setState: React.Dispatch<React.SetStateAction<EditorState>> }) {
+function ContentTab({
+  state,
+  setState,
+  selectedId,
+  onSelect,
+}: {
+  state: EditorState
+  setState: React.Dispatch<React.SetStateAction<EditorState>>
+  selectedId: string | null
+  onSelect: (id: string) => void
+}) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [overIndex, setOverIndex] = useState<number | null>(null)
+  const [showCatalog, setShowCatalog] = useState(false)
 
   function addSection(type: string) {
     const entry = getSectionCatalogEntry(type)
@@ -258,6 +385,8 @@ function ContentTab({ state, setState }: { state: EditorState; setState: React.D
       props: JSON.parse(JSON.stringify(entry.defaultProps)),
     }
     setState((s) => ({ ...s, sections: [...s.sections, newSection] }))
+    onSelect(newSection.id)
+    setShowCatalog(false)
   }
 
   function updateSection(id: string, patch: Partial<LandingPageSection>) {
@@ -314,82 +443,105 @@ function ContentTab({ state, setState }: { state: EditorState; setState: React.D
   }
 
   return (
-    <div className="grid md:grid-cols-[260px_1fr] gap-5">
-      {/* Catalog (left) */}
+    <div className="space-y-3">
+      {/* Add a section */}
       <div>
-        <div className="bg-white rounded-xl border border-slate-200 p-3 sticky top-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2 px-1">Add a section</h3>
-          <div className="space-y-1">
-            {SECTION_CATALOG.map((entry) => (
-              <button
-                key={entry.type}
-                type="button"
-                onClick={() => addSection(entry.type)}
-                className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-50 text-sm text-slate-800"
-                title={entry.description}
-              >
-                <span className="font-medium">{entry.label}</span>
-                <span className="block text-xs text-slate-500 truncate">{entry.description}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Current sections (right) */}
-      <div className="space-y-3">
-        {state.sections.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500 bg-white">
-            No sections yet. Pick one from the left to add it.
+        <button
+          type="button"
+          onClick={() => setShowCatalog((v) => !v)}
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+        >
+          <Plus className="h-4 w-4" /> Add a section
+        </button>
+        {showCatalog ? (
+          <div className="mt-2 max-h-80 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2">
+            {SECTION_GROUPS.map((group) => {
+              const entries = SECTION_CATALOG.filter((e) => e.group === group)
+              if (entries.length === 0) return null
+              return (
+                <div key={group} className="mb-2 last:mb-0">
+                  <p className="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">{group}</p>
+                  <div className="grid grid-cols-1 gap-1">
+                    {entries.map((entry) => (
+                      <button
+                        key={entry.type}
+                        type="button"
+                        onClick={() => addSection(entry.type)}
+                        className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left hover:bg-slate-50"
+                        title={entry.description}
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+                          <LucideIcon name={entry.icon} className="h-4 w-4" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-slate-800">{entry.label}</span>
+                          <span className="block truncate text-xs text-slate-500">{entry.description}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         ) : null}
-        {state.sections.map((sec, i) => {
-          const entry = getSectionCatalogEntry(sec.type)
-          const isOver = overIndex === i && dragIndex !== null && dragIndex !== i
-          return (
-            <div
-              key={sec.id}
-              draggable
-              onDragStart={(e) => {
-                setDragIndex(i)
-                e.dataTransfer.effectAllowed = 'move'
-                try { e.dataTransfer.setData('text/plain', sec.id) } catch { /* some browsers reject */ }
-              }}
-              onDragOver={(e) => {
-                if (dragIndex === null) return
-                e.preventDefault()
-                e.dataTransfer.dropEffect = 'move'
-                if (overIndex !== i) setOverIndex(i)
-              }}
-              onDragLeave={() => {
-                if (overIndex === i) setOverIndex(null)
-              }}
-              onDrop={(e) => {
-                e.preventDefault()
-                if (dragIndex !== null && dragIndex !== i) reorder(dragIndex, i)
-                setDragIndex(null)
-                setOverIndex(null)
-              }}
-              onDragEnd={() => {
-                setDragIndex(null)
-                setOverIndex(null)
-              }}
-              className={isOver ? 'ring-2 ring-blue-300 rounded-xl' : undefined}
-            >
-              <SectionRow
-                section={sec}
-                entry={entry}
-                isFirst={i === 0}
-                isLast={i === state.sections.length - 1}
-                onUpdate={(patch) => updateSection(sec.id, patch)}
-                onMove={(dir) => moveSection(sec.id, dir)}
-                onRemove={() => removeSection(sec.id)}
-                onDuplicate={() => duplicateSection(sec.id)}
-              />
-            </div>
-          )
-        })}
       </div>
+
+      {/* Current sections */}
+      {state.sections.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+          No sections yet. Use “Add a section” above, or click a section in the preview.
+        </div>
+      ) : null}
+
+      {state.sections.map((sec, i) => {
+        const entry = getSectionCatalogEntry(sec.type)
+        const isOver = overIndex === i && dragIndex !== null && dragIndex !== i
+        return (
+          <div
+            key={sec.id}
+            draggable
+            onDragStart={(e) => {
+              setDragIndex(i)
+              e.dataTransfer.effectAllowed = 'move'
+              try { e.dataTransfer.setData('text/plain', sec.id) } catch { /* some browsers reject */ }
+            }}
+            onDragOver={(e) => {
+              if (dragIndex === null) return
+              e.preventDefault()
+              e.dataTransfer.dropEffect = 'move'
+              if (overIndex !== i) setOverIndex(i)
+            }}
+            onDragLeave={() => {
+              if (overIndex === i) setOverIndex(null)
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              if (dragIndex !== null && dragIndex !== i) reorder(dragIndex, i)
+              setDragIndex(null)
+              setOverIndex(null)
+            }}
+            onDragEnd={() => {
+              setDragIndex(null)
+              setOverIndex(null)
+            }}
+            className={isOver ? 'ring-2 ring-blue-300 rounded-xl' : undefined}
+          >
+            <SectionRow
+              section={sec}
+              entry={entry}
+              isFirst={i === 0}
+              isLast={i === state.sections.length - 1}
+              isSelected={selectedId === sec.id}
+              onSelect={() => onSelect(sec.id)}
+              onUpdate={(patch) => updateSection(sec.id, patch)}
+              onMove={(dir) => moveSection(sec.id, dir)}
+              onRemove={() => removeSection(sec.id)}
+              onDuplicate={() => duplicateSection(sec.id)}
+            />
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -399,6 +551,8 @@ function SectionRow({
   entry,
   isFirst,
   isLast,
+  isSelected,
+  onSelect,
   onUpdate,
   onMove,
   onRemove,
@@ -408,39 +562,108 @@ function SectionRow({
   entry: SectionCatalogEntry | null
   isFirst: boolean
   isLast: boolean
+  isSelected: boolean
+  onSelect: () => void
   onUpdate: (patch: Partial<LandingPageSection>) => void
   onMove: (dir: -1 | 1) => void
   onRemove: () => void
   onDuplicate: () => void
 }) {
   const [open, setOpen] = useState(true)
+  const rowRef = useRef<HTMLDivElement | null>(null)
+
+  // When selected from the preview, expand and scroll this row into view.
+  useEffect(() => {
+    if (isSelected) {
+      setOpen(true)
+      rowRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  }, [isSelected])
 
   function setProp(name: string, value: unknown) {
     onUpdate({ props: { ...section.props, [name]: value } })
   }
 
   return (
-    <div className={`bg-white rounded-xl border ${section.enabled ? 'border-slate-200' : 'border-slate-200 opacity-60'}`}>
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
-        <span className="text-slate-300 cursor-grab active:cursor-grabbing select-none text-xs leading-none" aria-hidden="true" title="Drag to reorder">⠿⠿</span>
-        <div className="flex flex-col gap-0.5">
-          <button type="button" disabled={isFirst} onClick={() => onMove(-1)} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 text-xs" aria-label="Move up">▲</button>
-          <button type="button" disabled={isLast} onClick={() => onMove(1)} className="text-slate-400 hover:text-slate-700 disabled:opacity-30 text-xs" aria-label="Move down">▼</button>
+    <div
+      ref={rowRef}
+      className={`bg-white rounded-xl border transition ${
+        isSelected ? 'border-violet-400 ring-2 ring-violet-200' : 'border-slate-200'
+      } ${section.enabled ? '' : 'opacity-70'}`}
+    >
+      <div className={`flex items-center gap-2 px-3 py-2.5 ${open ? 'border-b border-slate-100' : ''}`}>
+        {/* Drag handle */}
+        <span
+          className="shrink-0 cursor-grab text-slate-300 transition hover:text-slate-400 active:cursor-grabbing"
+          aria-hidden="true"
+          title="Drag to reorder"
+        >
+          <GripVertical className="h-4 w-4" />
+        </span>
+
+        {/* Reorder */}
+        <div className="flex shrink-0 flex-col">
+          <button type="button" disabled={isFirst} onClick={() => onMove(-1)} className="text-slate-400 transition hover:text-slate-700 disabled:opacity-30" aria-label="Move section up">
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <button type="button" disabled={isLast} onClick={() => onMove(1)} className="text-slate-400 transition hover:text-slate-700 disabled:opacity-30" aria-label="Move section down">
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
         </div>
-        <button type="button" onClick={() => setOpen((v) => !v)} className="flex-1 text-left">
-          <div className="text-sm font-semibold text-slate-900">{entry?.label ?? section.type}</div>
-          <div className="text-xs text-slate-500">{entry?.description ?? 'Unknown section type'}</div>
+
+        {/* Title + description (click to expand/collapse) */}
+        <button type="button" onClick={() => { onSelect(); setOpen((v) => !v) }} className="min-w-0 flex-1 text-left" aria-expanded={open}>
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-semibold text-slate-900">{entry?.label ?? section.type}</span>
+            {!section.enabled ? (
+              <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Hidden</span>
+            ) : null}
+          </div>
+          <div className="truncate text-xs text-slate-500">{entry?.description ?? 'Unknown section type'}</div>
         </button>
-        <label className="inline-flex items-center gap-1.5 text-xs text-slate-600">
-          <input
-            type="checkbox"
-            checked={section.enabled}
-            onChange={(e) => onUpdate({ enabled: e.target.checked })}
-          />
-          Enabled
-        </label>
-        <button type="button" onClick={onDuplicate} className="text-xs px-2 py-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-50" title="Duplicate this section">Duplicate</button>
-        <button type="button" onClick={onRemove} className="text-xs px-2 py-1 rounded border border-rose-200 text-rose-700 hover:bg-rose-50">Remove</button>
+
+        {/* Controls */}
+        <div className="flex shrink-0 items-center gap-0.5">
+          <label
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-slate-600 transition hover:bg-slate-50"
+            title={section.enabled ? 'Section is shown on the page' : 'Section is hidden from the page'}
+          >
+            <input
+              type="checkbox"
+              className="h-3.5 w-3.5 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+              checked={section.enabled}
+              onChange={(e) => onUpdate({ enabled: e.target.checked })}
+            />
+            <span className="hidden sm:inline">Enabled</span>
+          </label>
+          <button
+            type="button"
+            onClick={onDuplicate}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
+            title="Duplicate section"
+            aria-label="Duplicate section"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+            title="Remove section"
+            aria-label="Remove section"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => { onSelect(); setOpen((v) => !v) }}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+            aria-label={open ? 'Collapse section' : 'Expand section'}
+            aria-expanded={open}
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
       </div>
       {open ? (
         <div className="p-4 space-y-3">
@@ -462,130 +685,9 @@ function SectionRow({
   )
 }
 
-function FieldEditor({
-  field,
-  value,
-  onChange,
-}: {
-  field: SectionFieldDef
-  value: unknown
-  onChange: (next: unknown) => void
-}) {
-  if (field.type === 'boolean') {
-    return (
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={Boolean(value)}
-          onChange={(e) => onChange(e.target.checked)}
-        />
-        <span className="font-medium text-slate-800">{field.label}</span>
-        {field.description ? <span className="text-xs text-slate-500">— {field.description}</span> : null}
-      </label>
-    )
-  }
-
-  if (field.type === 'select') {
-    return (
-      <label className="block text-sm">
-        <span className="font-medium text-slate-800">{field.label}</span>
-        <select
-          value={String(value ?? '')}
-          onChange={(e) => onChange(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-        >
-          <option value="">—</option>
-          {(field.options ?? []).map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
-      </label>
-    )
-  }
-
-  if (field.type === 'textarea') {
-    return (
-      <label className="block text-sm">
-        <span className="font-medium text-slate-800">{field.label}</span>
-        <textarea
-          value={String(value ?? '')}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          rows={4}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
-        />
-      </label>
-    )
-  }
-
-  if (field.type === 'json') {
-    return <JsonField field={field} value={value} onChange={onChange} />
-  }
-
-  if (field.type === 'number') {
-    return (
-      <label className="block text-sm">
-        <span className="font-medium text-slate-800">{field.label}</span>
-        <input
-          type="number"
-          value={typeof value === 'number' ? value : ''}
-          onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-        />
-      </label>
-    )
-  }
-
-  return (
-    <label className="block text-sm">
-      <span className="font-medium text-slate-800">{field.label}{field.required ? <span className="text-rose-600"> *</span> : null}</span>
-      <input
-        type={field.type === 'url' || field.type === 'image' ? 'url' : 'text'}
-        value={String(value ?? '')}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={field.placeholder}
-        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-      />
-    </label>
-  )
-}
-
-function JsonField({ field, value, onChange }: { field: SectionFieldDef; value: unknown; onChange: (next: unknown) => void }) {
-  const [raw, setRaw] = useState(() => JSON.stringify(value ?? [], null, 2))
-  const [err, setErr] = useState<string | null>(null)
-
-  function commit(next: string) {
-    setRaw(next)
-    if (!next.trim()) {
-      setErr(null)
-      onChange([])
-      return
-    }
-    try {
-      const parsed = JSON.parse(next)
-      setErr(null)
-      onChange(parsed)
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : 'invalid JSON')
-    }
-  }
-
-  return (
-    <div className="block text-sm">
-      <span className="font-medium text-slate-800 flex items-center justify-between">
-        <span>{field.label}</span>
-        {err ? <span className="text-xs text-rose-600 font-normal">{err}</span> : null}
-      </span>
-      <textarea
-        value={raw}
-        onChange={(e) => commit(e.target.value)}
-        rows={8}
-        className={`mt-1 w-full rounded-lg border px-3 py-2 text-xs font-mono ${err ? 'border-rose-300' : 'border-slate-300'}`}
-      />
-      {field.placeholder ? <p className="mt-1 text-xs text-slate-500">{field.placeholder}</p> : null}
-    </div>
-  )
-}
+// Field rendering now lives in ./fields/FieldEditor (structured repeater/image/
+// icon/color editors). The inline form-only renderer was removed in the Studio
+// Phase 1 upgrade.
 
 // ---------------- Settings tab ----------------
 
@@ -605,7 +707,7 @@ function SettingsTab({ state, setState, setSlug }: {
   }
 
   return (
-    <div className="grid lg:grid-cols-2 gap-5">
+    <div className="space-y-4">
       <Card title="Identity">
         <Text label="Internal name" value={state.internal_name} onChange={(v) => set('internal_name', v)} required />
         <Text
@@ -673,7 +775,7 @@ function SeoTab({ state, setState }: { state: EditorState; setState: React.Dispa
     setState((s) => ({ ...s, seo: { ...s.seo, [key]: value } }))
   }
   return (
-    <div className="grid lg:grid-cols-2 gap-5">
+    <div className="space-y-4">
       <Card title="Page SEO">
         <Text label="SEO title" value={state.seo.title} onChange={(v) => setSeo('title', v)} />
         <Textarea label="Meta description" value={state.seo.description} onChange={(v) => setSeo('description', v)} />

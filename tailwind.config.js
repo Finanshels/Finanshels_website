@@ -42,8 +42,12 @@ export default {
         },
       },
       fontFamily: {
+        // Inter is the single brand typeface. `display` (used by every
+        // `font-display` heading) intentionally points at --font-sans so the
+        // whole site renders Inter. Reintroduce a separate display var here if a
+        // distinct heading face is ever wanted again.
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-display)', 'Georgia', 'serif'],
+        display: ['var(--font-sans)', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
         'gradient-brand': 'linear-gradient(135deg, #f16610 0%, #ff8a3c 50%, #ffd19b 100%)',

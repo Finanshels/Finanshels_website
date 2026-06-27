@@ -10,6 +10,7 @@ import {
   type CmsCollectionKey,
 } from './collectionDefinitions'
 import { slugifyForCms } from './slugify'
+import { deleteCmsMediaObject } from './storageUpload'
 
 // FIX-047: status enum collapsed from 6 values to 3. Legacy `scheduled` /
 // `approved` / `archived` values from older docs are coerced via readStatus()
@@ -346,6 +347,19 @@ export async function bulkDeleteCmsDocuments(
     const ref = db.collection(collection).doc(id)
     const snap = await ref.get()
     if (!snap.exists) continue
+    // FIX-052: for media assets, delete the underlying Storage blob too — deleting
+    // only the Firestore doc orphaned the file forever (cost + still public).
+    // Best-effort: never let a storage hiccup block the Firestore delete.
+    if (collection === 'media_assets') {
+      const assetUrl = snap.get('assetUrl')
+      if (typeof assetUrl === 'string' && assetUrl) {
+        try {
+          await deleteCmsMediaObject(assetUrl)
+        } catch (err) {
+          console.error('[cms] failed to delete media storage object', id, err)
+        }
+      }
+    }
     // Best-effort delete of revisions subcollection (small collection, sequential is fine).
     const revs = await ref.collection('_revisions').listDocuments()
     if (revs.length > 0) {
@@ -392,17 +406,33 @@ async function writeRevision(
     })
 }
 
+export type UpsertCmsDocumentOptions = {
+  /**
+   * Whether to snapshot the pre-save state into the `_revisions` subcollection.
+   * Defaults to true (explicit saves are version checkpoints). Autosave passes
+   * `false`: it fires every few seconds, so snapshotting each one doubled the
+   * write count and let `_revisions` grow unbounded — which then slowed every
+   * subsequent editor open (listCmsRevisions reads it back). Autosave still
+   * persists the document itself; it just no longer creates a revision per tick.
+   */
+  snapshotRevision?: boolean
+}
+
 export async function upsertCmsDocument(
   collection: CmsCollectionKey,
   id: string,
   payload: Record<string, unknown>,
-  updatedBy?: string
+  updatedBy?: string,
+  options: UpsertCmsDocumentOptions = {}
 ): Promise<void> {
+  const { snapshotRevision = true } = options
   const db = getDb()
   if (!db) throw new Error('CMS is not configured')
 
+  // Read the previous doc once: needed both for the optional revision snapshot
+  // and for `isNew` detection below (createdAt / locale defaults).
   const previous = await db.collection(collection).doc(id).get()
-  if (previous.exists) {
+  if (previous.exists && snapshotRevision) {
     const previousData = normalizeFirestoreTimestamps(previous.data() as Record<string, unknown>)
     await writeRevision(collection, id, previousData, updatedBy)
   }

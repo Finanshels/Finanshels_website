@@ -30,7 +30,16 @@ function parseError(error: string): ParsedError {
     return { fieldName: 'slug', message: 'That URL slug is already taken — choose a different one.' }
   if (error === 'missing-slug')
     return { fieldName: 'slug', message: 'Add a URL slug before saving.' }
-  if (error === 'missing-altText' || error === 'missing-featured_image_alt')
+  // FIX-052: these are two different fields. `missing-altText` is the
+  // media_assets field `altText`; `missing-featured_image_alt` is the blog_posts
+  // field `featured_image_alt`. Mapping both to `featured_image_alt` meant the
+  // media-library error highlighted a non-existent selector.
+  if (error === 'missing-altText')
+    return {
+      fieldName: 'altText',
+      message: 'Add alt text for this image — it helps accessibility and SEO.',
+    }
+  if (error === 'missing-featured_image_alt')
     return {
       fieldName: 'featured_image_alt',
       message: 'Add alt text for the featured image — it helps accessibility and SEO.',
@@ -107,6 +116,17 @@ export function CmsFormValidator({ error }: CmsFormValidatorProps) {
           el.removeAttribute('aria-invalid')
           el.removeEventListener('input', clear)
         }
+      } else if (el) {
+        // Field exists but is in a collapsed/inactive tab (display:none): we can't
+        // scroll to or focus it, but still clear the toast once the user edits it,
+        // and tell them where to look instead of leaving a dead-end message.
+        setActive({ ...parsed, message: `${parsed.message} It’s inside a collapsed tab — open the tabs to find it.` })
+        const clearHidden = () => {
+          el.removeEventListener('input', clearHidden)
+          setActive(null)
+        }
+        el.addEventListener('input', clearHidden)
+        cleanup = () => el.removeEventListener('input', clearHidden)
       }
     }
 
