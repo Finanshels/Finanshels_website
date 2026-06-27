@@ -3,8 +3,15 @@
 import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Copy, Pencil, Trash2, Eye, Search, Download, Plus, ChevronDown, X } from 'lucide-react'
+import { Copy, Trash2, Search, Download, Plus, ChevronDown, X } from 'lucide-react'
 import { getStatusStyle } from './statusStyle'
+import { Badge, type BadgeVariant } from '@/components/cms/admin/ui'
+
+function statusVariant(status: CmsListRow['status']): BadgeVariant {
+  if (status === 'published') return 'published'
+  if (status === 'in_review') return 'in_review'
+  return 'draft'
+}
 
 // FIX-047: status union collapsed from 6 to 3. `scheduledAtIso` dropped along
 // with the scheduled-publishing workflow.
@@ -267,7 +274,7 @@ export function CmsCollectionItemTable({
                 ? `/admin/cms?collection=${collectionKey}#cms-media-upload`
                 : `/admin/cms/new/${collectionKey}`
             }
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-gradient-brand px-4 py-2 text-sm font-semibold text-brand-dark shadow-[0_10px_30px_rgba(241,102,16,0.35)] hover:brightness-110"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-primary px-4 py-2 text-[13px] font-semibold text-white shadow-sm hover:bg-admin-brand-hover transition"
           >
             <Plus className="h-4 w-4" />
             New {singularLabel}
@@ -375,26 +382,27 @@ export function CmsCollectionItemTable({
 
       {/* Table */}
       {visible.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-cms-rule bg-cms-soft px-6 py-16 text-center">
-          <p className="text-sm text-slate-600">
-            {items.length === 0 ? (
-              <>
-                No entries yet in this collection.{' '}
-                <Link
-                  href={
-                    collectionKey === 'media_assets'
-                      ? `/admin/cms?collection=${collectionKey}#cms-media-upload`
-                      : `/admin/cms/new/${collectionKey}`
-                  }
-                  className="font-medium text-brand-primary underline-offset-4 hover:underline"
-                >
-                  Create your first {singularLabel.toLowerCase()}
-                </Link>
-              </>
-            ) : (
-              'No items match your filters.'
-            )}
-          </p>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          {items.length === 0 ? (
+            <>
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-2xl">📝</div>
+              <p className="text-[15px] font-semibold text-slate-700">No {label.toLowerCase()} yet</p>
+              <p className="mt-1 text-[13px] text-slate-400">Create your first {singularLabel.toLowerCase()} to get started.</p>
+              <Link
+                href={
+                  collectionKey === 'media_assets'
+                    ? `/admin/cms?collection=${collectionKey}#cms-media-upload`
+                    : `/admin/cms/new/${collectionKey}`
+                }
+                className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-brand-primary px-4 py-2 text-[13px] font-semibold text-white shadow-sm hover:bg-admin-brand-hover transition"
+              >
+                <Plus className="h-4 w-4" />
+                Create {singularLabel}
+              </Link>
+            </>
+          ) : (
+            <p className="text-[14px] text-slate-500">No items match your filters.</p>
+          )}
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-cms-rule bg-white">
@@ -453,53 +461,59 @@ export function CmsCollectionItemTable({
                       <p className="mt-0.5 truncate font-mono text-[11px] text-slate-500">/{row.slug}</p>
                     </td>
                     <td className="hidden px-4 py-3 md:table-cell">
-                      <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold tracking-wider ${st.box}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} aria-hidden />
-                        {st.label}
-                      </span>
+                      <Badge variant={statusVariant(row.status)} />
                     </td>
                     <td className="hidden whitespace-nowrap px-4 py-3 text-slate-500 lg:table-cell">{formatRelative(row.createdAtIso)}</td>
                     <td className="hidden whitespace-nowrap px-4 py-3 text-slate-500 lg:table-cell">{formatRelative(row.updatedAtIso)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-0.5 opacity-70 transition group-hover:opacity-100">
-                        {liveUrl ? (
-                          <a
-                            href={liveUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            title="View live"
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-cms-hover hover:text-slate-800"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </a>
-                        ) : null}
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/cms?collection=${collectionKey}&slug=${encodeURIComponent(row.id)}`}
-                          title="Edit"
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-cms-hover hover:text-slate-800"
+                          className="rounded-lg border border-cms-rule bg-white px-3 py-1.5 text-[12px] font-medium text-slate-700 hover:bg-gray-50 transition"
                         >
-                          <Pencil className="h-4 w-4" />
+                          Edit
                         </Link>
-                        <button
-                          type="button"
-                          onClick={() => submitDuplicate(row.id)}
-                          disabled={pending}
-                          title="Duplicate"
-                          className="rounded-md p-1.5 text-slate-400 hover:bg-cms-hover hover:text-slate-800 disabled:opacity-50"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                        {canDelete ? (
+                        <div className="relative group/actions">
                           <button
                             type="button"
-                            onClick={() => submitDelete(row.id, row.title)}
-                            disabled={pending}
-                            title="Delete"
-                            className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-cms-rule bg-white text-slate-500 hover:bg-gray-50 transition text-base leading-none"
+                            aria-label="More actions"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            ···
                           </button>
-                        ) : null}
+                          <div className="absolute right-0 top-full z-10 mt-1 hidden min-w-[150px] rounded-xl border border-cms-rule bg-white py-1 shadow-lg group-hover/actions:block">
+                            {liveUrl ? (
+                              <a
+                                href={liveUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center px-4 py-2 text-[13px] text-slate-700 hover:bg-gray-50"
+                              >
+                                View live ↗
+                              </a>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => submitDuplicate(row.id)}
+                              disabled={pending}
+                              className="flex w-full items-center px-4 py-2 text-[13px] text-slate-700 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              <Copy className="mr-2 h-3.5 w-3.5" />
+                              Duplicate
+                            </button>
+                            {canDelete ? (
+                              <button
+                                type="button"
+                                onClick={() => submitDelete(row.id, row.title)}
+                                disabled={pending}
+                                className="flex w-full items-center px-4 py-2 text-[13px] text-red-600 hover:bg-red-50 disabled:opacity-50"
+                              >
+                                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                Delete
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
                       </div>
                     </td>
                   </tr>
