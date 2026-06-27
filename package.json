@@ -18,11 +18,15 @@
     "webflow:discover": "node --conditions=react-server --import tsx scripts/import/discovery.ts",
     "webflow:import": "node --conditions=react-server --import tsx scripts/import/index.ts",
     "webflow:test": "node --conditions=react-server --import tsx --test scripts/import/lib/__tests__/*.test.ts",
+    "test:unit": "node --import tsx --test \"src/lib/tools/__tests__/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "firebase:login": "firebase login",
     "firebase:use": "firebase use --add",
     "firebase:deploy": "firebase deploy --only firestore:rules,firestore:indexes",
     "db:check": "node scripts/check-firestore.mjs",
+    "seed:blog": "node --conditions=react-server --import tsx scripts/seed-sample-blog.ts",
+    "seed:content": "node --conditions=react-server --import tsx scripts/seed-sample-content.ts",
+    "seed:all": "npm run seed:blog && npm run seed:content",
     "redirects:import": "node scripts/import-webflow-redirects.mjs"
   },
   "dependencies": {
