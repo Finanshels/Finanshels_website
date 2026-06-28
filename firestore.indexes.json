@@ -88,6 +88,14 @@
         { "fieldPath": "landing_page_id", "order": "ASCENDING" },
         { "fieldPath": "submitted_at", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "tools",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "sort_order", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
