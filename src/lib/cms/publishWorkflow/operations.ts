@@ -110,7 +110,11 @@ export async function publishDoc(collection: string, id: string, userId: string)
     published_card: extractPublishedCard(fields),
     last_published_at: FieldValue.serverTimestamp(),
   }
+  // Set both casings of the first-publish date: snake_case `published_at` (this
+  // workflow + the editor) and camelCase `publishedAt` (the CMS list view column),
+  // so a doc first published through this flow still shows a date in the list.
   if (!existing.published_at) update.published_at = FieldValue.serverTimestamp()
+  if (!existing.publishedAt) update.publishedAt = FieldValue.serverTimestamp()
 
   await ref.update(update)
 }

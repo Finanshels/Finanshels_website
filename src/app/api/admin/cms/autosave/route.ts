@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireAdminAuth, sessionRole } from '@/lib/cms/adminAuth'
 import { getCmsCollectionDefinition, getAllFields } from '@/lib/cms/collectionDefinitions'
 import { upsertCmsDocument } from '@/lib/cms/collectionRepository'
+import { markDraftDirty } from '@/lib/cms/publishWorkflow/operations'
 import { decodeFieldValue, InvalidFieldValueError } from '@/lib/cms/fieldCodec'
 import type { CmsCollectionKey } from '@/lib/cms/collectionDefinitions'
 
@@ -66,6 +67,9 @@ export async function POST(request: Request) {
     await upsertCmsDocument(definition.key as CmsCollectionKey, slug, parsed, role, {
       snapshotRevision: false,
     })
+    // Two-version: keep has_unpublished_changes accurate on the autosave-only path
+    // — otherwise an autosaved edit to a published doc never surfaces "Republish".
+    await markDraftDirty(definition.key, slug, parsed)
   } catch (err) {
     console.error('[autosave] upsert failed', err)
     return NextResponse.json({ error: 'Save failed' }, { status: 500 })

@@ -65,7 +65,9 @@ async function saveAction(formData: FormData) {
  */
 async function publishAction(formData: FormData) {
   'use server'
-  const session = await requireAdminAuth('editor')
+  // Publish is admin/owner only — matches the CMS publish gate. Editors save
+  // drafts (saveAction stays 'editor') but cannot push a landing page live.
+  const session = await requireAdminAuth('admin')
   const id = String(formData.get('id') ?? '')
   if (!id) redirect(`/admin/cms/landing-pages?error=missing_id`)
   const payloadJson = String(formData.get('payload') ?? '')
@@ -95,7 +97,7 @@ async function publishAction(formData: FormData) {
 /** Unpublish: flip status to draft so the live URL 404s; snapshot is retained. */
 async function unpublishAction(formData: FormData) {
   'use server'
-  await requireAdminAuth('editor')
+  await requireAdminAuth('admin')
   const id = String(formData.get('id') ?? '')
   if (!id) redirect(`/admin/cms/landing-pages?error=missing_id`)
 
