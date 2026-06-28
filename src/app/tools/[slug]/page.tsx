@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { getSiteUrl } from '@/lib/cms/config'
 import { getToolBySlug } from '@/lib/cms/toolsRepository'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
-import { getToolWidget } from '@/components/tools/registry'
+import { ToolWidgetMount } from '@/components/tools/ToolWidgetMount'
 
 export const revalidate = 600
 
@@ -37,7 +37,6 @@ export default async function ToolPage({ params }: Props) {
   const tool = await getToolBySlug(slug)
   if (!tool) notFound()
 
-  const Widget = getToolWidget(tool.toolRouteKey)
   const site = getSiteUrl()
 
   const jsonLd = {
@@ -67,20 +66,15 @@ export default async function ToolPage({ params }: Props) {
       </header>
 
       <section className="mt-8">
-        {Widget ? (
-          <Widget
-            slug={tool.slug}
-            gate={tool.gate}
-            leadCaptureEnabled={tool.leadCaptureEnabled}
-            gatedOutputLabel={tool.gatedOutputLabel}
-            leadMagnetDescription={tool.leadMagnetDescription}
-            serviceInterest={tool.serviceInterest}
-          />
-        ) : (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900">
-            This tool is launching soon.
-          </div>
-        )}
+        <ToolWidgetMount
+          toolRouteKey={tool.toolRouteKey}
+          slug={tool.slug}
+          gate={tool.gate}
+          leadCaptureEnabled={tool.leadCaptureEnabled}
+          gatedOutputLabel={tool.gatedOutputLabel}
+          leadMagnetDescription={tool.leadMagnetDescription}
+          serviceInterest={tool.serviceInterest}
+        />
       </section>
 
       {tool.relatedServiceUrl && tool.relatedServiceLabel ? (
