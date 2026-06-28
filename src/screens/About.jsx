@@ -2,8 +2,7 @@
 
 import {
   ArrowRight,
-  Target,
-  Users2,
+  Quote,
   Sparkles,
   Globe2,
   Flame,
@@ -13,13 +12,11 @@ import {
   Heart,
   Compass,
   TrendingUp,
-  CheckCircle2,
   Building2,
-  MessageSquare,
 } from 'lucide-react'
 import AnimatedSection from '../components/marketing/AnimatedSection'
-import LeadershipCard from '../components/marketing/LeadershipCard'
-import { COMPANY_VALUES, LEADERSHIP_TEAM } from '@/content/team'
+import TeamSection from '../components/marketing/TeamSection'
+import { COMPANY_VALUES } from '@/content/team'
 
 const STORY_POINTS = [
   {
@@ -59,27 +56,6 @@ const METRICS = [
   { value: '$1.2B', label: 'flows managed' },
 ]
 
-const PILLARS = [
-  {
-    icon: Target,
-    title: 'Built for operators',
-    description: 'Dedicated teams embed into your leadership cadence, not the other way around.',
-    accent: 'bg-[#fff1e1] text-[#f16610]',
-  },
-  {
-    icon: Users2,
-    title: 'People + product',
-    description: 'Humans you trust plus automations that remove repetitive work and errors.',
-    accent: 'bg-[#e9ecff] text-[#4f46e5]',
-  },
-  {
-    icon: Heart,
-    title: 'Radical ownership',
-    description: 'We behave like an in-house team, obsessing over the same metrics you report to investors.',
-    accent: 'bg-[#fce7f3] text-[#db2777]',
-  },
-]
-
 const CULTURE_POINTS = [
   {
     icon: Flame,
@@ -98,33 +74,6 @@ const CULTURE_POINTS = [
     title: 'Trust and accountability',
     description:
       'We publish commitments, SLAs, and postmortems openly. When we miss, we own it publicly and fix it fast.',
-  },
-]
-
-const PRESENCE = [
-  {
-    flag: '🇦🇪',
-    title: 'Dubai, UAE',
-    role: 'Global HQ',
-    description: 'in5 Tech. Home to leadership and founder-facing teams.',
-    accent: 'from-[#fff4ec] to-white',
-    glow: 'rgba(241,102,16,0.3)',
-  },
-  {
-    flag: '🇮🇳',
-    title: 'Kerala & Ahmedabad, India',
-    role: 'Delivery centre',
-    description: 'Finance operations hub and training ground for our teams.',
-    accent: 'from-[#eef2ff] to-white',
-    glow: 'rgba(79,70,229,0.25)',
-  },
-  {
-    flag: '🇸🇦',
-    title: 'KSA, Qatar & Egypt',
-    role: 'On-ground',
-    description: 'Local controllers ensuring compliance and approvals in market.',
-    accent: 'from-[#ecfdf5] to-white',
-    glow: 'rgba(5,150,105,0.25)',
   },
 ]
 
@@ -179,41 +128,60 @@ export default function About() {
         </div>
       </section>
 
-      {/* OUR EDGE / PILLARS */}
+      {/* FROM THE FOUNDER — image-led */}
       <section className="px-6 sm:px-10 lg:px-16 py-20 bg-white">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_1.4fr] gap-12 items-start">
+        <div className="max-w-6xl mx-auto grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          {/* PHOTO */}
           <AnimatedSection animation="fade-right">
-            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-600">
-              Our edge
+            <div className="relative mx-auto w-full max-w-md">
+              <div className="absolute -bottom-5 -right-5 h-full w-full rounded-[36px] bg-gradient-to-br from-[#f16610] to-[#ff8a3c]" />
+              <div className="absolute -inset-6 -z-10 rounded-[44px] bg-[#f16610]/15 blur-3xl" />
+              <div className="relative overflow-hidden rounded-[36px] border border-slate-100 bg-white shadow-[0_40px_80px_-45px_rgba(15,23,42,0.5)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/shafeekh.png"
+                  alt="Muhammed Shafeekh, Co-Founder & CEO of Finanshels"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute bottom-5 left-5 rounded-2xl border border-white/60 bg-white/90 px-4 py-2.5 shadow-lg backdrop-blur">
+                  <p className="text-sm font-semibold tracking-tight text-slate-900">Muhammed Shafeekh</p>
+                  <p className="text-xs font-semibold text-[#f16610]">Co-Founder &amp; CEO</p>
+                </div>
+              </div>
+            </div>
+          </AnimatedSection>
+
+          {/* QUOTE — minimal copy */}
+          <AnimatedSection animation="fade-left">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-[#fff4ec] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#f16610]">
+              From the founder
             </span>
-            <h2 className="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
-              A finance company that behaves like a{' '}
-              <span className="bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">product team</span>.
-            </h2>
-            <p className="mt-5 text-lg text-slate-600">
-              Finanshels wasn&apos;t born in a boardroom. It was built by operators who were tired of broken books, delayed filings, and finance teams that never had the full context. We built teams that run every layer of finance and feed dashboards leadership actually uses.
+            <Quote className="mt-6 text-[#f16610]/25" size={48} />
+            <p className="mt-2 text-3xl font-semibold leading-snug tracking-tight text-slate-900 sm:text-[2.5rem]">
+              We started Finanshels so brilliant founders never lose another night to{' '}
+              <span className="bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">broken books</span>.
             </p>
+            <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Muhammed Shafeekh · Co-Founder &amp; CEO
+            </p>
+            <div className="mt-7 flex flex-wrap gap-2">
+              {['Built for operators', 'People + product', 'Radical ownership'].map((chip) => (
+                <span
+                  key={chip}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-sm font-medium text-slate-700"
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
             <a
-              href="/contact"
-              className="mt-7 inline-flex items-center gap-2 rounded-2xl bg-[#f16610] px-5 py-3 font-semibold text-white shadow-lg shadow-[#f16610]/30 hover:-translate-y-0.5 hover:shadow-xl transition"
+              href="#team"
+              className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-[#f16610] px-5 py-3 font-semibold text-white shadow-lg shadow-[#f16610]/30 transition hover:-translate-y-0.5 hover:shadow-xl"
             >
               Meet the team <ArrowRight size={16} />
             </a>
           </AnimatedSection>
-
-          <div className="grid sm:grid-cols-3 gap-4">
-            {PILLARS.map((p, i) => (
-              <AnimatedSection key={p.title} animation="fade-up" delay={i * 100}>
-                <div className="group h-full rounded-[28px] border border-slate-100 bg-white p-6 hover:-translate-y-1 hover:shadow-[0_25px_50px_-20px_rgba(15,23,42,0.15)] transition-all">
-                  <div className={`w-12 h-12 rounded-2xl ${p.accent} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <p.icon size={22} />
-                  </div>
-                  <h3 className="text-lg font-semibold tracking-tight">{p.title}</h3>
-                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">{p.description}</p>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -305,33 +273,8 @@ export default function About() {
         </AnimatedSection>
       </section>
 
-      {/* LEADERSHIP */}
-      <section className="px-6 sm:px-10 lg:px-16 py-20 bg-white">
-        <div className="max-w-6xl mx-auto space-y-12">
-          <AnimatedSection animation="fade-up">
-            <div className="grid md:grid-cols-[1fr_auto] gap-6 items-end">
-              <div>
-                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-600">
-                  Leadership
-                </span>
-                <h2 className="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight max-w-2xl">
-                  Operators who&apos;ve built inside the region&apos;s best teams.
-                </h2>
-              </div>
-              <p className="text-slate-600 max-w-sm">
-                Our bench spans accounting, tax, HR, technology, and GTM. They coach teams, meet founders weekly, and keep the Finanshels bar painfully high.
-              </p>
-            </div>
-          </AnimatedSection>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {LEADERSHIP_TEAM.map((leader, index) => (
-              <AnimatedSection key={leader.name} animation="fade-up" delay={index * 60}>
-                <LeadershipCard leader={leader} />
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* LEADERSHIP / TEAM */}
+      <TeamSection />
 
       {/* VALUES BENTO */}
       <section className="px-6 sm:px-10 lg:px-16 py-20 bg-gradient-to-b from-white to-[#fffaf3]">
@@ -356,43 +299,6 @@ export default function About() {
                     <div className="text-4xl mb-3 group-hover:scale-110 transition-transform inline-block">{value.icon}</div>
                     <h3 className="text-xl font-semibold tracking-tight">{value.title}</h3>
                     <p className="mt-2 text-sm text-slate-600 leading-relaxed">{value.description}</p>
-                  </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* GLOBAL PRESENCE */}
-      <section className="px-6 sm:px-10 lg:px-16 py-20">
-        <div className="max-w-6xl mx-auto space-y-12">
-          <AnimatedSection animation="fade-up">
-            <div className="flex flex-col items-center text-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-600">
-                <Globe2 size={12} /> Global presence
-              </span>
-              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">Local experts across the GCC + India</h2>
-              <p className="text-slate-600 max-w-2xl text-lg">
-                Finance is hyper-local. Teams on the ground in every country we serve, backed by centres of excellence in Dubai and India.
-              </p>
-            </div>
-          </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-5">
-            {PRESENCE.map((place, i) => (
-              <AnimatedSection key={place.title} animation="fade-up" delay={i * 100}>
-                <div className={`group relative h-full overflow-hidden rounded-[32px] border border-slate-100 bg-gradient-to-br ${place.accent} p-7 hover:-translate-y-1.5 hover:shadow-[0_30px_60px_-25px_rgba(15,23,42,0.15)] transition-all`}>
-                  <div
-                    className="absolute -top-20 -right-20 h-52 w-52 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity"
-                    style={{ background: place.glow }}
-                  />
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-4xl leading-none">{place.flag}</span>
-                      <span className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-semibold">{place.role}</span>
-                    </div>
-                    <h3 className="mt-4 text-2xl font-semibold tracking-tight">{place.title}</h3>
-                    <p className="mt-2 text-slate-600 text-sm leading-relaxed">{place.description}</p>
                   </div>
                 </div>
               </AnimatedSection>
@@ -446,46 +352,6 @@ export default function About() {
             </div>
           </AnimatedSection>
         </div>
-      </section>
-
-      {/* FINAL CTA */}
-      <section className="px-6 sm:px-10 lg:px-16 pb-24 pt-10">
-        <AnimatedSection animation="fade-up">
-          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[44px] bg-gradient-to-br from-[#f16610] via-[#ff7a23] to-[#ff8a3c] p-10 sm:p-16 text-white">
-            <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/15 blur-3xl" />
-            <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-amber-200/30 blur-3xl" />
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:48px_48px]" />
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-              <div className="max-w-xl">
-                <p className="text-xs uppercase tracking-[0.4em] text-white/80 font-semibold">Let&apos;s build together</p>
-                <h2 className="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
-                  Ready to build your finance command centre?
-                </h2>
-                <p className="mt-4 text-white/85 text-lg">
-                  Bring Finanshels into your leadership rhythm. We&apos;ll map your needs, assemble a team, and get you investor-ready in 30 days.
-                </p>
-                <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-white/80">
-                  <span className="inline-flex items-center gap-2"><CheckCircle2 size={16} /> 48-hour proposal</span>
-                  <span className="inline-flex items-center gap-2"><CheckCircle2 size={16} /> No setup fees on annual</span>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3 w-full md:w-auto">
-                <a
-                  href="mailto:contact@finanshels.com"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-[#f16610] shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
-                >
-                  Talk to the team <ArrowRight size={18} />
-                </a>
-                <a
-                  href="https://wa.me/971521549572"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
-                >
-                  <MessageSquare size={18} /> WhatsApp us
-                </a>
-              </div>
-            </div>
-          </div>
-        </AnimatedSection>
       </section>
     </div>
   )

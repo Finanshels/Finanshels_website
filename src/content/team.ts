@@ -3,7 +3,7 @@ export interface LeadershipMember {
   role: string
   image: string
   bio: string
-  linkedin: string
+  linkedin?: string
 }
 
 export interface Testimonial {
@@ -38,7 +38,7 @@ export const LEADERSHIP_TEAM: LeadershipMember[] = [
     name: 'Meet Patel',
     role: 'Centre Of Excellence',
     image: 'https://api.dicebear.com/7.x/notionists/svg?seed=MaleStylishBoss&backgroundColor=ec4899',
-    bio: 'Driving growth, business and innovations',
+    bio: 'Driving Strategy, business and innovations',
     linkedin: 'https://www.linkedin.com/in/themeetpatel/',
   },
   {
@@ -49,32 +49,39 @@ export const LEADERSHIP_TEAM: LeadershipMember[] = [
     linkedin: 'https://www.linkedin.com/in/kohlirahul/',
   },
   {
-    name: 'Aditya Jha',
-    role: 'Head of Sales',
-    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=AdityaJha&backgroundColor=f97316',
-    bio: 'Leading revenue growth and building lasting client relationships.',
-    linkedin: 'https://www.linkedin.com/in/adityajha11/',
+    name: 'Ashish Tripathi',
+    role: 'Head of Product & Monetization',
+    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=AshishTripathi&backgroundColor=10b981',
+    bio: 'Building the product and pricing that turn finance operations into a platform clients rely on.',
+    linkedin: 'https://www.linkedin.com/in/ashishtripathi-at/',
   },
   {
-    name: 'Harris Solangi',
-    role: 'VP of Engineering',
-    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=HarrisSolangi&backgroundColor=10b981',
-    bio: 'Building scalable tech infrastructure powering financial operations.',
-    linkedin: 'https://www.linkedin.com/in/harrissolangi/',
-  },
-  {
-    name: 'George Methew',
-    role: 'Fractional CHRO',
-    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=GeorgeMethewMale456&backgroundColor=a855f7',
-    bio: 'Shaping company culture and building world-class teams.',
-    linkedin: 'https://www.linkedin.com/in/georgeathumlog/',
+    name: 'Santo Thomas',
+    role: 'AM - Org Excellence',
+    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=SantoThomasMale&backgroundColor=0ea5e9',
+    bio: 'Driving organisational excellence — the systems, rituals, and standards that keep every team performing at its best.',
+    linkedin: 'https://www.linkedin.com/in/santo-thomas-991287236/',
   },
   {
     name: 'Suhail KY',
-    role: 'Head of Taxation',
+    role: 'Head of Operations',
     image: 'https://api.dicebear.com/7.x/notionists/svg?seed=SuhailKYMale&backgroundColor=eab308',
-    bio: 'Expert in tax compliance and strategic financial planning.',
+    bio: 'Keeping delivery sharp across every market — process, quality, and on-time compliance for each client.',
     linkedin: 'https://www.linkedin.com/in/suhail-k-y-cma%C2%AE-011264181/',
+  },
+  {
+    name: 'Vishal Singh',
+    role: 'Partnership Lead',
+    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=VishalSinghMale&backgroundColor=f43f5e',
+    bio: 'Building the alliances and ecosystem partnerships that open new markets for Finanshels.',
+    linkedin: 'https://www.linkedin.com/in/vishalsingh2302/',
+  },
+  {
+    name: 'Ashish Yadav',
+    role: 'Sales Lead',
+    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=AshishYadav&backgroundColor=f97316',
+    bio: 'Leading revenue growth and building lasting client relationships.',
+    linkedin: 'https://www.linkedin.com/in/ashish-yadav-00370618a/',
   },
   {
     name: 'Jaydeep Khamkar',
@@ -84,18 +91,32 @@ export const LEADERSHIP_TEAM: LeadershipMember[] = [
     linkedin: 'https://www.linkedin.com/in/jaydeep-khamkar-538ab415/',
   },
   {
-    name: 'Aditi Gupta',
-    role: 'Strategic Partnership Head',
-    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=AditiGuptaFemale789&backgroundColor=f43f5e',
-    bio: 'Building strategic alliances and ecosystem partnerships across MENA.',
-    linkedin: 'https://www.linkedin.com/in/aditi-gupta1583/',
-  },
-  {
     name: 'Jasmeet Monga',
     role: 'Account Manager - Finance',
     image: 'https://api.dicebear.com/7.x/notionists/svg?seed=JasmeetMongaMale&backgroundColor=f59e0b',
     bio: 'Leading finance operations and client relationships across UAE markets.',
     linkedin: 'https://www.linkedin.com/in/jasmeet-monga-acca-98a39254/',
+  },
+  {
+    name: 'Divya Mangtani',
+    role: 'HR - Business Partner',
+    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Divya&backgroundColor=a855f7',
+    bio: 'Partnering with teams on hiring, growth, and the people experience that keeps Finanshels a place builders love.',
+    linkedin: 'https://www.linkedin.com/in/divya-mangtani-1470271b5/',
+  },
+  {
+    name: 'Manali Kulkarni',
+    role: 'Brand & Community Manager',
+    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=ManaliKulkarni&backgroundColor=d946ef',
+    bio: 'Growing the Finanshels brand and community — the stories, events, and voice that bring our people and clients together.',
+    linkedin: 'https://www.linkedin.com/in/manali-kulkarni-353ba2b1/',
+  },
+  {
+    name: 'Emil Rizwan',
+    role: 'Customer Success Manager',
+    image: 'https://api.dicebear.com/7.x/notionists/svg?seed=Emil&backgroundColor=3b82f6',
+    bio: 'Making sure every client gets more than they expected — onboarding, adoption, and outcomes that keep them growing with us.',
+    linkedin: 'https://www.linkedin.com/in/emilrizwan16/',
   },
 ]
 
