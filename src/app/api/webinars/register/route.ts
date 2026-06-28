@@ -77,6 +77,18 @@ function notificationRecipients(): string[] {
   return raw.split(',').map((s) => s.trim()).filter(Boolean)
 }
 
+// Escape user-supplied values before interpolating into the HTML email body.
+// Without this, a registrant's name like `<img src=x onerror=...>` executes in
+// the team member's email client. (Mirrors the helper in /api/contact.)
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 async function notifyTeam(params: {
   name: string
   email: string
@@ -99,8 +111,8 @@ async function notifyTeam(params: {
   const text = [`New webinar registration from /webinars/${params.slug}`, '', ...lines].join('\n')
   const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#0f172a;">
     <h2 style="margin:0 0 12px;font-size:18px;">New webinar registration</h2>
-    <p style="margin:0 0 12px;color:#64748b;font-size:13px;">/webinars/${params.slug}</p>
-    ${lines.map((l) => `<div style="font-size:14px;margin:2px 0;">${l}</div>`).join('')}
+    <p style="margin:0 0 12px;color:#64748b;font-size:13px;">/webinars/${escapeHtml(params.slug)}</p>
+    ${lines.map((l) => `<div style="font-size:14px;margin:2px 0;">${escapeHtml(l)}</div>`).join('')}
   </div>`
 
   for (const to of recipients) {
