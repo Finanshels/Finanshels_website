@@ -117,7 +117,7 @@ function renderTemplate(
   if (collection === 'blog_posts') {
     const body = sanitizeCmsHtml(String(doc.body ?? doc.bodyHtml ?? ''))
     return (
-      <article className="mx-auto max-w-3xl px-6 py-16 sm:px-10">
+      <article className="mx-auto max-w-3xl px-6 pb-16 pt-28 sm:px-10 sm:pt-32">
         <h1 className="text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
         {doc.excerpt ? <p className="mt-4 text-lg text-slate-600">{String(doc.excerpt)}</p> : null}
         <div className="mt-8">
@@ -143,7 +143,7 @@ function renderTemplate(
       .filter(Boolean)
       .join('  ·  ')
     return (
-      <article className="mx-auto max-w-3xl px-6 py-16 sm:px-10">
+      <article className="mx-auto max-w-3xl px-6 pb-16 pt-28 sm:px-10 sm:pt-32">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           {art ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -207,7 +207,7 @@ function renderTemplate(
     // description blocks read fields that don't exist on the faqs schema —
     // dead code, removed.
     return (
-      <section className="mx-auto max-w-3xl px-6 py-16 sm:px-10">
+      <section className="mx-auto max-w-3xl px-6 pb-16 pt-28 sm:px-10 sm:pt-32">
         <h1 className="text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
         {doc.answer ? (
           <>
@@ -239,7 +239,7 @@ function renderTemplate(
     ]
     const testimonials = extras.storyTestimonials ?? []
     return (
-      <article className="mx-auto max-w-4xl px-6 py-16 sm:px-10">
+      <article className="mx-auto max-w-4xl px-6 pb-16 pt-28 sm:px-10 sm:pt-32">
         {eyebrow ? <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">{eyebrow}</p> : null}
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
         {heroImage ? (
@@ -295,7 +295,7 @@ function renderTemplate(
 
   if (collection === 'customer_reviews') {
     return (
-      <section className="mx-auto max-w-4xl px-6 py-16 sm:px-10">
+      <section className="mx-auto max-w-4xl px-6 pb-16 pt-28 sm:px-10 sm:pt-32">
         <h1 className="text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
         {(doc.review_text || doc.quote) ? (
           <blockquote className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-lg text-slate-700">
@@ -307,7 +307,7 @@ function renderTemplate(
   }
 
   return (
-    <section className="mx-auto max-w-4xl px-6 py-16 sm:px-10">
+    <section className="mx-auto max-w-4xl px-6 pb-16 pt-28 sm:px-10 sm:pt-32">
       <h1 className="text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
       {resolveDescription(doc) ? <p className="mt-4 text-lg text-slate-600">{resolveDescription(doc)}</p> : null}
       <pre className="mt-8 overflow-auto rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-700">

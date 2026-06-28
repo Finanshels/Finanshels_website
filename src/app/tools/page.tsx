@@ -50,7 +50,7 @@ export default async function ToolsHubPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-12">
+    <main className="mx-auto max-w-6xl px-4 pb-16 pt-28 sm:pt-32">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <header>
         <h1 className="text-3xl font-bold text-slate-900 md:text-4xl">Free finance & tax tools</h1>

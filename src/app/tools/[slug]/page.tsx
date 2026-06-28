@@ -115,7 +115,7 @@ export default async function ToolPage({ params }: Props) {
           aria-hidden
           className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-secondary/10 blur-3xl"
         />
-        <div className="relative mx-auto max-w-5xl px-4 py-12 sm:py-16">
+        <div className="relative mx-auto max-w-5xl px-4 pb-12 pt-28 sm:pb-16 sm:pt-32">
           <nav className="flex items-center gap-1.5 text-sm text-slate-500" aria-label="Breadcrumb">
             <Link href="/tools" className="transition hover:text-brand-primary">
               Tools
