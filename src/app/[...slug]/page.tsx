@@ -791,7 +791,7 @@ export default async function LegacyStaticPage({ params }: CatchAllPageProps) {
   const testimonials = testimonialsForPath(path)
 
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10 md:px-8 md:py-14">
+    <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 pb-10 pt-28 sm:pt-32 md:px-8 md:pb-14">
       <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-white to-blue-50 p-8 shadow-sm md:p-12">
         <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-blue-100/70 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-indigo-100/60 blur-3xl" />

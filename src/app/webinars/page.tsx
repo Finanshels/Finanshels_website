@@ -91,7 +91,7 @@ export default async function WebinarsHubPage() {
 
   return (
     <main className="bg-gradient-to-b from-white to-slate-50">
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 pb-14 pt-28 sm:px-6 sm:pb-20 sm:pt-32">
         <header className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-700">Webinars</p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
