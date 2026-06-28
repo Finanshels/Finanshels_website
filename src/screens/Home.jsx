@@ -110,7 +110,7 @@ const SOLUTION_PILLARS = [
     copy: 'Senior financial strategy without the full-time cost. Cash flow modelling, investor reporting, pricing strategy, and fundraising support from seasoned CFOs.',
     accent: 'from-[#ecfdf5] to-[#fff]',
     iconBg: 'bg-[#dcfce7] text-[#059669]',
-    href: '/cfo-services-dubai',
+    href: '/cfo-services-uae',
   },
 ]
 
@@ -462,7 +462,7 @@ export default function Home() {
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </a>
               <a
-                href="https://wa.me/97145457841?text=Hi%20Team%20Finanshels%2C%20I%27d%20like%20to%20chat%20with%20an%20expert."
+                href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20I%27d%20like%20to%20chat%20with%20an%20expert."
                 className="group inline-flex items-center justify-center gap-2.5 rounded-2xl border border-white/15 bg-white/8 px-8 py-4 text-[15px] font-semibold text-white/90 backdrop-blur hover:bg-white/15 hover:border-white/25 transition"
               >
                 <MessageSquare size={17} className="text-white/60 group-hover:text-white/90 transition-colors" />

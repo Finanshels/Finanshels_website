@@ -11,6 +11,7 @@ import { verifyTurnstile } from '@/lib/landing-pages/turnstile'
 import { leadToZohoPayload, pushLeadToZoho } from '@/lib/landing-pages/zohoClient'
 import { sendLeadNotification } from '@/lib/landing-pages/leadNotification'
 import { getLead } from '@/lib/landing-pages/repository'
+import { enforceBodyLimit } from '@/lib/http/bodyLimit'
 
 export const runtime = 'nodejs'
 
@@ -67,6 +68,9 @@ function hashIp(ip: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const tooLarge = enforceBodyLimit(req, 64_000)
+  if (tooLarge) return tooLarge
+
   let body: unknown
   try {
     body = await req.json()

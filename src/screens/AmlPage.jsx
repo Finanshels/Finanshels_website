@@ -185,7 +185,7 @@ export default function AmlPage() {
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </a>
               <a
-                href="https://api.whatsapp.com/send/?phone=97145457841&text=Hi+I%27d+like+to+get+started+with+AML+compliance."
+                href="https://api.whatsapp.com/send/?phone=971521549572&text=Hi+I%27d+like+to+get+started+with+AML+compliance."
                 className="inline-flex items-center gap-2 rounded-2xl border-2 border-slate-900 bg-white px-6 py-3.5 font-semibold text-slate-900 hover:bg-slate-900 hover:text-white transition"
               >
                 <MessageSquare size={18} /> Chat on WhatsApp
@@ -431,7 +431,7 @@ export default function AmlPage() {
                   Book a Meeting <ArrowRight size={18} />
                 </a>
                 <a
-                  href="https://api.whatsapp.com/send/?phone=97145457841&text=Hi+I%27d+like+to+get+started+with+AML+compliance."
+                  href="https://api.whatsapp.com/send/?phone=971521549572&text=Hi+I%27d+like+to+get+started+with+AML+compliance."
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
                 >
                   <MessageSquare size={18} /> Chat on WhatsApp

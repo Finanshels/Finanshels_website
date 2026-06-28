@@ -1,3 +1,5 @@
+'use client'
+
 import { createContext, useContext, useState, useEffect } from 'react'
 
 const OnboardingContext = createContext()
@@ -54,15 +56,27 @@ export const OnboardingProvider = ({ children }) => {
   const [showConfetti, setShowConfetti] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem('finanshels-onboarding')
+    // FIX-060: guard localStorage access — JSON.parse on a corrupt value, or
+    // getItem in privacy mode / sandboxed iframes, used to throw and white-screen
+    // the whole onboarding flow.
+    let saved = null
+    try {
+      saved = localStorage.getItem('finanshels-onboarding')
+    } catch {
+      saved = null
+    }
     if (saved) {
-      const data = JSON.parse(saved)
-      setCurrentStep(data.currentStep || 'welcome')
-      setCompletedSteps(data.completedSteps || [])
-      setUserData(data.userData || userData)
-      setQuizAnswers(data.quizAnswers || {})
-      setQuizScore(data.quizScore || 0)
-      setBadges(data.badges || [])
+      try {
+        const data = JSON.parse(saved)
+        setCurrentStep(data.currentStep || 'welcome')
+        setCompletedSteps(data.completedSteps || [])
+        setUserData(data.userData || userData)
+        setQuizAnswers(data.quizAnswers || {})
+        setQuizScore(data.quizScore || 0)
+        setBadges(data.badges || [])
+      } catch {
+        // Corrupt saved state — ignore and start fresh.
+      }
     }
   }, [])
 
@@ -77,7 +91,11 @@ export const OnboardingProvider = ({ children }) => {
       timeSpent,
       progress: calculateProgress()
     }
-    localStorage.setItem('finanshels-onboarding', JSON.stringify(progress))
+    try {
+      localStorage.setItem('finanshels-onboarding', JSON.stringify(progress))
+    } catch {
+      // Storage unavailable (private mode / quota exceeded) — non-fatal.
+    }
     checkBadges(progress)
   }, [currentStep, completedSteps, userData, quizAnswers, quizScore, badges, timeSpent])
 
@@ -99,10 +117,14 @@ export const OnboardingProvider = ({ children }) => {
   }
 
   const calculateProgress = () => {
-    const requiredSteps = ONBOARDING_STEPS.filter(s => s.required)
-    const completedRequired = completedSteps.filter(cs => 
+    // FIX-060: 'completion' is the celebration screen, not a task to complete, so
+    // it can never be marked done — previously capping progress at 13/14 = 93%
+    // and making the 100% "completionist" badge unreachable. Exclude it.
+    const requiredSteps = ONBOARDING_STEPS.filter(s => s.required && s.id !== 'completion')
+    const completedRequired = completedSteps.filter(cs =>
       requiredSteps.find(rs => rs.id === cs)
     )
+    if (requiredSteps.length === 0) return 0
     return Math.round((completedRequired.length / requiredSteps.length) * 100)
   }
 
@@ -146,7 +168,11 @@ export const OnboardingProvider = ({ children }) => {
     setQuizAnswers({})
     setQuizScore(0)
     setBadges([])
-    localStorage.removeItem('finanshels-onboarding')
+    try {
+      localStorage.removeItem('finanshels-onboarding')
+    } catch {
+      // ignore
+    }
   }
 
   const value = {

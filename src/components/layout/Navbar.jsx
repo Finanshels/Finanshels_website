@@ -64,10 +64,12 @@ const SERVICES_SECTIONS = [
   {
     title: 'Finance Back Office',
     items: [
-      { name: 'Accounting Services UAE', href: '/accounting-services-uae', icon: BookOpen },
+      // FIX-055: /accounting-services-uae, /financial-controller-uae and
+      // /cfo-services-dubai 404 (no page). Remapped to live pages.
+      { name: 'Accounting Services', href: '/services', icon: BookOpen },
       { name: 'Bookkeeping Services', href: '/bookkeeping-services-uae', icon: Calculator },
-      { name: 'Financial Controller (FCaaS)', href: '/financial-controller-uae', icon: TrendingUp },
-      { name: 'CFO Services Dubai', href: '/cfo-services-dubai', icon: Briefcase }
+      { name: 'Financial Controller (FCaaS)', href: '/services', icon: TrendingUp },
+      { name: 'CFO Services', href: '/cfo-services-uae', icon: Briefcase }
     ]
   },
   {
@@ -92,39 +94,42 @@ const SERVICES_SECTIONS = [
   }
 ]
 
+// FIX-055: the Resources hub linked to ~12 pages that don't exist yet (guides,
+// reports, cheat sheets, templates, and standalone calculator routes all 404).
+// Until those ship, each entry points at the closest live page so nothing 404s.
 const RESOURCES_SECTIONS = [
   {
     title: 'Knowledge',
     items: [
-      { name: 'Guides Hub', href: '/guide', icon: GraduationCap },
+      { name: 'Guides Hub', href: '/blog', icon: GraduationCap },
       { name: 'Blog Hub', href: '/blog', icon: Newspaper },
       { name: 'Glossary Hub', href: '/glossary', icon: BookOpen },
-      { name: 'Reports', href: '/report', icon: FileBarChart }
+      { name: 'Reports', href: '/blog', icon: FileBarChart }
     ]
   },
   {
     title: 'Quick Reference',
     items: [
       { name: 'FAQs', href: '/faq', icon: HelpCircle },
-      { name: 'Cheat Sheets', href: '/cheat-sheet', icon: ListChecks },
-      { name: 'Templates', href: '/template', icon: LayoutTemplate }
+      { name: 'Cheat Sheets', href: '/blog', icon: ListChecks },
+      { name: 'Templates', href: '/blog', icon: LayoutTemplate }
     ]
   },
   {
     title: 'Calculators',
     items: [
-      { name: 'Cash Flow', href: '/cash-flow-management-calculator', icon: Wallet },
-      { name: 'Gratuity', href: '/gratuity-calculator', icon: Coins },
-      { name: 'VAT', href: '/vat-calculator', icon: Percent },
-      { name: 'E-Invoicing', href: '/einvoicing-tax-calculator', icon: Receipt }
+      { name: 'Cash Flow', href: '/services', icon: Wallet },
+      { name: 'Gratuity', href: '/services', icon: Coins },
+      { name: 'VAT', href: '/vat-filing-uae', icon: Percent },
+      { name: 'E-Invoicing', href: '/vat-filing-uae', icon: Receipt }
     ]
   },
   {
     title: 'Benchmarks & Checks',
     items: [
-      { name: 'Salary Benchmark', href: '/accounting-finance-salary-benchmark', icon: Scale },
-      { name: 'Finance Health Check', href: '/business-finance-health-checker', icon: HeartPulse },
-      { name: 'CT Deadline Check', href: '/corporate-tax-deadline-checker', icon: CalendarClock }
+      { name: 'Salary Benchmark', href: '/services', icon: Scale },
+      { name: 'Finance Health Check', href: '/services', icon: HeartPulse },
+      { name: 'CT Deadline Check', href: '/corporate-tax-filing-uae', icon: CalendarClock }
     ]
   }
 ]
@@ -140,24 +145,27 @@ const COMPANY_SECTIONS = [
   {
     title: 'Connect',
     items: [
-      { name: 'Partners', href: '/partners', icon: HeartHandshake },
+      // FIX-055: /partners 404s — use the external partner portal (matches footer).
+      { name: 'Partners', href: 'https://partner.finanshels.com', icon: HeartHandshake },
       { name: 'Contact', href: '/contact', icon: MessageSquare }
     ]
   },
   {
     title: 'Careers',
     items: [
+      // FIX-055: /jobs 404s — point to the live careers page.
       { name: 'Careers', badge: "We're hiring!", href: '/careers', icon: Briefcase },
-      { name: 'Jobs', href: '/jobs', icon: Briefcase }
+      { name: 'Open Roles', href: '/careers', icon: Briefcase }
     ]
   },
   {
     title: 'Media',
     items: [
+      // FIX-055: /events, /podcasts, /webinars 404 — remap to live pages.
       { name: 'Community', href: '/community', icon: Users },
-      { name: 'Events', href: '/events', icon: CalendarDays },
-      { name: 'Podcasts', href: '/podcasts', icon: Mic },
-      { name: 'Webinars', href: '/webinars', icon: Video }
+      { name: 'Events', href: '/events-by-finanshels', icon: CalendarDays },
+      { name: 'Podcasts', href: '/blog', icon: Mic },
+      { name: 'Webinars', href: '/blog', icon: Video }
     ]
   }
 ]
@@ -212,8 +220,8 @@ export default function Navbar() {
           text: 'Free guides, calculators, and tools for ambitious operators.',
           primary: { href: '/blog', label: 'View blog' },
           actions: [
-            { href: '/guide', label: 'Browse guides' },
-            { href: '/vat-calculator', label: 'Try a calculator' }
+            { href: '/blog', label: 'Browse guides' },
+            { href: '/glossary', label: 'Explore glossary' }
           ]
         }
       },
@@ -226,7 +234,7 @@ export default function Navbar() {
           primary: { href: '/contact', label: 'Contact us' },
           actions: [
             { href: '/careers', label: 'Careers' },
-            { href: '/partners', label: 'Become a partner' }
+            { href: 'https://partner.finanshels.com', label: 'Become a partner' }
           ]
         }
       }
@@ -445,7 +453,9 @@ export default function Navbar() {
                               const EntryComponent = entry.href?.startsWith('http') ? 'a' : Link
                               const entryProps = entry.href?.startsWith('http')
                                 ? { href: entry.href, target: '_blank', rel: 'noreferrer', onClick: () => setMobileMenuOpen(false) }
-                                : { to: entry.href || '#', onClick: () => setMobileMenuOpen(false) }
+                                // FIX-055: next/link uses `href`, not `to` — the mobile
+                                // submenu links were rendering with no href (dead links).
+                                : { href: entry.href || '#', onClick: () => setMobileMenuOpen(false) }
                               return (
                                 <EntryComponent
                                   key={entry.name}
@@ -479,7 +489,7 @@ export default function Navbar() {
                                 const ActionComponent = action.href.startsWith('http') ? 'a' : Link
                                 const actionProps = action.href.startsWith('http')
                                   ? { href: action.href, target: '_blank', rel: 'noreferrer', onClick: () => setMobileMenuOpen(false) }
-                                  : { to: action.href, onClick: () => setMobileMenuOpen(false) }
+                                  : { href: action.href, onClick: () => setMobileMenuOpen(false) }
                                 return (
                                   <ActionComponent
                                     key={action.label}

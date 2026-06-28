@@ -1,3 +1,7 @@
+// FIX-062: defense-in-depth — this module imports firebase-admin, so mark it
+// server-only so a stray client import fails loudly at build (precedent c5d6155)
+// instead of leaking the admin SDK into the browser bundle.
+import 'server-only'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getDb } from '../cms/firestore'
 import { normalizeFirestoreTimestamps } from '../cms/normalizeDoc'

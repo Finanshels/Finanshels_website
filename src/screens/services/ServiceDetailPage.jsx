@@ -54,6 +54,7 @@ export default function ServiceDetailPage({ page }) {
   const [lead, setLead] = useState({ name: '', email: '', phone: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   const testimonials = useMemo(() => TESTIMONIALS.slice(0, 2), [])
 
@@ -88,13 +89,42 @@ export default function ServiceDetailPage({ page }) {
     setLead((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (event) => {
+  // FIX-063: this form previously faked success with a setTimeout and never sent
+  // the lead anywhere — every enquiry on sector/solution/service pages was
+  // silently dropped. Wire it to the same /api/contact pipeline the main contact
+  // form uses (Firestore + Zoho + email notification).
+  const handleSubmit = async (event) => {
     event.preventDefault()
     setSubmitting(true)
-    setTimeout(() => {
-      setSubmitting(false)
+    setError('')
+    try {
+      const composedMessage = [
+        lead.message?.trim() || 'Requested a strategy call.',
+        lead.phone ? `Phone / WhatsApp: ${lead.phone}` : '',
+        page?.title ? `Service interest: ${page.title}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n')
+
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: lead.name,
+          email: lead.email,
+          message: composedMessage,
+          reason: 'sales',
+          pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+        }),
+      })
+
+      if (!res.ok) throw new Error('request_failed')
       setSubmitted(true)
-    }, 600)
+    } catch {
+      setError('Something went wrong. Please email contact@finanshels.com or message us on WhatsApp.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -682,6 +712,9 @@ export default function ServiceDetailPage({ page }) {
                         </>
                       )}
                     </button>
+                    {error && (
+                      <p className="text-sm text-rose-600 text-center" role="alert">{error}</p>
+                    )}
                   </form>
                 )}
                 <p className="mt-4 text-xs text-slate-500 text-center">

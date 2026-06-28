@@ -18,6 +18,7 @@ import {
   updateLeadAndSync,
 } from '@/lib/chat/leadRepository'
 import { searchSiteContent } from '@/lib/chat/siteSearch'
+import { enforceBodyLimit } from '@/lib/http/bodyLimit'
 import {
   checkRateLimit,
   classifyIntent,
@@ -110,6 +111,9 @@ export async function POST(request: Request) {
       { status: 429 }
     )
   }
+
+  const tooLarge = enforceBodyLimit(request, 256_000)
+  if (tooLarge) return tooLarge
 
   let body: { messages?: UIMessage[]; pageUrl?: string }
   try {
