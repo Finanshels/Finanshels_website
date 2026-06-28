@@ -18,7 +18,7 @@ import {
   TestimonialsCarousel,
   TrustBar,
   VideoTestimonial,
-} from './sections/Sections'
+} from './sections'
 import LandingHeader from './LandingHeader'
 import LandingFooter from './LandingFooter'
 import StickyCtaBar from './StickyCtaBar'
