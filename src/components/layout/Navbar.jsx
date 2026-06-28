@@ -113,18 +113,18 @@ const RESOURCES_SECTIONS = [
   {
     title: 'Calculators',
     items: [
-      { name: 'Cash Flow', href: '/cash-flow-management-calculator', icon: Wallet },
-      { name: 'Gratuity', href: '/gratuity-calculator', icon: Coins },
-      { name: 'VAT', href: '/vat-calculator', icon: Percent },
-      { name: 'E-Invoicing', href: '/einvoicing-tax-calculator', icon: Receipt }
+      { name: 'Cash Flow', href: '/tools', icon: Wallet },
+      { name: 'Gratuity', href: '/tools/gratuity-calculator', icon: Coins },
+      { name: 'VAT', href: '/tools/vat-calculator', icon: Percent },
+      { name: 'E-Invoicing', href: '/tools', icon: Receipt }
     ]
   },
   {
     title: 'Benchmarks & Checks',
     items: [
-      { name: 'Salary Benchmark', href: '/accounting-finance-salary-benchmark', icon: Scale },
-      { name: 'Finance Health Check', href: '/business-finance-health-checker', icon: HeartPulse },
-      { name: 'CT Deadline Check', href: '/corporate-tax-deadline-checker', icon: CalendarClock }
+      { name: 'Salary Benchmark', href: '/tools', icon: Scale },
+      { name: 'Finance Health Check', href: '/tools/business-finance-health-check', icon: HeartPulse },
+      { name: 'CT Deadline Check', href: '/tools/corporate-tax-deadline-checker', icon: CalendarClock }
     ]
   }
 ]

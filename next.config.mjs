@@ -43,8 +43,18 @@ async function legacyRedirects() {
     { source: '/ebooks/:slug', destination: '/content/ebooks/:slug', permanent: true },
     { source: '/ebook/:slug', destination: '/content/ebooks/:slug', permanent: true },
 
-    { source: '/old-tools/:slug', destination: '/content/tools/:slug', permanent: true },
-    { source: '/tools/:slug', destination: '/content/tools/:slug', permanent: true },
+    // The bare `/tools/:slug` catch-all that used to send tool URLs to the
+    // (blocklisted) /content/tools route is REMOVED — the dedicated
+    // /tools/[slug] route now owns tool detail pages, and a catch-all here
+    // would hijack every one of them. Redirect only the known legacy slugs.
+    { source: '/old-tools/:slug', destination: '/tools', permanent: true },
+    { source: '/tools/corporate-tax-registration-deadline-checker-uae', destination: '/tools', permanent: true },
+    { source: '/tools/corporate-tax-filing-deadline-checker-in-uae', destination: '/tools', permanent: true },
+    { source: '/tools/gratuity-checker-calculator-tool-in-uae', destination: '/tools', permanent: true },
+    { source: '/tools/check-financial-health-for-your-business-with-finanshels', destination: '/tools', permanent: true },
+    { source: '/tools/cash-flow-scoring-system-for-your-business-with-finanshels', destination: '/tools', permanent: true },
+    { source: '/tools/finance-hiring-salary-benchmark', destination: '/tools', permanent: true },
+    { source: '/tools/finanshels-tools-powered-by-finanshels', destination: '/tools', permanent: true },
 
     { source: '/faq-questions/:slug', destination: '/content/faqs/:slug', permanent: true },
     { source: '/faq/:slug', destination: '/content/faqs/:slug', permanent: true },
