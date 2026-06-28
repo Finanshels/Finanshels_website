@@ -23,7 +23,14 @@ export async function verifyTurnstile(token: string | undefined, remoteIp?: stri
   if (!secret) {
     if (!warnedOnce) {
       warnedOnce = true
-      console.warn('[turnstile] TURNSTILE_SECRET_KEY not set — verification bypassed.')
+      console.warn('[turnstile] TURNSTILE_SECRET_KEY not set.')
+    }
+    // FIX-065: if the public site key IS configured, visitors are solving the
+    // widget and a missing secret is a real misconfiguration — fail closed in
+    // production so bots aren't waved through. If neither key is set, Turnstile
+    // simply isn't deployed, so don't block legitimate leads (fail open).
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()) {
+      return { ok: false, reason: 'turnstile_unconfigured' }
     }
     return { ok: true }
   }

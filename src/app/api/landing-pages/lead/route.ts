@@ -123,6 +123,7 @@ export async function POST(req: NextRequest) {
       attribution: input.attribution,
       user_agent: userAgent,
       ip_hash: ipHash,
+      extra: input.extra,
     })
   } catch (err) {
     return NextResponse.json(

@@ -1,8 +1,18 @@
-'use client'
-
 import ServiceDetailPage from '../../screens/services/ServiceDetailPage'
 import { SERVICE_PAGES } from '@/content/service-pages'
+import { buildServiceMetadata } from '@/lib/seo/serviceMetadata'
+import { ServiceJsonLd } from '@/components/seo/StructuredData'
+
+const PATH = '/audit-services-dubai'
+const page = SERVICE_PAGES['audit-services-dubai']
+
+export const metadata = buildServiceMetadata(page, PATH)
 
 export default function Page() {
-  return <ServiceDetailPage page={SERVICE_PAGES['audit-services-dubai']} />
+  return (
+    <>
+      <ServiceJsonLd page={page} path={PATH} />
+      <ServiceDetailPage page={page} />
+    </>
+  )
 }

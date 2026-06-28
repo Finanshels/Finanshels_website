@@ -356,6 +356,9 @@ export type LeadWriteInput = {
   attribution: LeadAttribution
   user_agent: string
   ip_hash: string
+  // FIX-067: campaign-configured hidden form fields. Persisted so they aren't
+  // silently dropped after a 200 OK.
+  extra?: Record<string, string>
 }
 
 export async function writeLead(input: LeadWriteInput): Promise<string> {
@@ -381,6 +384,7 @@ export async function writeLead(input: LeadWriteInput): Promise<string> {
     landing_url: input.attribution.landing_url,
     user_agent: input.user_agent,
     ip_hash: input.ip_hash,
+    extra: input.extra ?? {},
     zoho_retry_count: 0,
     zoho_synced_at: null,
     resend_email_sent_at: null,

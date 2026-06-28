@@ -122,7 +122,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 })
   }
 
-  const messages = Array.isArray(body.messages) ? body.messages.slice(-MAX_HISTORY_TURNS) : []
+  // FIX-066: only accept user/assistant turns from the client — drop any
+  // client-supplied 'system'/'tool' messages so they can't override the
+  // server-set system prompt (prompt-injection hardening).
+  const messages = (Array.isArray(body.messages) ? body.messages : [])
+    .filter((m) => m && (m.role === 'user' || m.role === 'assistant'))
+    .slice(-MAX_HISTORY_TURNS)
   if (messages.length === 0) {
     return NextResponse.json({ error: 'no_messages' }, { status: 400 })
   }
