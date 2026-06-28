@@ -1,43 +1,35 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
   CheckCircle2,
   Quote,
   Sparkles,
-  Zap,
   Send,
   MessageSquare,
   Wallet,
   Activity,
   Target,
-  Compass,
-  TrendingUp,
   Users,
   Layers,
+  MapPin,
+  HeartPulse,
+  Scissors,
+  ShoppingCart,
+  Dumbbell,
+  Briefcase,
+  UtensilsCrossed,
+  Building2,
+  ShoppingBag,
+  Cpu,
+  Truck,
+  Gem,
+  TrendingUp,
 } from 'lucide-react'
 import AnimatedSection from '../../components/marketing/AnimatedSection'
 import TestimonialsCarousel from '@/components/marketing/TestimonialsCarousel'
 import { TESTIMONIALS } from '@/content/team'
-
-const createStoryBeats = (title) => [
-  {
-    phase: 'Sprint 0',
-    headline: 'Shadow & diagnose',
-    description: `We sit with your leaders and operators to see how ${title.toLowerCase()} runs today, logging every manual hand-off and risk.`,
-  },
-  {
-    phase: 'Sprint 1',
-    headline: 'Rebuild the engine',
-    description: 'Finanshels squads plug into your stack, clean data, and stand up recurring rituals without derailing BAU.',
-  },
-  {
-    phase: 'Sprint 2+',
-    headline: 'Scale & narrate',
-    description: 'Weekly memos, dashboards, and compliance proof keep founders, boards, and regulators aligned.',
-  },
-]
 
 const DEFAULT_DELIVERABLES = [
   'Weekly leadership memo covering wins, blockers, and next moves.',
@@ -51,15 +43,51 @@ const DEFAULT_TRIGGERS = [
   'Better controls unlock smoother cash cycles and valuation uplifts.',
 ]
 
-const STORY_ICONS = [Compass, Zap, TrendingUp]
+// Brand-level trust facts surfaced under the hero (reused site-wide — confirm numbers).
+const HERO_TRUST = [
+  { value: '7,000+', label: 'businesses served' },
+  { value: '180+', label: 'finance experts' },
+]
+
+// Per-segment icon for the "Who this is for" accordion — keyword match, Building2 fallback.
+const SEGMENT_ICONS = [
+  { re: /clinic|health|medical|dental|dha|doh|wellness/i, icon: HeartPulse },
+  { re: /salon|spa|beauty/i, icon: Scissors },
+  { re: /supermarket|grocery|food retail|retail/i, icon: ShoppingCart },
+  { re: /gym|fitness/i, icon: Dumbbell },
+  { re: /consult|agenc|professional/i, icon: Briefcase },
+  { re: /restaurant|cafe|caf|f&b|hospitality|dining/i, icon: UtensilsCrossed },
+  { re: /real estate|property|broker|developer/i, icon: Building2 },
+  { re: /ecommerce|e-commerce|online|shop|store/i, icon: ShoppingBag },
+  { re: /tech|saas|software|startup|app/i, icon: Cpu },
+  { re: /trad|import|export|logistic|distribut/i, icon: Truck },
+  { re: /jewel|gold|diamond|luxury/i, icon: Gem },
+  { re: /fund|vc|invest|portfolio/i, icon: TrendingUp },
+]
+
+function segmentIcon(segment) {
+  const match = SEGMENT_ICONS.find((s) => s.re.test(segment || ''))
+  return match ? match.icon : Building2
+}
+
+// UAE coverage shown in the "Where we operate" band.
+const UAE_COVERAGE = ['Dubai Mainland', 'JAFZA', 'DMCC', 'DIFC', 'ADGM', 'IFZA', 'SHAMS', 'RAKEZ', 'Meydan']
 
 export default function ServiceDetailPage({ page, cmsTestimonials }) {
   const [lead, setLead] = useState({ name: '', email: '', phone: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
+  const [showSticky, setShowSticky] = useState(false)
 
   const testimonials = useMemo(() => TESTIMONIALS.slice(0, 2), [])
+
+  useEffect(() => {
+    const onScroll = () => setShowSticky(window.scrollY > 700)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   if (!page) {
     return (
@@ -69,7 +97,6 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
     )
   }
 
-  const storyBeats = page.storyBeats || createStoryBeats(page.title || 'this workstream')
   const triggers = page.whyNow || DEFAULT_TRIGGERS
   const deliverables = page.deliverables || DEFAULT_DELIVERABLES
   const rituals = page.workflow || [
@@ -85,7 +112,11 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
       'Compliance pressure from boards, regulators, and investors.',
     ]
   const hasPricingTiers = page.pricingTiers?.length > 0
-  const startingPrice = hasPricingTiers ? page.pricingTiers[0].price : '$219/mo'
+  const startingPrice = page.price || (hasPricingTiers ? page.pricingTiers[0].price : '$219/mo')
+  // Clean service label for headings: strip trailing region tag and keep proper
+  // casing so we never render "...registration uae." (FIX: title.toLowerCase bug).
+  const serviceLabel =
+    (page.title || '').replace(/\s+(UAE|Dubai|Abu Dhabi|Sharjah)$/i, '').trim() || page.title
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -148,9 +179,17 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
 
         <div className="max-w-6xl mx-auto">
           <AnimatedSection animation="fade-down">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-white/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#f16610] backdrop-blur">
-              <Sparkles size={13} /> {page.title}
-            </span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-white/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-[#f16610] backdrop-blur">
+                <Sparkles size={13} /> {page.title}
+              </span>
+              {page.price && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-emerald-700">
+                  From {page.price}
+                  {page.priceUnit ? ` · ${page.priceUnit}` : ''}
+                </span>
+              )}
+            </div>
             <h1 className="mt-6 text-[clamp(2.5rem,5vw,4rem)] font-semibold leading-[1.05] tracking-tight max-w-4xl">
               {page.subtitle}
             </h1>
@@ -159,10 +198,10 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
-                href="mailto:contact@finanshels.com"
+                href="#book"
                 className="group inline-flex items-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#f16610]/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
               >
-                Talk to a specialist
+                {page.price ? `Get started — from ${page.price}` : 'Talk to a specialist'}
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </a>
               <a
@@ -171,6 +210,19 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
               >
                 <MessageSquare size={18} /> WhatsApp us
               </a>
+            </div>
+            <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-500 text-sm">★★★★★</span>
+                <span className="text-sm font-semibold text-slate-800">4.9</span>
+                <span className="text-sm text-slate-500">Google rating</span>
+              </div>
+              {HERO_TRUST.map((t) => (
+                <div key={t.label} className="flex items-baseline gap-1.5">
+                  <span className="text-sm font-bold text-slate-900">{t.value}</span>
+                  <span className="text-sm text-slate-500">{t.label}</span>
+                </div>
+              ))}
             </div>
           </AnimatedSection>
 
@@ -197,35 +249,76 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
       {/* WHO THIS IS FOR */}
       {page.whoFor?.length > 0 && (
         <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
-          <div className="max-w-6xl mx-auto">
-            <AnimatedSection animation="fade-up">
-              <div className="flex flex-col items-center text-center gap-3 mb-10">
+          <div className="max-w-6xl mx-auto grid items-start gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+            {/* LEFT — intro */}
+            <AnimatedSection animation="fade-right">
+              <div className="lg:sticky lg:top-28">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-[#fff4ec] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#f16610]">
                   <Users size={12} /> Who this is for
                 </span>
-                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Built for your situation</h2>
+                <h2 className="mt-4 text-3xl sm:text-4xl font-semibold leading-tight tracking-tight">
+                  Built for your situation, not a{' '}
+                  <span className="bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">generic template</span>.
+                </h2>
+                <p className="mt-4 leading-relaxed text-slate-600">
+                  Every business books revenue differently. Open your model to see exactly how we handle your VAT, reporting, and compliance — no guesswork.
+                </p>
+                <div className="mt-6 flex items-center gap-3">
+                  <span className="inline-flex h-10 min-w-[2.5rem] items-center justify-center rounded-2xl bg-slate-900 px-3 text-lg font-semibold text-white">
+                    {page.whoFor.length}
+                  </span>
+                  <p className="text-sm leading-snug text-slate-500">industries we know inside out</p>
+                </div>
+                <a
+                  href="/contact"
+                  className="mt-7 inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 px-5 py-3 text-sm font-semibold text-slate-800 transition-all hover:-translate-y-0.5 hover:border-[#f16610]/40 hover:text-[#f16610]"
+                >
+                  Not sure which fits? Book a Finance Health Check <ArrowRight size={15} />
+                </a>
               </div>
             </AnimatedSection>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {page.whoFor.map((audience) => (
-                <AnimatedSection key={audience.segment} animation="fade-up">
-                  <div className="h-full rounded-[28px] border border-slate-100 bg-gradient-to-br from-[#fff8f0] to-white p-6 hover:-translate-y-1 hover:shadow-[0_25px_50px_-25px_rgba(241,102,16,0.25)] transition-all">
-                    <h3 className="text-lg font-semibold tracking-tight text-slate-900">{audience.segment}</h3>
-                    <p className="mt-3 text-sm text-slate-600 leading-relaxed">{audience.description}</p>
-                    {audience.points?.length > 0 && (
-                      <ul className="mt-4 space-y-2">
-                        {audience.points.map((point) => (
-                          <li key={point} className="flex items-start gap-2 text-xs text-slate-600 leading-relaxed">
-                            <CheckCircle2 size={14} className="text-[#f16610] mt-0.5 flex-shrink-0" />
-                            <span>{point}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </AnimatedSection>
-              ))}
-            </div>
+
+            {/* RIGHT — accordion */}
+            <AnimatedSection animation="fade-left">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 lg:hidden">Tap your model to expand</p>
+              <div className="space-y-2.5">
+                {page.whoFor.map((audience, index) => {
+                  const Icon = segmentIcon(audience.segment)
+                  return (
+                    <details
+                      key={audience.segment}
+                      open={index === 0}
+                      className="group rounded-2xl border border-slate-100 bg-white transition-all open:border-[#f16610]/30 open:bg-gradient-to-br open:from-[#fff8f0] open:to-white open:shadow-[0_20px_45px_-28px_rgba(241,102,16,0.35)] hover:border-[#f16610]/20"
+                    >
+                      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
+                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[#fff1e1] text-[#f16610] transition-colors group-open:bg-[#f16610] group-open:text-white">
+                          <Icon size={17} />
+                        </span>
+                        <h3 className="flex-1 text-[15px] sm:text-base font-semibold leading-snug tracking-tight text-slate-900">
+                          {audience.segment}
+                        </h3>
+                        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-[#f16610]/30 bg-white text-lg font-light text-[#f16610] transition-transform group-open:rotate-45">
+                          +
+                        </span>
+                      </summary>
+                      <div className="px-4 pb-5 sm:px-5 sm:pl-[4.25rem]">
+                        <p className="text-sm leading-relaxed text-slate-600">{audience.description}</p>
+                        {audience.points?.length > 0 && (
+                          <ul className="mt-4 grid gap-x-5 gap-y-2 sm:grid-cols-2">
+                            {audience.points.map((point) => (
+                              <li key={point} className="flex items-start gap-2 text-xs leading-relaxed text-slate-600">
+                                <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0 text-[#f16610]" />
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </details>
+                  )
+                })}
+              </div>
+            </AnimatedSection>
           </div>
         </section>
       )}
@@ -324,57 +417,6 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
         </section>
       )}
 
-      {/* STORY ARC — DARK */}
-      <section className="px-6 sm:px-10 lg:px-16 py-20">
-        <AnimatedSection animation="fade-up">
-          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[44px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-10 sm:p-14 text-white">
-            <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#f16610]/30 blur-[120px]" />
-            <div className="absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-[#7e8bff]/30 blur-[140px]" />
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:60px_60px]" />
-            <div className="relative z-10 space-y-10">
-              <div className="max-w-3xl">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white/90 backdrop-blur">
-                  <Zap size={12} /> Story arc
-                </span>
-                <h2 className="mt-4 text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
-                  How the engagement{' '}
-                  <span className="bg-gradient-to-r from-white to-[#ff8a3c] bg-clip-text text-transparent">unfolds</span>.
-                </h2>
-                <p className="mt-4 text-slate-300 text-lg">
-                  Operators, controllers, and CFOs act as one team. Every sprint produces clear decisions for founders, boards, and regulators.
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-5 relative">
-                <div className="hidden md:block absolute top-12 left-[12%] right-[12%] h-0.5 bg-gradient-to-r from-[#f16610]/30 via-[#ff8a3c] to-[#f16610]/30">
-                  <div className="h-full w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-marquee" />
-                </div>
-                {storyBeats.map((beat, index) => {
-                  const Icon = STORY_ICONS[index] || Sparkles
-                  return (
-                    <AnimatedSection key={beat.phase} animation="fade-up" delay={index * 100}>
-                      <div className="relative rounded-[28px] bg-white/5 border border-white/15 backdrop-blur p-6 hover:bg-white/10 transition-all">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="relative inline-flex">
-                            <div className="absolute inset-0 rounded-full bg-[#f16610]/40 blur-md" />
-                            <div className="relative h-12 w-12 rounded-full bg-gradient-to-br from-[#f16610] to-[#ff8a3c] flex items-center justify-center text-white shadow-lg shadow-[#f16610]/30">
-                              <Icon size={20} />
-                            </div>
-                          </div>
-                          <span className="text-[10px] uppercase tracking-[0.3em] text-[#ff8a3c] font-bold">{beat.phase}</span>
-                        </div>
-                        <h3 className="text-xl font-semibold tracking-tight">{beat.headline}</h3>
-                        <p className="mt-2 text-sm text-white/75 leading-relaxed">{beat.description}</p>
-                      </div>
-                    </AnimatedSection>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-        </AnimatedSection>
-      </section>
-
       {/* WHY FINANSHELS + BLUEPRINT */}
       {(page.valueProps?.length || blueprint?.length) && (
         <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
@@ -401,9 +443,9 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
             <AnimatedSection animation="fade-left">
               <div className="h-full rounded-[32px] border border-slate-100 bg-gradient-to-br from-[#ecfdf5] to-white p-8 hover:-translate-y-1 hover:shadow-[0_30px_60px_-25px_rgba(15,23,42,0.18)] transition-all">
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-emerald-700">
-                  Solution blueprint
+                  Scope of work
                 </span>
-                <h2 className="mt-4 text-2xl font-semibold tracking-tight">How we deliver, step by step</h2>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight">Everything we handle</h2>
                 <div className="mt-5 space-y-3">
                   {blueprint.map((item, idx) => (
                     <div key={item} className="flex items-start gap-3 rounded-2xl bg-white border border-slate-100 p-4 text-sm text-slate-700">
@@ -420,35 +462,16 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
         </section>
       )}
 
-      {/* RITUALS + DELIVERABLES */}
+      {/* WHAT YOU GET */}
       <section className="px-6 sm:px-10 lg:px-16 py-16">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-6">
-          <AnimatedSection animation="fade-right">
-            <div className="h-full rounded-[32px] border border-slate-100 bg-white p-8">
-              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-700">
-                <Zap size={11} /> Execution rituals
-              </span>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight">What happens every sprint</h2>
-              <div className="mt-5 space-y-3">
-                {rituals.map((step, index) => (
-                  <div key={step} className="flex items-start gap-4 rounded-2xl border border-slate-100 p-4 hover:border-[#f16610]/30 transition">
-                    <div className="flex-shrink-0 w-11 h-11 rounded-2xl bg-gradient-to-br from-[#f16610] to-[#ff8a3c] text-white flex items-center justify-center font-bold shadow-md shadow-[#f16610]/20">
-                      {(index + 1).toString().padStart(2, '0')}
-                    </div>
-                    <p className="text-slate-700 text-sm leading-relaxed pt-1.5">{step}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </AnimatedSection>
-
-          <AnimatedSection animation="fade-left">
-            <div className="h-full rounded-[32px] border border-slate-100 bg-gradient-to-br from-[#eef2ff] to-white p-8">
+        <div className="max-w-6xl mx-auto">
+          <AnimatedSection animation="fade-up">
+            <div className="rounded-[32px] border border-slate-100 bg-gradient-to-br from-[#eef2ff] to-white p-8 sm:p-10">
               <span className="inline-flex items-center gap-2 rounded-full border border-[#4f46e5]/30 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#4f46e5]">
-                Leadership receives
+                <CheckCircle2 size={12} /> What you get
               </span>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight">Tangible deliverables</h2>
-              <div className="mt-5 space-y-3">
+              <h2 className="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">What&apos;s delivered</h2>
+              <div className="mt-6 grid sm:grid-cols-2 gap-x-8 gap-y-3">
                 {deliverables.map((d) => (
                   <div key={d} className="flex items-start gap-3 rounded-2xl bg-white border border-slate-100 p-4">
                     <CheckCircle2 size={18} className="text-[#4f46e5] mt-0.5 flex-shrink-0" />
@@ -554,6 +577,84 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
         </section>
       )}
 
+      {/* WHERE WE OPERATE */}
+      <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <AnimatedSection animation="fade-up">
+            <div className="rounded-[32px] border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-8 sm:p-10">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div className="max-w-md">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-700">
+                    <MapPin size={12} /> Where we operate
+                  </span>
+                  <h2 className="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight">
+                    UAE mainland &amp; every major free zone
+                  </h2>
+                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                    Onshore and free-zone entities alike — we handle the filing rules specific to each authority.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 lg:max-w-md lg:justify-end">
+                  {UAE_COVERAGE.map((zone) => (
+                    <span
+                      key={zone}
+                      className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                    >
+                      {zone}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* PRICING — fixed fee */}
+      {page.price && (
+        <section className="px-6 sm:px-10 lg:px-16 py-16">
+          <div className="max-w-3xl mx-auto">
+            <AnimatedSection animation="fade-up">
+              <div className="flex flex-col items-center text-center gap-3 mb-8">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-[#fff4ec] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#f16610]">
+                  <Wallet size={12} /> Pricing
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Transparent, fixed pricing</h2>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection animation="fade-up" delay={80}>
+              <div className="rounded-[32px] border-2 border-[#f16610]/30 bg-gradient-to-br from-[#fff4ec] to-white p-8 sm:p-10 text-center shadow-[0_30px_60px_-30px_rgba(241,102,16,0.3)]">
+                <div className="flex flex-wrap items-end justify-center gap-x-2 gap-y-1">
+                  <span className="pb-2 text-sm font-semibold uppercase tracking-widest text-slate-500">From</span>
+                  <span className="text-5xl sm:text-6xl font-semibold tracking-tight bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">
+                    {page.price}
+                  </span>
+                  {page.priceUnit && (
+                    <span className="pb-2 text-base font-medium text-slate-500">/ {page.priceUnit}</span>
+                  )}
+                </div>
+                <p className="mt-4 text-slate-600 leading-relaxed">
+                  Fixed fee, no hidden charges. A Finanshels specialist owns the entire process — you only pay the quoted price plus any government fees, billed at cost.
+                </p>
+                <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <a
+                    href="#book"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#f16610] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#f16610]/30 hover:-translate-y-0.5 hover:shadow-xl transition-all"
+                  >
+                    Get started <ArrowRight size={18} />
+                  </a>
+                  {page.priceInPlans && (
+                    <a href="/pricing" className="inline-flex items-center gap-2 font-semibold text-[#f16610]">
+                      Also included in monthly plans <ArrowRight size={16} />
+                    </a>
+                  )}
+                </div>
+              </div>
+            </AnimatedSection>
+          </div>
+        </section>
+      )}
+
       {/* PRICING TIERS */}
       {hasPricingTiers && (
         <section className="px-6 sm:px-10 lg:px-16 py-16">
@@ -623,24 +724,24 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
       )}
 
       {/* PRICING + LEAD FORM */}
-      <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
+      <section id="book" className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-6">
           <AnimatedSection animation="fade-right">
             <div className="h-full rounded-[32px] bg-gradient-to-br from-[#fff4ec] to-white border border-[#ffd7c0] p-8 relative overflow-hidden">
               <div className="absolute -top-20 -right-20 h-52 w-52 rounded-full bg-[#f16610]/15 blur-3xl" />
               <div className="relative z-10 flex flex-col h-full">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#f16610]">
-                  <Wallet size={12} /> Subscription snapshot
+                  <Wallet size={12} /> Pricing snapshot
                 </span>
                 <h3 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight">
-                  Starting from{' '}
+                  From{' '}
                   <span className="bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">{startingPrice}</span>
                 </h3>
                 <p className="mt-3 text-slate-600 leading-relaxed">
-                  Every subscription plugs bookkeeping, tax, compliance, reporting rituals, and direct access to Finanshels specialists into one partnership.
+                  Transparent, fixed pricing with no hidden charges — a dedicated Finanshels specialist owns the work from start to finish.
                 </p>
                 <div className="mt-6 space-y-2 text-sm text-slate-700">
-                  {['No setup fees on annual', 'Switch plans any time', 'WhatsApp + email · < 24h SLA'].map((item) => (
+                  {['Fixed fee — no hidden charges', 'FTA-registered specialists', 'WhatsApp + email support'].map((item) => (
                     <div key={item} className="flex items-center gap-2">
                       <CheckCircle2 size={16} className="text-emerald-500 flex-shrink-0" />
                       <span>{item}</span>
@@ -672,7 +773,7 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
                     <div className="mx-auto h-12 w-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mb-3">
                       <CheckCircle2 size={24} />
                     </div>
-                    <p className="font-semibold">Got it — reply coming within 24 hours.</p>
+                    <p className="font-semibold">Got it — our team will reach out to you directly.</p>
                   </div>
                 ) : (
                   <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
@@ -751,18 +852,18 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
       {/* FINAL CTA */}
       <section className="px-6 sm:px-10 lg:px-16 pb-24 pt-10">
         <AnimatedSection animation="fade-up">
-          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[44px] bg-gradient-to-br from-[#f16610] via-[#ff7a23] to-[#ff8a3c] p-10 sm:p-16 text-white">
-            <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/15 blur-3xl" />
-            <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-amber-200/30 blur-3xl" />
+          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[44px] bg-gradient-to-br from-[#b8420a] via-[#e0560c] to-[#f16610] p-10 sm:p-16 text-white">
+            <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[#ff8a3c]/20 blur-3xl" />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:48px_48px]" />
             <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
               <div className="max-w-xl">
-                <p className="text-xs uppercase tracking-[0.4em] text-white/80 font-semibold">Bring us in</p>
+                <p className="text-xs uppercase tracking-[0.4em] text-white/90 font-semibold">Ready when you are</p>
                 <h2 className="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
-                  Bring Finanshels in for {page.title.toLowerCase()}.
+                  Bring Finanshels in for {serviceLabel}.
                 </h2>
-                <p className="mt-4 text-white/85 text-lg">
-                  Share your stack, headcount, and deadlines — our service leads send a tailored roadmap within 48 hours.
+                <p className="mt-4 text-white/90 text-lg">
+                  Share where your business stands today — our specialists map out exactly what you need, with clear scope and pricing.
                 </p>
               </div>
               <div className="flex flex-col gap-3 w-full md:w-auto">
@@ -774,7 +875,7 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
                 </a>
                 <a
                   href="https://wa.me/971507178156"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/75 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
                 >
                   <MessageSquare size={18} /> WhatsApp consultants
                 </a>
@@ -783,6 +884,31 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
           </div>
         </AnimatedSection>
       </section>
+
+      {/* STICKY CTA */}
+      {page.price && (
+        <div
+          className={`fixed inset-x-0 bottom-0 z-40 transition-transform duration-300 ${
+            showSticky ? 'translate-y-0' : 'translate-y-full'
+          }`}
+        >
+          <div className="mx-auto m-3 flex max-w-3xl items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/95 px-4 py-3 shadow-2xl backdrop-blur">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">{serviceLabel}</p>
+              <p className="text-xs text-white/70">
+                From {page.price}
+                {page.priceUnit ? ` · ${page.priceUnit}` : ''}
+              </p>
+            </div>
+            <a
+              href="#book"
+              className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-xl bg-[#f16610] px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+            >
+              Get started <ArrowRight size={16} />
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
