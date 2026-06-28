@@ -9,14 +9,13 @@
 - **Main editor (center):** the title + slug, any required/long-form rich-text bodies, then collapsible **Card / Listing / Detail / Page blocks / Relationships** groups.
 - **Sidebar (right rail):** a **Publish** tab (status, metadata, card/CTA fields) plus **SEO / AEO / GEO** tabs. Tabs only appear when the collection actually has fields for them.
 
-_14 collections._
+_11 collections._
 
 ## Contents
 
 - [Media](#media--media_assets)
 - [Blog Posts](#blog-posts--blog_posts)
 - [Glossaries](#glossaries--glossary_terms)
-- [Our Customers](#our-customers--our_customers)
 - [Tools](#tools--tools)
 - [Customer Reviews](#customer-reviews--customer_reviews)
 - [Podcasts](#podcasts--podcasts)
@@ -25,8 +24,6 @@ _14 collections._
 - [Ebooks](#ebooks--ebooks)
 - [Webinars](#webinars--webinars)
 - [Team Members](#team-members--team_members)
-- [Videos](#videos--videos)
-- [Review Sources](#review-sources--review_sources)
 
 ---
 
@@ -105,7 +102,7 @@ _None._
 | Field | Key | Type | Required |
 |---|---|---|---|
 | Page blocks | `page_blocks` | blocks | |
-| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
+| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, HowTo, FAQPage} | |
 
 **Relationships**
 
@@ -120,28 +117,16 @@ _None._
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
 | Language | `language` | select {en, ar} | ✅ |
 | Featured image | `featured_image` | image | |
-| Thumbnail image | `thumbnail_image` | image | |
-| Icon | `icon` | icon | |
 | Author | `author` | reference → team_members | ✅ |
 | Publish date | `publish_date` | datetime | ✅ |
 | Featured image alt text | `featured_image_alt` | text | |
-| Blog category | `blog_category` | select {corporate-tax, vat, transfer-pricing, audit, accounting, bookkeeping, payroll, compliance, advisory, cfo-services, esr-aml-ubo, regulatory-updates, founder-stories, how-to-guides} | ✅ |
-| Blog industry | `blog_industry` | select {technology, ecommerce, professional-services, manufacturing, healthcare, real-estate, hospitality, retail, fintech, logistics, general} | |
+| Blog category | `blog_category` | select {accounting-bookkeeping, vat, corporate-tax, audit-assurance, compliance-aml, cfo-cash-flow, ai-tech-finance, startup-sme-finance, business-setup-free-zone, payroll, general} | ✅ |
+| Blog industry | `blog_industry` | multi_select {small-business, technology-startups, real-estate, restaurants-fb, healthcare, trading-business, ecommerce, jewellers-precious-metals, vc-funds-investment-firms, professional-services, construction-contracting, general} | |
 | Blog tags | `blog_tags` | tags | |
-| Target persona | `target_persona` | select {founder, ceo, cfo, finance-manager, accountant, controller, business-owner, agency-owner, none} | |
-| TOC enabled | `table_of_contents_enabled` | boolean | |
 | Featured post | `featured_post` | boolean | |
 | Related posts | `related_posts` | multi_reference → blog_posts | |
-| Series parent post | `series_ref` | reference → blog_posts | |
-| Lead magnet label | `lead_magnet_label` | text | |
-| Lead magnet URL | `lead_magnet_url` | url | |
-| Lead magnet form ID | `lead_magnet_form_id` | text | |
-| Lead-capture form ID (detail page) | `detail_lead_capture_form_id` | text | |
-| Sticky side CTA label | `detail_sticky_side_cta_label` | text | |
-| Sticky side CTA link | `detail_sticky_side_cta_link` | url | |
 
 **SEO tab**
 
@@ -156,9 +141,7 @@ _None._
 | OG title | `og_title` | text | |
 | OG description | `og_description` | textarea | |
 | OG image | `og_image` | image | |
-| Twitter card type | `twitter_card_type` | select {summary_large_image, summary, app, player} | |
 | Robots meta | `robots_meta` | select {index,follow, noindex,follow, index,nofollow, noindex,nofollow} | |
-| Schema type | `schema_type` | select {Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
 | FAQ schema enabled | `faq_schema_enabled` | boolean | |
 | Breadcrumbs title | `breadcrumbs_title` | text | |
 
@@ -197,73 +180,7 @@ _None._
 |---|---|---|---|
 | Term | `term` | text | ✅ |
 | Slug | `slug` | text | ✅ |
-| Definition short | `definition_short` | textarea | ✅ |
-| Definition full | `definition_full` | textarea | ✅ |
-
-**Card**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Card description | `card_description` | textarea | |
-| Card image | `card_image` | image | |
-| Featured | `featured` | boolean | |
-| Sort order | `sort_order` | number | |
-
-**Listing page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Listing hero heading | `listing_hero_heading` | text | |
-| Listing hero subheading | `listing_hero_subheading` | textarea | |
-| Listing hero image | `listing_hero_image` | url | |
-| Listing intro HTML | `listing_intro_html` | textarea | |
-| Search bar enabled | `listing_search_enabled` | boolean | |
-| Search placeholder | `listing_search_placeholder` | text | |
-| Filter facets | `listing_filter_facets` | tags | |
-| Sort options | `listing_sort_options` | tags | |
-| Default sort | `listing_default_sort` | select {newest, oldest, alphabetical, popular, featured, sort_order} | |
-| Featured count | `listing_featured_count` | number | |
-| Layout | `listing_layout` | select {grid, list, magazine, masonry} | |
-| Page size | `listing_page_size` | number | |
-| Pagination style | `listing_pagination_style` | select {paged, load_more, infinite} | |
-| Sticky CTA enabled | `listing_sticky_cta_enabled` | boolean | |
-| Sticky CTA label | `listing_sticky_cta_label` | text | |
-| Sticky CTA link | `listing_sticky_cta_link` | url | |
-
-**Detail page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Breadcrumbs enabled | `detail_breadcrumbs_enabled` | boolean | |
-| Breadcrumbs title override | `detail_breadcrumbs_title` | text | |
-| Metadata row enabled | `detail_metadata_row_enabled` | boolean | |
-| Social share enabled | `detail_social_share_enabled` | boolean | |
-| Social networks | `detail_social_share_networks` | tags | |
-| Sticky side CTA enabled | `detail_sticky_side_cta_enabled` | boolean | |
-| Sticky side CTA label | `detail_sticky_side_cta_label` | text | |
-| Sticky side CTA link | `detail_sticky_side_cta_link` | url | |
-| Lead capture enabled | `detail_lead_capture_enabled` | boolean | |
-| Lead capture form ID | `detail_lead_capture_form_id` | text | |
-| Related content block enabled | `detail_related_content_enabled` | boolean | |
-| Related content mode | `detail_related_content_mode` | select {manual, auto, manual+auto} | |
-| Related content max items | `detail_related_content_max` | number | |
-| Detail template variant | `detail_template_variant` | select {default, compact, feature, story, landing} | |
-
-**Page blocks**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Page blocks | `page_blocks` | blocks | |
-| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
-
-**Relationships**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Related glossary terms | `relatedTermRefs` | multi_reference → glossary_terms | |
-| Related FAQs | `relatedFaqRefs` | multi_reference → faqs | |
-| Related blog posts | `relatedBlogRefs` | multi_reference → blog_posts | |
-| Related tools | `relatedToolRefs` | multi_reference → tools | |
+| Description | `definition_short` | textarea | ✅ |
 
 ### 📋 Sidebar (right rail)
 
@@ -271,236 +188,30 @@ _None._
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
 | Language | `language` | select {en, ar} | ✅ |
-| Excerpt | `excerpt` | textarea | |
-| Short description | `short_description` | textarea | |
-| Featured image | `featured_image` | image | |
-| Thumbnail image | `thumbnail_image` | image | |
-| Icon | `icon` | icon | |
-| Author | `author` | reference → team_members | |
-| Published at | `published_at` | datetime | |
-| Updated at | `updated_at` | datetime | ✅ |
-| Sort order | `sort_order` | number | |
-| Tags | `tags` | tags | |
-| Categories | `categories` | tags | |
-| Related content | `related_content` | multi_reference → blog_posts | |
-| CTA label | `cta_label` | text | |
-| CTA link | `cta_link` | url | |
-| Hero heading | `hero_heading` | text | |
-| Hero subheading | `hero_subheading` | textarea | |
-| Sections (legacy JSON) | `sections` | json | |
-| Sidebar CTA enabled | `sidebar_cta_enabled` | boolean | |
-| Primary CTA variant | `primary_cta_variant` | select {default, minimal, contrast, soft} | |
-| Template variant | `template_variant` | select {default, compact, feature, story, landing} | |
-| Term category | `term_category` | text | ✅ |
-| Alphabet letter | `alphabet_letter` | text | ✅ |
-| Synonyms | `synonyms` | tags | |
-| Related FAQs | `faq_items` | multi_reference → faqs | |
-| Example usage | `example_usage` | textarea | |
-| Applicability region | `applicability_region` | tags | |
-| Featured | `featured` | boolean | |
+| Category | `term_category` | select {accounting-bookkeeping, vat, corporate-tax, audit-assurance, compliance-aml, cfo-cash-flow, ai-tech-finance, startup-sme-finance, business-setup-free-zone, payroll, general} | |
 
 **SEO tab**
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Focus keyword | `focus_keyword` | text | |
 | SEO title | `seo_title` | text | |
 | Meta description | `meta_description` | textarea | |
-| Meta keywords | `meta_keywords` | tags | |
-| Secondary keywords (LSI) | `secondary_keywords` | tags | |
 | Canonical URL | `canonical_url` | url | |
 | OG title | `og_title` | text | |
 | OG description | `og_description` | textarea | |
 | OG image | `og_image` | image | |
-| Twitter card type | `twitter_card_type` | select {summary_large_image, summary, app, player} | |
-| Twitter creator handle | `twitter_creator_handle` | text | |
 | Robots meta | `robots_meta` | select {index,follow, noindex,follow, index,nofollow, noindex,nofollow} | |
-| Schema type | `schema_type` | select {Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
-| FAQ schema enabled | `faq_schema_enabled` | boolean | |
-| Breadcrumbs title | `breadcrumbs_title` | text | |
 
 **AEO tab**
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Direct answer (AI summary) | `directAnswer` | textarea | |
 | FAQ items JSON | `faqItems` | json | |
-| Direct answer snippet | `answerSnippet` | textarea | |
-| HowTo steps JSON | `howToSteps` | json | |
-| Speakable content | `speakableContent` | textarea | |
 
 **GEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| GEO summary | `geoSummary` | textarea | |
-| Source URLs | `sourceUrls` | tags | |
-| Content type | `geoContentType` | select {evergreen, news, guide, comparison, analysis} | |
-| Last updated date | `lastUpdatedDate` | text | |
-| Citations / sources | `citations` | rows | |
-| Key statistics | `keyStatistics` | rows | |
-| Expert quotes | `expertQuotes` | rows | |
-| Related entities | `relatedEntities` | tags | |
-
----
-
-## Our Customers  `our_customers`
-
-**Singular:** Customer Profile  ·  **Title field:** `company_name`  ·  **Slug field:** `slug`  ·  **Route:** _none (admin-only)_  ·  **Schema:** Organization
-
-> Company profiles and logos for trust sections.
-
-### 🖊️ Main editor (center column)
-
-**Primary fields**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Company name | `company_name` | text | ✅ |
-| Slug | `slug` | text | ✅ |
-| Body | `body` | textarea | |
-
-**Card**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Card description | `card_description` | textarea | |
-| Card image | `card_image` | image | |
-| Featured | `featured` | boolean | |
-| Sort order | `sort_order` | number | |
-
-**Listing page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Listing hero heading | `listing_hero_heading` | text | |
-| Listing hero subheading | `listing_hero_subheading` | textarea | |
-| Listing hero image | `listing_hero_image` | url | |
-| Listing intro HTML | `listing_intro_html` | textarea | |
-| Search bar enabled | `listing_search_enabled` | boolean | |
-| Search placeholder | `listing_search_placeholder` | text | |
-| Filter facets | `listing_filter_facets` | tags | |
-| Sort options | `listing_sort_options` | tags | |
-| Default sort | `listing_default_sort` | select {newest, oldest, alphabetical, popular, featured, sort_order} | |
-| Featured count | `listing_featured_count` | number | |
-| Layout | `listing_layout` | select {grid, list, magazine, masonry} | |
-| Page size | `listing_page_size` | number | |
-| Pagination style | `listing_pagination_style` | select {paged, load_more, infinite} | |
-| Sticky CTA enabled | `listing_sticky_cta_enabled` | boolean | |
-| Sticky CTA label | `listing_sticky_cta_label` | text | |
-| Sticky CTA link | `listing_sticky_cta_link` | url | |
-
-**Detail page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Breadcrumbs enabled | `detail_breadcrumbs_enabled` | boolean | |
-| Breadcrumbs title override | `detail_breadcrumbs_title` | text | |
-| Metadata row enabled | `detail_metadata_row_enabled` | boolean | |
-| Social share enabled | `detail_social_share_enabled` | boolean | |
-| Social networks | `detail_social_share_networks` | tags | |
-| Sticky side CTA enabled | `detail_sticky_side_cta_enabled` | boolean | |
-| Sticky side CTA label | `detail_sticky_side_cta_label` | text | |
-| Sticky side CTA link | `detail_sticky_side_cta_link` | url | |
-| Lead capture enabled | `detail_lead_capture_enabled` | boolean | |
-| Lead capture form ID | `detail_lead_capture_form_id` | text | |
-| Related content block enabled | `detail_related_content_enabled` | boolean | |
-| Related content mode | `detail_related_content_mode` | select {manual, auto, manual+auto} | |
-| Related content max items | `detail_related_content_max` | number | |
-| Detail template variant | `detail_template_variant` | select {default, compact, feature, story, landing} | |
-
-**Page blocks**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Page blocks | `page_blocks` | blocks | |
-| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
-
-**Relationships**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Customer stories | `storyRefs` | multi_reference → customer_stories | |
-| Customer reviews | `reviewRefs` | multi_reference → customer_reviews | |
-
-### 📋 Sidebar (right rail)
-
-**Publish tab**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
-| Language | `language` | select {en, ar} | ✅ |
-| Featured image | `featured_image` | image | |
-| Updated at | `updated_at` | datetime | ✅ |
-| Sort order | `sort_order` | number | |
-| Tags | `tags` | tags | |
-| CTA label | `cta_label` | text | |
-| CTA link | `cta_link` | url | |
-| Hero heading | `hero_heading` | text | |
-| Hero subheading | `hero_subheading` | textarea | |
-| Sections (legacy JSON) | `sections` | json | |
-| Sidebar CTA enabled | `sidebar_cta_enabled` | boolean | |
-| Primary CTA variant | `primary_cta_variant` | select {default, minimal, contrast, soft} | |
-| Template variant | `template_variant` | select {default, compact, feature, story, landing} | |
-| Logo | `logo` | image | ✅ |
-| Cover image | `cover_image` | image | |
-| Website URL | `website_url` | url | |
-| Industry | `industry` | text | |
-| Company size | `company_size` | text | |
-| HQ location | `hq_location` | text | |
-| Region | `region` | tags | |
-| Service used | `service_used` | tags | |
-| Relationship type | `relationship_type` | select {customer, partner, featured_customer} | ✅ |
-| Summary | `summary` | textarea | |
-| Testimonial reference | `testimonial_reference` | reference → customer_reviews | |
-| Story reference | `story_reference` | reference → customer_stories | |
-| Is featured | `is_featured` | boolean | |
-
-**SEO tab**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Focus keyword | `focus_keyword` | text | |
-| SEO title | `seo_title` | text | |
-| Meta description | `meta_description` | textarea | |
-| Meta keywords | `meta_keywords` | tags | |
-| Secondary keywords (LSI) | `secondary_keywords` | tags | |
-| Canonical URL | `canonical_url` | url | |
-| OG title | `og_title` | text | |
-| OG description | `og_description` | textarea | |
-| OG image | `og_image` | image | |
-| Twitter card type | `twitter_card_type` | select {summary_large_image, summary, app, player} | |
-| Twitter creator handle | `twitter_creator_handle` | text | |
-| Robots meta | `robots_meta` | select {index,follow, noindex,follow, index,nofollow, noindex,nofollow} | |
-| Schema type | `schema_type` | select {Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
-| FAQ schema enabled | `faq_schema_enabled` | boolean | |
-| Breadcrumbs title | `breadcrumbs_title` | text | |
-
-**AEO tab**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Direct answer (AI summary) | `directAnswer` | textarea | |
-| FAQ items JSON | `faqItems` | json | |
-| Direct answer snippet | `answerSnippet` | textarea | |
-| HowTo steps JSON | `howToSteps` | json | |
-| Speakable content | `speakableContent` | textarea | |
-
-**GEO tab**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| GEO summary | `geoSummary` | textarea | |
-| Source URLs | `sourceUrls` | tags | |
-| Content type | `geoContentType` | select {evergreen, news, guide, comparison, analysis} | |
-| Last updated date | `lastUpdatedDate` | text | |
-| Citations / sources | `citations` | rows | |
-| Key statistics | `keyStatistics` | rows | |
-| Expert quotes | `expertQuotes` | rows | |
-| Related entities | `relatedEntities` | tags | |
+_None._
 
 ---
 
@@ -575,7 +286,7 @@ _None._
 | Field | Key | Type | Required |
 |---|---|---|---|
 | Page blocks | `page_blocks` | blocks | |
-| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
+| Schema type (override) | `schema_type_override` | select {, SoftwareApplication, Product, WebPage} | |
 
 **Relationships**
 
@@ -595,7 +306,7 @@ _None._
 | Language | `language` | select {en, ar} | ✅ |
 | Featured image | `featured_image` | image | |
 | Icon | `icon` | icon | |
-| Updated at | `updated_at` | datetime | ✅ |
+| Updated at | `updated_at` | datetime | |
 | Hero heading | `hero_heading` | text | |
 | Hero subheading | `hero_subheading` | textarea | |
 | Sections (legacy JSON) | `sections` | json | |
@@ -628,10 +339,8 @@ _None._
 | OG title | `og_title` | text | |
 | OG description | `og_description` | textarea | |
 | OG image | `og_image` | image | |
-| Twitter card type | `twitter_card_type` | select {summary_large_image, summary, app, player} | |
 | Twitter creator handle | `twitter_creator_handle` | text | |
 | Robots meta | `robots_meta` | select {index,follow, noindex,follow, index,nofollow, noindex,nofollow} | |
-| Schema type | `schema_type` | select {Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
 | FAQ schema enabled | `faq_schema_enabled` | boolean | |
 | Breadcrumbs title | `breadcrumbs_title` | text | |
 
@@ -662,7 +371,7 @@ _None._
 
 ## Customer Reviews  `customer_reviews`
 
-**Singular:** Customer Review  ·  **Title field:** `review_title`  ·  **Slug field:** `slug`  ·  **Route:** _none (admin-only)_  ·  **Schema:** Review
+**Singular:** Customer Review  ·  **Title field:** `customer_name`  ·  **Slug field:** `slug`  ·  **Route:** _none (admin-only)_  ·  **Schema:** Review
 
 > Testimonials and social proof snippets.
 
@@ -672,73 +381,9 @@ _None._
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Review title | `review_title` | text | |
+| Customer name | `customer_name` | text | ✅ |
 | Slug | `slug` | text | ✅ |
-| Body | `body` | textarea | |
 | Review text | `review_text` | textarea | ✅ |
-
-**Card**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Card description | `card_description` | textarea | |
-| Card image | `card_image` | image | |
-| Featured | `featured` | boolean | |
-| Sort order | `sort_order` | number | |
-
-**Listing page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Listing hero heading | `listing_hero_heading` | text | |
-| Listing hero subheading | `listing_hero_subheading` | textarea | |
-| Listing hero image | `listing_hero_image` | url | |
-| Listing intro HTML | `listing_intro_html` | textarea | |
-| Search bar enabled | `listing_search_enabled` | boolean | |
-| Search placeholder | `listing_search_placeholder` | text | |
-| Filter facets | `listing_filter_facets` | tags | |
-| Sort options | `listing_sort_options` | tags | |
-| Default sort | `listing_default_sort` | select {newest, oldest, alphabetical, popular, featured, sort_order} | |
-| Featured count | `listing_featured_count` | number | |
-| Layout | `listing_layout` | select {grid, list, magazine, masonry} | |
-| Page size | `listing_page_size` | number | |
-| Pagination style | `listing_pagination_style` | select {paged, load_more, infinite} | |
-| Sticky CTA enabled | `listing_sticky_cta_enabled` | boolean | |
-| Sticky CTA label | `listing_sticky_cta_label` | text | |
-| Sticky CTA link | `listing_sticky_cta_link` | url | |
-
-**Detail page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Breadcrumbs enabled | `detail_breadcrumbs_enabled` | boolean | |
-| Breadcrumbs title override | `detail_breadcrumbs_title` | text | |
-| Metadata row enabled | `detail_metadata_row_enabled` | boolean | |
-| Social share enabled | `detail_social_share_enabled` | boolean | |
-| Social networks | `detail_social_share_networks` | tags | |
-| Sticky side CTA enabled | `detail_sticky_side_cta_enabled` | boolean | |
-| Sticky side CTA label | `detail_sticky_side_cta_label` | text | |
-| Sticky side CTA link | `detail_sticky_side_cta_link` | url | |
-| Lead capture enabled | `detail_lead_capture_enabled` | boolean | |
-| Lead capture form ID | `detail_lead_capture_form_id` | text | |
-| Related content block enabled | `detail_related_content_enabled` | boolean | |
-| Related content mode | `detail_related_content_mode` | select {manual, auto, manual+auto} | |
-| Related content max items | `detail_related_content_max` | number | |
-| Detail template variant | `detail_template_variant` | select {default, compact, feature, story, landing} | |
-
-**Page blocks**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Page blocks | `page_blocks` | blocks | |
-| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
-
-**Relationships**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Customer | `customerRef` | reference → our_customers | |
-| Related customer stories | `relatedStoryRefs` | multi_reference → customer_stories | |
 
 ### 📋 Sidebar (right rail)
 
@@ -746,75 +391,28 @@ _None._
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
 | Language | `language` | select {en, ar} | ✅ |
-| Featured image | `featured_image` | image | |
-| Author | `author` | reference → team_members | |
-| Updated at | `updated_at` | datetime | ✅ |
-| Sort order | `sort_order` | number | |
-| Tags | `tags` | tags | |
-| Hero heading | `hero_heading` | text | |
-| Hero subheading | `hero_subheading` | textarea | |
-| Sections (legacy JSON) | `sections` | json | |
-| Sidebar CTA enabled | `sidebar_cta_enabled` | boolean | |
-| Primary CTA variant | `primary_cta_variant` | select {default, minimal, contrast, soft} | |
-| Template variant | `template_variant` | select {default, compact, feature, story, landing} | |
-| Customer name | `customer_name` | text | ✅ |
 | Customer designation | `customer_designation` | text | |
-| Company | `company` | reference → our_customers | |
+| Company | `company` | text | |
 | Rating (1-5) | `rating` | number | |
 | Video review URL | `video_review_url` | url | |
 | Customer photo | `customer_photo` | image | |
-| Company logo override | `company_logo_override` | image | |
-| Service category | `service_category` | tags | |
-| Industry | `industry` | tags | |
-| Location | `location` | text | |
-| Review date | `review_date` | datetime | |
+| Company logo | `company_logo_override` | image | |
+| Services | `service_category` | multi_select {accounting-bookkeeping, vat, corporate-tax, audit-assurance, compliance-aml, cfo-cash-flow, ai-tech-finance, startup-sme-finance, business-setup-free-zone, payroll, general} | |
 | Approved for publication | `approved_for_publication` | boolean | ✅ |
 | Featured | `featured` | boolean | |
 
 **SEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Focus keyword | `focus_keyword` | text | |
-| SEO title | `seo_title` | text | |
-| Meta description | `meta_description` | textarea | |
-| Meta keywords | `meta_keywords` | tags | |
-| Secondary keywords (LSI) | `secondary_keywords` | tags | |
-| Canonical URL | `canonical_url` | url | |
-| OG title | `og_title` | text | |
-| OG description | `og_description` | textarea | |
-| OG image | `og_image` | image | |
-| Twitter card type | `twitter_card_type` | select {summary_large_image, summary, app, player} | |
-| Twitter creator handle | `twitter_creator_handle` | text | |
-| Robots meta | `robots_meta` | select {index,follow, noindex,follow, index,nofollow, noindex,nofollow} | |
-| Schema type | `schema_type` | select {Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
-| FAQ schema enabled | `faq_schema_enabled` | boolean | |
-| Breadcrumbs title | `breadcrumbs_title` | text | |
+_None._
 
 **AEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Direct answer (AI summary) | `directAnswer` | textarea | |
-| FAQ items JSON | `faqItems` | json | |
-| Direct answer snippet | `answerSnippet` | textarea | |
-| HowTo steps JSON | `howToSteps` | json | |
-| Speakable content | `speakableContent` | textarea | |
+_None._
 
 **GEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| GEO summary | `geoSummary` | textarea | |
-| Source URLs | `sourceUrls` | tags | |
-| Content type | `geoContentType` | select {evergreen, news, guide, comparison, analysis} | |
-| Last updated date | `lastUpdatedDate` | text | |
-| Citations / sources | `citations` | rows | |
-| Key statistics | `keyStatistics` | rows | |
-| Expert quotes | `expertQuotes` | rows | |
-| Related entities | `relatedEntities` | tags | |
+_None._
 
 ---
 
@@ -832,72 +430,19 @@ _None._
 |---|---|---|---|
 | Episode title | `episode_title` | text | ✅ |
 | Slug | `slug` | text | ✅ |
-| Body | `body` | textarea | |
 | Episode summary | `episode_summary` | textarea | ✅ |
-
-**Card**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Card description | `card_description` | textarea | |
-| Card image | `card_image` | image | |
-| Featured | `featured` | boolean | |
-| Sort order | `sort_order` | number | |
-
-**Listing page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Listing hero heading | `listing_hero_heading` | text | |
-| Listing hero subheading | `listing_hero_subheading` | textarea | |
-| Listing hero image | `listing_hero_image` | url | |
-| Listing intro HTML | `listing_intro_html` | textarea | |
-| Search bar enabled | `listing_search_enabled` | boolean | |
-| Search placeholder | `listing_search_placeholder` | text | |
-| Filter facets | `listing_filter_facets` | tags | |
-| Sort options | `listing_sort_options` | tags | |
-| Default sort | `listing_default_sort` | select {newest, oldest, alphabetical, popular, featured, sort_order} | |
-| Featured count | `listing_featured_count` | number | |
-| Layout | `listing_layout` | select {grid, list, magazine, masonry} | |
-| Page size | `listing_page_size` | number | |
-| Pagination style | `listing_pagination_style` | select {paged, load_more, infinite} | |
-| Sticky CTA enabled | `listing_sticky_cta_enabled` | boolean | |
-| Sticky CTA label | `listing_sticky_cta_label` | text | |
-| Sticky CTA link | `listing_sticky_cta_link` | url | |
-
-**Detail page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Breadcrumbs enabled | `detail_breadcrumbs_enabled` | boolean | |
-| Breadcrumbs title override | `detail_breadcrumbs_title` | text | |
-| Metadata row enabled | `detail_metadata_row_enabled` | boolean | |
-| Social share enabled | `detail_social_share_enabled` | boolean | |
-| Social networks | `detail_social_share_networks` | tags | |
-| Sticky side CTA enabled | `detail_sticky_side_cta_enabled` | boolean | |
-| Sticky side CTA label | `detail_sticky_side_cta_label` | text | |
-| Sticky side CTA link | `detail_sticky_side_cta_link` | url | |
-| Lead capture enabled | `detail_lead_capture_enabled` | boolean | |
-| Lead capture form ID | `detail_lead_capture_form_id` | text | |
-| Related content block enabled | `detail_related_content_enabled` | boolean | |
-| Related content mode | `detail_related_content_mode` | select {manual, auto, manual+auto} | |
-| Related content max items | `detail_related_content_max` | number | |
-| Detail template variant | `detail_template_variant` | select {default, compact, feature, story, landing} | |
 
 **Page blocks**
 
 | Field | Key | Type | Required |
 |---|---|---|---|
 | Page blocks | `page_blocks` | blocks | |
-| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
+| Schema type (override) | `schema_type_override` | select {, PodcastEpisode, VideoObject, Article} | |
 
 **Relationships**
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Hosts | `hostRefs` | multi_reference → team_members | |
-| Guests | `guestRefs` | multi_reference → team_members | |
-| Related blog posts | `relatedBlogRefs` | multi_reference → blog_posts | |
 | Related episodes | `relatedPodcastRefs` | multi_reference → podcasts | |
 
 ### 📋 Sidebar (right rail)
@@ -906,19 +451,8 @@ _None._
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
 | Language | `language` | select {en, ar} | ✅ |
 | Featured image | `featured_image` | image | |
-| Published at | `published_at` | datetime | |
-| Updated at | `updated_at` | datetime | ✅ |
-| Sort order | `sort_order` | number | |
-| Tags | `tags` | tags | |
-| Hero heading | `hero_heading` | text | |
-| Hero subheading | `hero_subheading` | textarea | |
-| Sections (legacy JSON) | `sections` | json | |
-| Sidebar CTA enabled | `sidebar_cta_enabled` | boolean | |
-| Primary CTA variant | `primary_cta_variant` | select {default, minimal, contrast, soft} | |
-| Template variant | `template_variant` | select {default, compact, feature, story, landing} | |
 | Episode number | `episode_number` | number | |
 | Podcast name | `podcast_name` | text | ✅ |
 | Audio URL | `audio_url` | url | ✅ |
@@ -945,35 +479,17 @@ _None._
 | OG title | `og_title` | text | |
 | OG description | `og_description` | textarea | |
 | OG image | `og_image` | image | |
-| Twitter card type | `twitter_card_type` | select {summary_large_image, summary, app, player} | |
-| Twitter creator handle | `twitter_creator_handle` | text | |
 | Robots meta | `robots_meta` | select {index,follow, noindex,follow, index,nofollow, noindex,nofollow} | |
-| Schema type | `schema_type` | select {Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
 | FAQ schema enabled | `faq_schema_enabled` | boolean | |
 | Breadcrumbs title | `breadcrumbs_title` | text | |
 
 **AEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Direct answer (AI summary) | `directAnswer` | textarea | |
-| FAQ items JSON | `faqItems` | json | |
-| Direct answer snippet | `answerSnippet` | textarea | |
-| HowTo steps JSON | `howToSteps` | json | |
-| Speakable content | `speakableContent` | textarea | |
+_None._
 
 **GEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| GEO summary | `geoSummary` | textarea | |
-| Source URLs | `sourceUrls` | tags | |
-| Content type | `geoContentType` | select {evergreen, news, guide, comparison, analysis} | |
-| Last updated date | `lastUpdatedDate` | text | |
-| Citations / sources | `citations` | rows | |
-| Key statistics | `keyStatistics` | rows | |
-| Expert quotes | `expertQuotes` | rows | |
-| Related entities | `relatedEntities` | tags | |
+_None._
 
 ---
 
@@ -991,72 +507,7 @@ _None._
 |---|---|---|---|
 | Question | `question` | text | ✅ |
 | Slug | `slug` | text | ✅ |
-| Body | `body` | textarea | |
 | Answer | `answer` | textarea | ✅ |
-
-**Card**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Card description | `card_description` | textarea | |
-| Card image | `card_image` | image | |
-| Featured | `featured` | boolean | |
-| Sort order | `sort_order` | number | |
-
-**Listing page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Listing hero heading | `listing_hero_heading` | text | |
-| Listing hero subheading | `listing_hero_subheading` | textarea | |
-| Listing hero image | `listing_hero_image` | url | |
-| Listing intro HTML | `listing_intro_html` | textarea | |
-| Search bar enabled | `listing_search_enabled` | boolean | |
-| Search placeholder | `listing_search_placeholder` | text | |
-| Filter facets | `listing_filter_facets` | tags | |
-| Sort options | `listing_sort_options` | tags | |
-| Default sort | `listing_default_sort` | select {newest, oldest, alphabetical, popular, featured, sort_order} | |
-| Featured count | `listing_featured_count` | number | |
-| Layout | `listing_layout` | select {grid, list, magazine, masonry} | |
-| Page size | `listing_page_size` | number | |
-| Pagination style | `listing_pagination_style` | select {paged, load_more, infinite} | |
-| Sticky CTA enabled | `listing_sticky_cta_enabled` | boolean | |
-| Sticky CTA label | `listing_sticky_cta_label` | text | |
-| Sticky CTA link | `listing_sticky_cta_link` | url | |
-
-**Detail page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Breadcrumbs enabled | `detail_breadcrumbs_enabled` | boolean | |
-| Breadcrumbs title override | `detail_breadcrumbs_title` | text | |
-| Metadata row enabled | `detail_metadata_row_enabled` | boolean | |
-| Social share enabled | `detail_social_share_enabled` | boolean | |
-| Social networks | `detail_social_share_networks` | tags | |
-| Sticky side CTA enabled | `detail_sticky_side_cta_enabled` | boolean | |
-| Sticky side CTA label | `detail_sticky_side_cta_label` | text | |
-| Sticky side CTA link | `detail_sticky_side_cta_link` | url | |
-| Lead capture enabled | `detail_lead_capture_enabled` | boolean | |
-| Lead capture form ID | `detail_lead_capture_form_id` | text | |
-| Related content block enabled | `detail_related_content_enabled` | boolean | |
-| Related content mode | `detail_related_content_mode` | select {manual, auto, manual+auto} | |
-| Related content max items | `detail_related_content_max` | number | |
-| Detail template variant | `detail_template_variant` | select {default, compact, feature, story, landing} | |
-
-**Page blocks**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Page blocks | `page_blocks` | blocks | |
-| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
-
-**Relationships**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Related FAQs | `relatedFaqRefs` | multi_reference → faqs | |
-| Related glossary terms | `relatedGlossaryRefs` | multi_reference → glossary_terms | |
-| Related blog posts | `relatedBlogRefs` | multi_reference → blog_posts | |
 
 ### 📋 Sidebar (right rail)
 
@@ -1064,67 +515,22 @@ _None._
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
 | Language | `language` | select {en, ar} | ✅ |
-| Updated at | `updated_at` | datetime | ✅ |
 | Sort order | `sort_order` | number | |
-| Tags | `tags` | tags | |
-| Hero heading | `hero_heading` | text | |
-| Hero subheading | `hero_subheading` | textarea | |
-| Sections (legacy JSON) | `sections` | json | |
-| Sidebar CTA enabled | `sidebar_cta_enabled` | boolean | |
-| Primary CTA variant | `primary_cta_variant` | select {default, minimal, contrast, soft} | |
-| Template variant | `template_variant` | select {default, compact, feature, story, landing} | |
-| Topic | `topic` | text | |
-| Topic slug | `topic_slug` | text | |
-| Related service | `related_service` | tags | |
-| Related blog posts | `related_blog_posts` | multi_reference → blog_posts | |
-| Related tools | `related_tools` | multi_reference → tools | |
-| Search keywords | `search_keywords` | tags | |
+| Services | `service_category` | multi_select {accounting-bookkeeping, vat, corporate-tax, audit-assurance, compliance-aml, cfo-cash-flow, ai-tech-finance, startup-sme-finance, business-setup-free-zone, payroll, general} | |
 | Featured | `featured` | boolean | |
 
 **SEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Focus keyword | `focus_keyword` | text | |
-| SEO title | `seo_title` | text | |
-| Meta description | `meta_description` | textarea | |
-| Meta keywords | `meta_keywords` | tags | |
-| Secondary keywords (LSI) | `secondary_keywords` | tags | |
-| Canonical URL | `canonical_url` | url | |
-| OG title | `og_title` | text | |
-| OG description | `og_description` | textarea | |
-| OG image | `og_image` | image | |
-| Twitter card type | `twitter_card_type` | select {summary_large_image, summary, app, player} | |
-| Twitter creator handle | `twitter_creator_handle` | text | |
-| Robots meta | `robots_meta` | select {index,follow, noindex,follow, index,nofollow, noindex,nofollow} | |
-| Schema type | `schema_type` | select {Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
-| FAQ schema enabled | `faq_schema_enabled` | boolean | |
-| Breadcrumbs title | `breadcrumbs_title` | text | |
+_None._
 
 **AEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Direct answer (AI summary) | `directAnswer` | textarea | |
-| FAQ items JSON | `faqItems` | json | |
-| Direct answer snippet | `answerSnippet` | textarea | |
-| HowTo steps JSON | `howToSteps` | json | |
-| Speakable content | `speakableContent` | textarea | |
+_None._
 
 **GEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| GEO summary | `geoSummary` | textarea | |
-| Source URLs | `sourceUrls` | tags | |
-| Content type | `geoContentType` | select {evergreen, news, guide, comparison, analysis} | |
-| Last updated date | `lastUpdatedDate` | text | |
-| Citations / sources | `citations` | rows | |
-| Key statistics | `keyStatistics` | rows | |
-| Expert quotes | `expertQuotes` | rows | |
-| Related entities | `relatedEntities` | tags | |
+_None._
 
 ---
 
@@ -1147,68 +553,18 @@ _None._
 | Results summary | `results_summary` | textarea | ✅ |
 | Full story body | `full_story_body` | textarea | ✅ |
 
-**Card**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Card description | `card_description` | textarea | |
-| Card image | `card_image` | image | |
-| Featured | `featured` | boolean | |
-
-**Listing page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Listing hero heading | `listing_hero_heading` | text | |
-| Listing hero subheading | `listing_hero_subheading` | textarea | |
-| Listing hero image | `listing_hero_image` | url | |
-| Listing intro HTML | `listing_intro_html` | textarea | |
-| Search bar enabled | `listing_search_enabled` | boolean | |
-| Search placeholder | `listing_search_placeholder` | text | |
-| Filter facets | `listing_filter_facets` | tags | |
-| Sort options | `listing_sort_options` | tags | |
-| Default sort | `listing_default_sort` | select {newest, oldest, alphabetical, popular, featured, sort_order} | |
-| Featured count | `listing_featured_count` | number | |
-| Layout | `listing_layout` | select {grid, list, magazine, masonry} | |
-| Page size | `listing_page_size` | number | |
-| Pagination style | `listing_pagination_style` | select {paged, load_more, infinite} | |
-| Sticky CTA enabled | `listing_sticky_cta_enabled` | boolean | |
-| Sticky CTA label | `listing_sticky_cta_label` | text | |
-| Sticky CTA link | `listing_sticky_cta_link` | url | |
-
-**Detail page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Breadcrumbs enabled | `detail_breadcrumbs_enabled` | boolean | |
-| Breadcrumbs title override | `detail_breadcrumbs_title` | text | |
-| Metadata row enabled | `detail_metadata_row_enabled` | boolean | |
-| Social share enabled | `detail_social_share_enabled` | boolean | |
-| Social networks | `detail_social_share_networks` | tags | |
-| Sticky side CTA enabled | `detail_sticky_side_cta_enabled` | boolean | |
-| Sticky side CTA label | `detail_sticky_side_cta_label` | text | |
-| Sticky side CTA link | `detail_sticky_side_cta_link` | url | |
-| Lead capture enabled | `detail_lead_capture_enabled` | boolean | |
-| Lead capture form ID | `detail_lead_capture_form_id` | text | |
-| Related content block enabled | `detail_related_content_enabled` | boolean | |
-| Related content mode | `detail_related_content_mode` | select {manual, auto, manual+auto} | |
-| Related content max items | `detail_related_content_max` | number | |
-| Detail template variant | `detail_template_variant` | select {default, compact, feature, story, landing} | |
-
 **Page blocks**
 
 | Field | Key | Type | Required |
 |---|---|---|---|
 | Page blocks | `page_blocks` | blocks | |
-| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
+| Schema type (override) | `schema_type_override` | select {, Article, NewsArticle, Review} | |
 
 **Relationships**
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Customer | `customerRef` | reference → our_customers | |
 | Lead author | `leadAuthorRef` | reference → team_members | |
-| Related customer reviews | `reviewRefs` | multi_reference → customer_reviews | |
 | Related customer stories | `relatedStoryRefs` | multi_reference → customer_stories | |
 
 ### 📋 Sidebar (right rail)
@@ -1217,18 +573,9 @@ _None._
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
 | Language | `language` | select {en, ar} | ✅ |
-| Thumbnail image | `thumbnail_image` | image | |
-| Icon | `icon` | icon | |
-| Hero heading | `hero_heading` | text | |
-| Hero subheading | `hero_subheading` | textarea | |
-| Sections (legacy JSON) | `sections` | json | |
-| Sidebar CTA enabled | `sidebar_cta_enabled` | boolean | |
-| Primary CTA variant | `primary_cta_variant` | select {default, minimal, contrast, soft} | |
-| Template variant | `template_variant` | select {default, compact, feature, story, landing} | |
-| Customer | `customer` | reference → our_customers | ✅ |
-| Industry | `industry` | tags | ✅ |
+| Customer | `customer` | text | ✅ |
+| Industry | `industry` | select {small-business, technology-startups, real-estate, restaurants-fb, healthcare, trading-business, ecommerce, jewellers-precious-metals, vc-funds-investment-firms, professional-services, construction-contracting, general} | ✅ |
 | Region | `region` | text | |
 | Hero image | `hero_image` | image | |
 | Metrics highlights | `metrics_highlights` | json | |
@@ -1250,35 +597,17 @@ _None._
 | OG title | `og_title` | text | |
 | OG description | `og_description` | textarea | |
 | OG image | `og_image` | image | |
-| Twitter card type | `twitter_card_type` | select {summary_large_image, summary, app, player} | |
-| Twitter creator handle | `twitter_creator_handle` | text | |
 | Robots meta | `robots_meta` | select {index,follow, noindex,follow, index,nofollow, noindex,nofollow} | |
-| Schema type | `schema_type` | select {Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
 | FAQ schema enabled | `faq_schema_enabled` | boolean | |
 | Breadcrumbs title | `breadcrumbs_title` | text | |
 
 **AEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Direct answer (AI summary) | `directAnswer` | textarea | |
-| FAQ items JSON | `faqItems` | json | |
-| Direct answer snippet | `answerSnippet` | textarea | |
-| HowTo steps JSON | `howToSteps` | json | |
-| Speakable content | `speakableContent` | textarea | |
+_None._
 
 **GEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| GEO summary | `geoSummary` | textarea | |
-| Source URLs | `sourceUrls` | tags | |
-| Content type | `geoContentType` | select {evergreen, news, guide, comparison, analysis} | |
-| Last updated date | `lastUpdatedDate` | text | |
-| Citations / sources | `citations` | rows | |
-| Key statistics | `keyStatistics` | rows | |
-| Expert quotes | `expertQuotes` | rows | |
-| Related entities | `relatedEntities` | tags | |
+_None._
 
 ---
 
@@ -1296,73 +625,13 @@ _None._
 |---|---|---|---|
 | Ebook title | `ebook_title` | text | ✅ |
 | Slug | `slug` | text | ✅ |
-| Body | `body` | textarea | |
 | Full description | `full_description` | textarea | |
-
-**Card**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Card description | `card_description` | textarea | |
-| Card image | `card_image` | image | |
-| Featured | `featured` | boolean | |
-| Sort order | `sort_order` | number | |
-
-**Listing page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Listing hero heading | `listing_hero_heading` | text | |
-| Listing hero subheading | `listing_hero_subheading` | textarea | |
-| Listing hero image | `listing_hero_image` | url | |
-| Listing intro HTML | `listing_intro_html` | textarea | |
-| Search bar enabled | `listing_search_enabled` | boolean | |
-| Search placeholder | `listing_search_placeholder` | text | |
-| Filter facets | `listing_filter_facets` | tags | |
-| Sort options | `listing_sort_options` | tags | |
-| Default sort | `listing_default_sort` | select {newest, oldest, alphabetical, popular, featured, sort_order} | |
-| Featured count | `listing_featured_count` | number | |
-| Layout | `listing_layout` | select {grid, list, magazine, masonry} | |
-| Page size | `listing_page_size` | number | |
-| Pagination style | `listing_pagination_style` | select {paged, load_more, infinite} | |
-| Sticky CTA enabled | `listing_sticky_cta_enabled` | boolean | |
-| Sticky CTA label | `listing_sticky_cta_label` | text | |
-| Sticky CTA link | `listing_sticky_cta_link` | url | |
-
-**Detail page**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Breadcrumbs enabled | `detail_breadcrumbs_enabled` | boolean | |
-| Breadcrumbs title override | `detail_breadcrumbs_title` | text | |
-| Metadata row enabled | `detail_metadata_row_enabled` | boolean | |
-| Social share enabled | `detail_social_share_enabled` | boolean | |
-| Social networks | `detail_social_share_networks` | tags | |
-| Sticky side CTA enabled | `detail_sticky_side_cta_enabled` | boolean | |
-| Sticky side CTA label | `detail_sticky_side_cta_label` | text | |
-| Sticky side CTA link | `detail_sticky_side_cta_link` | url | |
-| Lead capture enabled | `detail_lead_capture_enabled` | boolean | |
-| Lead capture form ID | `detail_lead_capture_form_id` | text | |
-| Related content block enabled | `detail_related_content_enabled` | boolean | |
-| Related content mode | `detail_related_content_mode` | select {manual, auto, manual+auto} | |
-| Related content max items | `detail_related_content_max` | number | |
-| Detail template variant | `detail_template_variant` | select {default, compact, feature, story, landing} | |
-
-**Page blocks**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Page blocks | `page_blocks` | blocks | |
-| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
 
 **Relationships**
 
 | Field | Key | Type | Required |
 |---|---|---|---|
 | Authors | `authorRefs` | multi_reference → team_members | |
-| Related blog posts | `relatedBlogRefs` | multi_reference → blog_posts | |
-| Related ebooks | `relatedEbookRefs` | multi_reference → ebooks | |
-| Related webinars | `relatedWebinarRefs` | multi_reference → webinars | |
 
 ### 📋 Sidebar (right rail)
 
@@ -1370,29 +639,13 @@ _None._
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
 | Language | `language` | select {en, ar} | ✅ |
-| Featured image | `featured_image` | image | |
-| Updated at | `updated_at` | datetime | ✅ |
-| Sort order | `sort_order` | number | |
-| Tags | `tags` | tags | |
-| CTA label | `cta_label` | text | |
-| CTA link | `cta_link` | url | |
-| Hero heading | `hero_heading` | text | |
-| Hero subheading | `hero_subheading` | textarea | |
-| Sections (legacy JSON) | `sections` | json | |
-| Sidebar CTA enabled | `sidebar_cta_enabled` | boolean | |
-| Primary CTA variant | `primary_cta_variant` | select {default, minimal, contrast, soft} | |
-| Template variant | `template_variant` | select {default, compact, feature, story, landing} | |
 | Cover image | `cover_image` | image | ✅ |
 | File upload | `file_upload` | file | ✅ |
-| File size | `file_size` | text | |
 | Page count | `page_count` | number | |
 | Format | `format` | select {pdf, ebook, guide} | ✅ |
 | Topics | `topics` | tags | |
 | Gated download | `gated` | boolean | |
-| Form embed | `form_embed` | textarea | |
-| Thank-you page URL | `thank_you_page_url` | url | |
 | Featured | `featured` | boolean | |
 
 **SEO tab**
@@ -1408,35 +661,17 @@ _None._
 | OG title | `og_title` | text | |
 | OG description | `og_description` | textarea | |
 | OG image | `og_image` | image | |
-| Twitter card type | `twitter_card_type` | select {summary_large_image, summary, app, player} | |
-| Twitter creator handle | `twitter_creator_handle` | text | |
 | Robots meta | `robots_meta` | select {index,follow, noindex,follow, index,nofollow, noindex,nofollow} | |
-| Schema type | `schema_type` | select {Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
 | FAQ schema enabled | `faq_schema_enabled` | boolean | |
 | Breadcrumbs title | `breadcrumbs_title` | text | |
 
 **AEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Direct answer (AI summary) | `directAnswer` | textarea | |
-| FAQ items JSON | `faqItems` | json | |
-| Direct answer snippet | `answerSnippet` | textarea | |
-| HowTo steps JSON | `howToSteps` | json | |
-| Speakable content | `speakableContent` | textarea | |
+_None._
 
 **GEO tab**
 
-| Field | Key | Type | Required |
-|---|---|---|---|
-| GEO summary | `geoSummary` | textarea | |
-| Source URLs | `sourceUrls` | tags | |
-| Content type | `geoContentType` | select {evergreen, news, guide, comparison, analysis} | |
-| Last updated date | `lastUpdatedDate` | text | |
-| Citations / sources | `citations` | rows | |
-| Key statistics | `keyStatistics` | rows | |
-| Expert quotes | `expertQuotes` | rows | |
-| Related entities | `relatedEntities` | tags | |
+_None._
 
 ---
 
@@ -1510,7 +745,7 @@ _None._
 | Field | Key | Type | Required |
 |---|---|---|---|
 | Page blocks | `page_blocks` | blocks | |
-| Schema type (override) | `schema_type_override` | select {, Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
+| Schema type (override) | `schema_type_override` | select {, Event, VideoObject, Course} | |
 
 **Relationships**
 
@@ -1529,7 +764,7 @@ _None._
 | Status | `status` | select {draft, in_review, published} | ✅ |
 | Language | `language` | select {en, ar} | ✅ |
 | Featured image | `featured_image` | image | |
-| Updated at | `updated_at` | datetime | ✅ |
+| Updated at | `updated_at` | datetime | |
 | Sort order | `sort_order` | number | |
 | Tags | `tags` | tags | |
 | CTA label | `cta_label` | text | |
@@ -1568,10 +803,8 @@ _None._
 | OG title | `og_title` | text | |
 | OG description | `og_description` | textarea | |
 | OG image | `og_image` | image | |
-| Twitter card type | `twitter_card_type` | select {summary_large_image, summary, app, player} | |
 | Twitter creator handle | `twitter_creator_handle` | text | |
 | Robots meta | `robots_meta` | select {index,follow, noindex,follow, index,nofollow, noindex,nofollow} | |
-| Schema type | `schema_type` | select {Article, BlogPosting, NewsArticle, DefinedTerm, FAQPage, HowTo, WebPage, CollectionPage, ItemList, VideoObject, PodcastEpisode, Event, Course, SoftwareApplication, Product, Person, Organization, Review, Book} | |
 | FAQ schema enabled | `faq_schema_enabled` | boolean | |
 | Breadcrumbs title | `breadcrumbs_title` | text | |
 
@@ -1614,7 +847,6 @@ _None._
 |---|---|---|---|
 | Full name | `full_name` | text | ✅ |
 | Slug | `slug` | text | ✅ |
-| Short bio | `short_bio` | textarea | ✅ |
 | Full bio | `full_bio` | textarea | |
 
 ### 📋 Sidebar (right rail)
@@ -1623,104 +855,18 @@ _None._
 
 | Field | Key | Type | Required |
 |---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
-| Language | `language` | select {en, ar} | ✅ |
 | Sort order | `sort_order` | number | |
-| Photo | `photo` | image | ✅ |
+| Photo | `photo` | image | |
 | Job title | `job_title` | text | ✅ |
-| Department | `department` | text | |
+| Department | `department` | select {Management, Centre of Excellence, Marketing, Sales, Partnerships, HR, Tech and Product, FinOps, Taxation, Compliance, Legal, Internal Finance} | |
+| Short bio | `short_bio` | textarea | |
 | Email | `email` | email | |
 | Phone | `phone` | text | |
 | LinkedIn URL | `linkedin_url` | url | |
 | Twitter URL | `twitter_url` | url | |
+| Instagram URL | `instagram_url` | url | |
 | Website URL | `website_url` | url | |
-| Location | `location` | text | |
 | Expertise tags | `expertise_tags` | tags | |
-| Display on team page | `display_on_team_page` | boolean | ✅ |
-| Display as author | `display_as_author` | boolean | ✅ |
-
-**SEO tab**
-
-_None._
-
-**AEO tab**
-
-_None._
-
-**GEO tab**
-
-_None._
-
----
-
-## Videos  `videos`
-
-**Singular:** Video  ·  **Title field:** `video_title`  ·  **Slug field:** `slug`  ·  **Route:** _none (admin-only)_  ·  **Schema:** VideoObject
-
-> Embedded videos (YouTube, Vimeo, etc.) shown on resource pages.
-
-### 🖊️ Main editor (center column)
-
-**Primary fields**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Title | `video_title` | text | ✅ |
-| Slug | `slug` | text | ✅ |
-
-### 📋 Sidebar (right rail)
-
-**Publish tab**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
-| Language | `language` | select {en, ar} | ✅ |
-| Thumbnail image | `thumbnail_image` | image | |
-| Sort order | `sort_order` | number | |
-| Video URL | `video_url` | url | ✅ |
-| Description | `description` | textarea | |
-| Featured | `featured` | boolean | |
-
-**SEO tab**
-
-_None._
-
-**AEO tab**
-
-_None._
-
-**GEO tab**
-
-_None._
-
----
-
-## Review Sources  `review_sources`
-
-**Singular:** Review Source  ·  **Title field:** `source_name`  ·  **Slug field:** `slug`  ·  **Route:** _none (admin-only)_  ·  **Schema:** Organization
-
-> External review platforms (Google, Trustpilot, etc.) referenced by customer reviews.
-
-### 🖊️ Main editor (center column)
-
-**Primary fields**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Source name | `source_name` | text | ✅ |
-| Slug | `slug` | text | ✅ |
-
-### 📋 Sidebar (right rail)
-
-**Publish tab**
-
-| Field | Key | Type | Required |
-|---|---|---|---|
-| Status | `status` | select {draft, in_review, published} | ✅ |
-| Language | `language` | select {en, ar} | ✅ |
-| Icon | `icon` | image | |
-| Source URL | `source_url` | url | |
 
 **SEO tab**
 

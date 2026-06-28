@@ -95,7 +95,6 @@ const EXACT: Record<string, AiFieldConfig> = {
   body:            { kind: 'body', label: 'Write', longForm: true },
   content:         { kind: 'body', label: 'Write', longForm: true },
   article:         { kind: 'body', label: 'Write', longForm: true },
-  definition_full: { kind: 'body', label: 'Write', longForm: true },
   full_description:{ kind: 'body', label: 'Write', longForm: true },
   full_bio:        { kind: 'body', label: 'Write', longForm: true },
 
@@ -124,7 +123,6 @@ const EXACT: Record<string, AiFieldConfig> = {
   focus_keyword:     { kind: 'focus_keyword', label: 'Suggest', multiChoice: true },
   secondary_keywords:{ kind: 'keywords', label: 'Suggest' },
   meta_keywords:     { kind: 'keywords', label: 'Suggest' },
-  search_keywords:   { kind: 'keywords', label: 'Suggest' },
 
   featured_image_alt: { kind: 'alt_text', label: 'Generate' },
 

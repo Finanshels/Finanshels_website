@@ -19,6 +19,7 @@ import {
 import AnimatedSection from '../components/marketing/AnimatedSection'
 import { Button } from '../components/ui/Button'
 import { TESTIMONIALS } from '@/content/team'
+import TestimonialsCarousel from '@/components/marketing/TestimonialsCarousel'
 import { SERVICE_PAGES } from '@/content/service-pages'
 
 const PLANS = [
@@ -219,7 +220,7 @@ function PriceSparkline() {
   )
 }
 
-export default function Pricing() {
+export default function Pricing({ cmsTestimonials } = {}) {
   const [stage, setStage] = useState('essential')
   const [transactions, setTransactions] = useState(100)
   const [industry, setIndustry] = useState('saas')
@@ -931,7 +932,12 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
+      {/* TESTIMONIALS — real CMS reviews when present, else the static grid */}
+      {cmsTestimonials?.length ? (
+      <section className="py-20">
+        <TestimonialsCarousel items={cmsTestimonials} ariaLabel="reviews" />
+      </section>
+      ) : (
       <section className="px-6 sm:px-10 lg:px-16 py-20">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-6">
           {testimonials.map((testimonial, index) => (
@@ -957,6 +963,7 @@ export default function Pricing() {
           ))}
         </div>
       </section>
+      )}
 
       {/* SERVICES STRIP */}
       <section className="px-6 sm:px-10 lg:px-16 py-20 bg-gradient-to-b from-white to-[#fffaf3]">

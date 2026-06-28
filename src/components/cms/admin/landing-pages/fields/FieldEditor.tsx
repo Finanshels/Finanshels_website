@@ -48,12 +48,12 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
 
   if (field.type === 'select') {
     return (
-      <label className="block text-sm">
+      <label className="block text-[13px]">
         <span className="font-medium text-slate-800">{field.label}</span>
         <select
           value={String(value ?? '')}
           onChange={(e) => onChange(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-[13px]"
         >
           <option value="">—</option>
           {(field.options ?? []).map((opt) => (
@@ -75,7 +75,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
   if (field.type === 'textarea' || field.type === 'rich_text') {
     const str = String(value ?? '')
     return (
-      <label className="block text-sm">
+      <label className="block text-[13px]">
         <span className="font-medium text-slate-800">
           {field.label}
           {field.required ? <span className="text-rose-600"> *</span> : null}
@@ -85,7 +85,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
           rows={3}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-[13px]"
         />
         <Guidance field={field} value={str} />
       </label>
@@ -94,13 +94,13 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
 
   if (field.type === 'number') {
     return (
-      <label className="block text-sm">
+      <label className="block text-[13px]">
         <span className="font-medium text-slate-800">{field.label}</span>
         <input
           type="number"
           value={typeof value === 'number' ? value : ''}
           onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-[13px]"
         />
         {field.description ? <p className="mt-1 text-xs text-slate-500">{field.description}</p> : null}
       </label>
@@ -114,7 +114,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
   // text / url / fallback
   const str = String(value ?? '')
   return (
-    <label className="block text-sm">
+    <label className="block text-[13px]">
       <span className="font-medium text-slate-800">
         {field.label}
         {field.required ? <span className="text-rose-600"> *</span> : null}
@@ -124,7 +124,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
         value={str}
         onChange={(e) => onChange(e.target.value)}
         placeholder={field.placeholder}
-        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-[13px]"
       />
       <Guidance field={field} value={str} />
     </label>
@@ -138,7 +138,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
  */
 function JsonField({ field, value, onChange }: FieldEditorProps) {
   return (
-    <label className="block text-sm">
+    <label className="block text-[13px]">
       <span className="font-medium text-slate-800">{field.label}</span>
       <textarea
         defaultValue={JSON.stringify(value ?? [], null, 2)}

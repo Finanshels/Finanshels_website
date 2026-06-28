@@ -1,6 +1,10 @@
 import Home from '../screens/Home'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 import { HOME_FAQS } from '@/content/home-faqs'
+import { getTestimonials } from '@/lib/cms/reviewsRepository'
+
+// Reviews change rarely; revalidate hourly (customer_reviews has no auto-revalidation route).
+export const revalidate = 3600
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.finanshels.com'
 
@@ -83,7 +87,8 @@ const faqSchema = {
   })),
 }
 
-export default function Page() {
+export default async function Page() {
+  const cmsTestimonials = await getTestimonials({ limit: 12 })
   return (
     <>
       <script
@@ -98,7 +103,7 @@ export default function Page() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }}
       />
-      <Home />
+      <Home cmsTestimonials={cmsTestimonials} />
     </>
   )
 }

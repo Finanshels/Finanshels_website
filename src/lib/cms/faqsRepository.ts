@@ -26,3 +26,15 @@ export async function listPublishedFaqs(): Promise<CmsFaq[]> {
   faqs.sort((a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999))
   return faqs
 }
+
+/**
+ * Published FAQs tagged with `service` (a slug from contentCategoryOptions.ts),
+ * in sort_order. Filtered in memory off `listPublishedFaqs` — FAQ volume is
+ * small (<= LIST_LIMIT) so this avoids a composite array-contains + status index.
+ */
+export async function listPublishedFaqsByService(service: string): Promise<CmsFaq[]> {
+  const target = service.trim()
+  if (!target) return []
+  const all = await listPublishedFaqs()
+  return all.filter((faq) => (faq.service_category ?? []).includes(target))
+}

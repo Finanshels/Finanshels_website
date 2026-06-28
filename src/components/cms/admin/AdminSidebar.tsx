@@ -81,7 +81,7 @@ export function AdminSidebar({ activeKey, collectionCounts, session }: AdminSide
       </nav>
 
       {/* Marketing */}
-      <div className="mb-1 px-2">
+      <div className="mb-1 mt-6 px-2">
         <SectionHeading>Marketing</SectionHeading>
       </div>
       <nav className="mb-4 space-y-0.5">
@@ -101,7 +101,7 @@ export function AdminSidebar({ activeKey, collectionCounts, session }: AdminSide
       </nav>
 
       {/* Settings */}
-      <div className="mb-1 px-2">
+      <div className="mb-1 mt-6 px-2">
         <SectionHeading>Settings</SectionHeading>
       </div>
       <nav className="mb-4 space-y-0.5">

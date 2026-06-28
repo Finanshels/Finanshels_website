@@ -7,7 +7,6 @@ import { createWriter, type CmsDocStatus, type UpsertFn } from './lib/writer'
 import { createReport } from './lib/report'
 
 import { importTeamMembers } from './team_members'
-import { importOurCustomers } from './our_customers'
 import { importGlossaryTerms } from './glossary_terms'
 import { importFaqs } from './faqs'
 import { importBlogPosts } from './blog_posts'
@@ -17,8 +16,6 @@ import { importPodcasts } from './podcasts'
 import { importCustomerStories } from './customer_stories'
 import { importCustomerReviews } from './customer_reviews'
 import { importTools } from './tools'
-import { importVideos } from './videos'
-import { importReviewSources } from './review_sources'
 
 interface CliFlags {
   collection: string | null
@@ -46,7 +43,6 @@ function parseFlags(argv: string[]): CliFlags {
 const TOPOLOGICAL_ORDER: ReadonlyArray<string> = [
   // Pass 1 — no cross-collection refs
   'team_members',
-  'our_customers',
   'glossary_terms',
   'faqs',
   'webinars',
@@ -54,8 +50,6 @@ const TOPOLOGICAL_ORDER: ReadonlyArray<string> = [
   'podcasts',
   'tools',
   'customer_reviews',
-  'videos',
-  'review_sources',
   // Pass 2 — depend on Pass 1 collections
   'blog_posts',
   'customer_stories',
@@ -145,8 +139,6 @@ async function main(): Promise<void> {
     try {
       if (collection === 'team_members') {
         await importTeamMembers({ webflow, assetMigrator, writer, referenceMap, report })
-      } else if (collection === 'our_customers') {
-        await importOurCustomers({ webflow, assetMigrator, writer, referenceMap, report })
       } else if (collection === 'glossary_terms') {
         await importGlossaryTerms({ webflow, assetMigrator, writer, referenceMap, report })
       } else if (collection === 'faqs') {
@@ -165,10 +157,6 @@ async function main(): Promise<void> {
         await importCustomerReviews({ webflow, assetMigrator, writer, referenceMap, report })
       } else if (collection === 'tools') {
         await importTools({ webflow, assetMigrator, writer, referenceMap, report })
-      } else if (collection === 'videos') {
-        await importVideos({ webflow, assetMigrator, writer, referenceMap, report })
-      } else if (collection === 'review_sources') {
-        await importReviewSources({ webflow, assetMigrator, writer, referenceMap, report })
       } else {
         process.stderr.write(`Unknown collection: ${collection}\n`)
         process.exit(2)

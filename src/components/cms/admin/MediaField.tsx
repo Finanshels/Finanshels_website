@@ -9,9 +9,15 @@
 // Media Library automatically.
 
 import { useMemo, useRef, useState } from 'react'
-import { FileText, ImageIcon, Library, Loader2, Search, Upload, X } from 'lucide-react'
+import { FileText, ImageIcon, Library, Link2, Loader2, Search, Upload, X } from 'lucide-react'
 
 const MEDIA_UPLOAD_API = '/api/admin/cms/media/upload'
+
+// Friendly, human-readable accepted-format hints shown in the dropzone.
+const ACCEPT_HINT: Record<MediaFieldKind, string> = {
+  image: 'PNG · JPG · GIF · WEBP · SVG · AVIF',
+  file: 'PDF · DOC · XLS · PPT · CSV · TXT',
+}
 
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|avif)(\?|$)/i
 const IMAGE_ACCEPT =
@@ -160,82 +166,106 @@ export function MediaField({
         </div>
       ) : null}
 
-      {/* Dropzone + library picker */}
+      {/* Hero dropzone — the primary, most-inviting way to add media. Kept as a
+          <button> so a wrapping <label> doesn't double-fire to the URL input. */}
       {uploadEnabled ? (
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            disabled={uploading}
-            onClick={() => fileRef.current?.click()}
-            onDragOver={(e) => {
-              e.preventDefault()
-              setDragOver(true)
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault()
-              setDragOver(false)
-              void uploadFile(e.dataTransfer.files?.[0])
-            }}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed px-3 py-3 text-sm font-medium transition ${
-              dragOver
-                ? 'border-brand-primary bg-brand-primary/5 text-brand-primary'
-                : 'border-cms-rule bg-cms-soft text-slate-600 hover:border-brand-primary/40 hover:text-slate-800'
-            } disabled:cursor-not-allowed disabled:opacity-60`}
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Uploading…
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4" aria-hidden />
-                {hasValue ? 'Replace — drop or click' : 'Drop a file or click to upload'}
-              </>
-            )}
-          </button>
-          {pickerAssets.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => setPickerOpen(true)}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-cms-rule bg-white px-3 py-3 text-sm font-medium text-slate-700 transition hover:border-brand-primary/40 hover:text-slate-900"
-            >
-              <Library className="h-4 w-4" aria-hidden /> Choose from library
-            </button>
-          ) : null}
-          <input
-            ref={fileRef}
-            type="file"
-            accept={accept}
-            className="sr-only"
-            disabled={uploading}
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              e.target.value = ''
-              void uploadFile(file)
-            }}
-          />
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => fileRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragOver(true)
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault()
+            setDragOver(false)
+            void uploadFile(e.dataTransfer.files?.[0])
+          }}
+          className={`group w-full rounded-2xl border-2 border-dashed text-center transition ${
+            hasValue ? 'px-4 py-3' : 'px-4 py-7'
+          } ${
+            dragOver
+              ? 'border-brand-primary bg-brand-primary/5'
+              : 'border-cms-rule bg-cms-soft hover:border-brand-primary/50 hover:bg-brand-primary/[0.03]'
+          } disabled:cursor-wait disabled:opacity-70`}
+        >
+          {uploading ? (
+            <span className="flex items-center justify-center gap-2 text-sm font-medium text-slate-600">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Uploading…
+            </span>
+          ) : hasValue ? (
+            <span className="flex items-center justify-center gap-2 text-sm font-medium text-slate-600">
+              <Upload className="h-4 w-4" aria-hidden /> Replace — drop or click to upload
+            </span>
+          ) : (
+            <span className="flex flex-col items-center gap-2">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-brand-primary shadow-sm ring-1 ring-cms-rule transition group-hover:scale-105">
+                <Upload className="h-5 w-5" aria-hidden />
+              </span>
+              <span className="text-sm font-semibold text-slate-700">
+                Drop {kind === 'image' ? 'an image' : 'a file'} here, or{' '}
+                <span className="text-brand-primary">click to upload</span>
+              </span>
+              <span className="text-[11px] uppercase tracking-[0.14em] text-slate-400">{ACCEPT_HINT[kind]}</span>
+            </span>
+          )}
+        </button>
+      ) : null}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept={accept}
+        className="sr-only"
+        disabled={uploading}
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          void uploadFile(file)
+        }}
+      />
+
+      {/* Divider — only shown when the dropzone above offers the primary path. */}
+      {uploadEnabled ? (
+        <div className="flex items-center gap-3" aria-hidden>
+          <span className="h-px flex-1 bg-cms-rule" />
+          <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">or</span>
+          <span className="h-px flex-1 bg-cms-rule" />
         </div>
       ) : null}
 
-      {/* Canonical form value — uncontrolled, always in the DOM so server-side
-          `required` validation and form serialization work unchanged. Muted to a
-          secondary "or paste a URL" row when uploads are available. */}
-      <div className="flex flex-col gap-1">
-        {uploadEnabled ? (
-          <span className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Or paste a URL</span>
+      {/* Secondary actions: library picker + paste-a-URL. The URL input is the
+          canonical form value — uncontrolled, always in the DOM so server-side
+          `required` validation and form serialization work unchanged. */}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        {pickerAssets.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-cms-rule bg-white px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-brand-primary/40 hover:text-slate-900"
+          >
+            <Library className="h-4 w-4" aria-hidden /> Choose from library
+          </button>
         ) : null}
-        <input
-          ref={inputRef}
-          type="url"
-          name={name}
-          required={required}
-          defaultValue={initialValue}
-          placeholder={placeholder}
-          list={pickerAssets.length > 0 ? datalistId : undefined}
-          onInput={(e) => setValue(e.currentTarget.value)}
-          className={`${inputClass} text-sm`}
-        />
+        <div className="relative flex-1">
+          <Link2
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            aria-hidden
+          />
+          <input
+            ref={inputRef}
+            type="url"
+            name={name}
+            required={required}
+            defaultValue={initialValue}
+            placeholder={placeholder ?? (uploadEnabled ? 'Or paste a URL…' : 'Paste a URL…')}
+            list={pickerAssets.length > 0 ? datalistId : undefined}
+            onInput={(e) => setValue(e.currentTarget.value)}
+            className={`${inputClass} pl-9 text-sm`}
+          />
+        </div>
         {pickerAssets.length > 0 ? (
           <datalist id={datalistId}>
             {pickerAssets.map((url) => (

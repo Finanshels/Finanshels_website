@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import CardPreview from '@/components/cms/admin/CardPreview'
+import TestimonialPreview from '@/components/cms/admin/TestimonialPreview'
 import { AdminSidebar } from '@/components/cms/admin/AdminSidebar'
 import { AutosaveShell } from '@/components/cms/admin/AutosaveShell'
 import { AiFieldButton } from '@/components/cms/admin/ai/AiFieldButton'
@@ -9,6 +10,8 @@ import { resolveAiField, type AiContext } from '@/lib/cms/ai/fieldMap'
 import { getFieldHelperText } from '@/lib/cms/fieldHelperText'
 import { CmsTitleSlugFields } from '@/components/cms/admin/CmsTitleSlugFields'
 import { CmsFormValidator } from '@/components/cms/admin/CmsFormValidator'
+import { EditorStatusControls } from '@/components/cms/admin/EditorStatusControls'
+import { SaveConfirmation } from '@/components/cms/admin/SaveConfirmation'
 // FIX-039: FieldRenderer extracted to a shared FieldEditor reused by the create flow.
 import { FieldEditor as FieldRenderer } from '@/components/cms/admin/FieldEditor'
 import { getStatusStyle } from '@/components/cms/admin/statusStyle'
@@ -56,6 +59,8 @@ import { decodeFieldValue, encodeFieldValue, InvalidFieldValueError } from '@/li
 
 type SearchParams = Promise<{
   saved?: string
+  /** Nonce so a repeated action re-triggers the transient save confirmation. */
+  sn?: string
   error?: string
   collection?: string
   slug?: string
@@ -88,7 +93,6 @@ function getReferencedCollections(definition: CmsCollectionDefinition): CmsColle
 const BLOCKS_REFERENCED_COLLECTIONS: CmsCollectionKey[] = [
   'team_members',
   'customer_reviews',
-  'our_customers',
   'faqs',
   'tools',
 ]
@@ -131,6 +135,15 @@ function isMainContentField(field: CmsFieldDefinition): boolean {
   if (field.type === 'blocks') return true
   if (field.type !== 'textarea') return false
   if (field.required) return true
+  // A profile's short bio is primary content and belongs on the main canvas even
+  // when optional — but it stays a plain textarea (FieldEditor's own long-body
+  // check excludes it, so it doesn't get the rich-text surface).
+  if (field.name.toLowerCase() === 'short_bio') return true
+  // The webinar `description` is its long-form body (rendered as HTML on the
+  // public page) — primary content, so it belongs on the main canvas, not the
+  // Settings sidebar. `description` (exact) is webinar-only across all
+  // collections, so this never affects short_/meta_/card_/full_description.
+  if (field.name.toLowerCase() === 'description') return true
   return isLongBodyField(field)
 }
 
@@ -140,6 +153,26 @@ function fieldColumnSpan(field: CmsFieldDefinition): string {
   if (field.type === 'json') return 'md:col-span-2'
   if (field.type === 'rows') return 'md:col-span-2'
   return 'md:col-span-1'
+}
+
+/**
+ * FIX-057: a field group is wrapped in <label> ONLY when it's a simple native
+ * input/textarea/select with no header AI button. A <label> with no `htmlFor`
+ * associates with its FIRST labelable descendant; when the group renders a
+ * contenteditable rich-text editor (blocks / long-body textarea — whose internal
+ * toolbar buttons are labelable) or carries a header AI button, that first
+ * labelable descendant is the AI "Generate"/toolbar button, NOT the editor.
+ * Per the HTML spec, clicking a label's non-interactive content (the contenteditable
+ * surface) fires a synthetic click on the associated control — so every click into
+ * the editor re-opened the AI popover and the field couldn't be edited. Those
+ * groups (and multi_reference, which has no single labelable control) use a <div>.
+ */
+function fieldGroupUsesLabel(field: CmsFieldDefinition, hasAiButton: boolean): boolean {
+  if (hasAiButton) return false
+  if (field.type === 'multi_reference') return false
+  if (field.type === 'blocks') return false
+  if (field.type === 'textarea' && isLongBodyField(field)) return false
+  return true
 }
 
 function readText(value: unknown): string {
@@ -171,6 +204,28 @@ function editorStatusStyle(status: string): { dot: string; box: string } {
   // variant) here because the editor renders the dot as a Lucide icon.
   const s = getStatusStyle(status)
   return { dot: s.dotText, box: s.box }
+}
+
+/**
+ * Server-rendered, top-of-editor message for a save/publish rejection. Mirrors
+ * CmsFormValidator's client copy so the reason a publish "did nothing" is
+ * impossible to miss — the bottom-center toast alone was easy to overlook while
+ * looking at the Publish button. Returns null when there's no error.
+ */
+function editorErrorBanner(error: string | undefined): string | null {
+  if (!error) return null
+  const humanize = (slug: string) => {
+    const words = slug.replace(/[_-]+/g, ' ').trim()
+    return words.charAt(0).toUpperCase() + words.slice(1)
+  }
+  if (error === 'slug-taken') return 'That URL slug is already taken — choose a different one.'
+  if (error === 'missing-slug') return 'Add a URL slug before publishing.'
+  if (error === 'save-failed') return 'Couldn’t save your changes — please try again.'
+  if (error === 'missing-altText') return 'Add alt text for this image before saving.'
+  if (error === 'missing-featured_image_alt') return 'Add alt text for the featured image before saving.'
+  if (error.startsWith('missing-')) return `${humanize(error.slice('missing-'.length))} is required — fill it in, then publish.`
+  if (error.startsWith('invalid-')) return `The ${humanize(error.slice('invalid-'.length)).toLowerCase()} value isn’t valid — please review it.`
+  return `${humanize(error)}.`
 }
 
 function renderChecklistCard(
@@ -437,7 +492,35 @@ async function saveCmsDocumentAction(formData: FormData) {
   invalidateCmsCaches(definition.key, slug)
   // Revalidate the old route too so the renamed-away URL stops serving stale content.
   if (isRename) invalidateCmsCaches(definition.key, cmsOriginalSlug)
-  redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(slug)}&saved=1`)
+
+  // Action-aware confirmation: encode WHAT happened (not just "saved") so the
+  // editor can show "Published / Republished / Unpublished / …" instead of a
+  // generic banner. `sn` is a nonce so repeating the same action (e.g. Republish
+  // twice) re-triggers the transient toast on the client.
+  const savedKind = savedKindFor(currentDocStatus, payload.status as string)
+  // Nonce = clock + random so a repeated identical action (e.g. Republish twice)
+  // always changes the `key` and replays the transient confirmation, even within
+  // the same millisecond.
+  const nonce = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+  redirect(
+    `/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(slug)}&saved=${savedKind}&sn=${nonce}`,
+  )
+}
+
+/**
+ * Maps a status transition to a confirmation kind shown by SaveConfirmation.
+ * `prior` is the doc's status before the save; `next` is the resolved status.
+ *
+ * Note `published → published` ("republished") is only reachable via the explicit
+ * Republish button: admins/owners have no Save button on a live doc (FIX-056),
+ * and an editor saving a live doc is bumped to in_review above (→ "review"). So a
+ * plain content Save never mislabels as "republished".
+ */
+function savedKindFor(prior: string, next: string): string {
+  if (next === 'in_review') return 'review'
+  if (next === 'published') return prior === 'published' ? 'republished' : 'published'
+  if (prior === 'published') return 'unpublished' // went live → draft
+  return 'saved'
 }
 
 async function rollbackCmsRevisionAction(revisionId: string, formData: FormData) {
@@ -611,21 +694,15 @@ function renderSection(
             />
           )
           const baseClass = `block text-sm font-medium text-slate-800 ${fieldColumnSpan(field)}`
-          if (field.type === 'multi_reference') {
-            return (
-              <div key={field.name} className={baseClass}>
-                {header}
-                {control}
-                {helper}
-              </div>
-            )
-          }
+          // FIX-057: <div> (not <label>) for rich editors / AI-button groups so
+          // editor clicks aren't forwarded to a labelable header/toolbar button.
+          const Wrapper = fieldGroupUsesLabel(field, Boolean(aiButton)) ? 'label' : 'div'
           return (
-            <label key={field.name} className={baseClass}>
+            <Wrapper key={field.name} className={baseClass}>
               {header}
               {control}
               {helper}
-            </label>
+            </Wrapper>
           )
         })}
       </div>
@@ -702,21 +779,15 @@ function renderMainEditorSection(
             />
           )
           const baseClass = `block text-sm font-medium text-slate-800 ${fieldColumnSpan(field)}`
-          if (field.type === 'multi_reference') {
-            return (
-              <div key={field.name} className={baseClass}>
-                {header}
-                {control}
-                {helper}
-              </div>
-            )
-          }
+          // FIX-057: <div> (not <label>) for rich editors / AI-button groups so
+          // editor clicks aren't forwarded to a labelable header/toolbar button.
+          const Wrapper = fieldGroupUsesLabel(field, Boolean(aiButton)) ? 'label' : 'div'
           return (
-            <label key={field.name} className={baseClass}>
+            <Wrapper key={field.name} className={baseClass}>
               {header}
               {control}
               {helper}
-            </label>
+            </Wrapper>
           )
         })}
       </div>
@@ -765,21 +836,15 @@ function renderSidebarSection(
             />
           )
           const boxClass = 'block rounded-xl border border-cms-rule bg-cms-soft p-3 text-sm font-medium text-slate-800'
-          if (field.type === 'multi_reference') {
-            return (
-              <div key={field.name} className={boxClass}>
-                {header}
-                {control}
-                {helper}
-              </div>
-            )
-          }
+          // FIX-057: <div> (not <label>) for rich editors / AI-button groups so
+          // editor clicks aren't forwarded to a labelable header/toolbar button.
+          const Wrapper = fieldGroupUsesLabel(field, Boolean(aiButton)) ? 'label' : 'div'
           return (
-            <label key={field.name} className={boxClass}>
+            <Wrapper key={field.name} className={boxClass}>
               {header}
               {control}
               {helper}
-            </label>
+            </Wrapper>
           )
         })}
       </div>
@@ -1015,7 +1080,22 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
     ),
   ]
 
-  const saved = params.saved === '1'
+  // `saved` carries the action kind; legacy actions still pass '1' → 'saved'.
+  // Validated against a whitelist so a hand-crafted URL can't surface an
+  // arbitrary confirmation badge.
+  const VALID_SAVED_KINDS = new Set(['published', 'republished', 'unpublished', 'review', 'saved'])
+  const savedKind =
+    typeof params.saved === 'string'
+      ? VALID_SAVED_KINDS.has(params.saved)
+        ? params.saved
+        : params.saved === '1'
+        ? 'saved'
+        : undefined
+      : undefined
+  const savedNonce = typeof params.sn === 'string' ? params.sn : undefined
+  // Generic flag for the list-view "changes saved" banner (bulk/delete/duplicate
+  // still redirect with the legacy `saved=1`). The editor uses `savedKind` above.
+  const saved = Boolean(savedKind)
   const errorRaw = params.error
   const error =
     typeof errorRaw === 'string'
@@ -1023,6 +1103,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
       : Array.isArray(errorRaw) && typeof errorRaw[0] === 'string'
       ? errorRaw[0]
       : undefined
+  const errorBanner = editorErrorBanner(error)
 
   if (!isEditorView) {
     const listRows = documentList.map((d) => ({
@@ -1139,6 +1220,10 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
   ]
   const lastSettingsTabId = settingsTabIds[settingsTabIds.length - 1]
   const currentStatus = String(formValues.status ?? 'draft')
+  // The "In Review" gate is an editorial step before public exposure. Collections
+  // with no public route (e.g. team_members, FIX-048) don't need it — show the
+  // segment only when there's a route, or when a doc already sits in that state.
+  const showReviewStatus = Boolean(definition.routePattern) || currentStatus === 'in_review'
   // AI generation context: title + main body field names let the ✨ buttons pull
   // live values from the form, and the collection key tunes the prompt voice.
   const aiContext: AiContext = {
@@ -1275,15 +1360,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 </div>
 
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                  {saved ? (
-                    <span
-                      role="status"
-                      aria-live="polite"
-                      className="inline-flex shrink-0 items-center rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-800"
-                    >
-                      Saved · cache refreshed
-                    </span>
-                  ) : null}
+                  {savedKind ? <SaveConfirmation key={savedNonce ?? savedKind} kind={savedKind} /> : null}
                   {params.slug ? (
                     <AutosaveShell
                       formId="cms-editor-form"
@@ -1303,71 +1380,39 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     </a>
                   ) : null}
                   {/*
-                    FIX-047: status workflow collapsed to 3 states. The segmented
-                    control below is the ONLY way to change status — each segment
-                    is a submit button that saves the form with that status in
-                    one click. The trailing Save Changes button preserves the
-                    current status faithfully (previously it silently coerced to
-                    'draft' whenever the doc wasn't 'published', producing the
-                    "I clicked Save but it's still a draft" bug).
+                    FIX-054: status is carried by a hidden input set on click (see
+                    EditorStatusControls), NOT by the submit button's name/value —
+                    React/Next 15.5 drops the submitter's value from the Server
+                    Action's FormData, which silently saved every "Publish" as the
+                    current status (draft). Each segment + Save changes still saves
+                    the form with the chosen status in one click.
                   */}
-                  <div className="inline-flex overflow-hidden rounded-lg border border-cms-rule bg-white text-[11px] font-semibold uppercase tracking-wide">
-                    <button
-                      type="submit"
-                      name="requestedStatus"
-                      value="draft"
-                      title="Save as draft"
-                      className={`px-2.5 py-2 transition ${
-                        currentStatus === 'draft'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'text-slate-600 hover:bg-cms-soft'
-                      }`}
-                    >
-                      Draft
-                    </button>
-                    <button
-                      type="submit"
-                      name="requestedStatus"
-                      value="in_review"
-                      title="Send for review"
-                      className={`border-l border-cms-rule px-2.5 py-2 transition ${
-                        currentStatus === 'in_review'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'text-slate-600 hover:bg-cms-soft'
-                      }`}
-                    >
-                      In Review
-                    </button>
-                    <button
-                      type="submit"
-                      name="requestedStatus"
-                      value="published"
-                      disabled={ROLE_RANK[role] < ROLE_RANK['admin']}
-                      title={
-                        ROLE_RANK[role] < ROLE_RANK['admin']
-                          ? 'Owner / admin only'
-                          : 'Publish now'
-                      }
-                      className={`border-l border-cms-rule px-2.5 py-2 transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                        currentStatus === 'published'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'text-slate-600 hover:bg-cms-soft'
-                      }`}
-                    >
-                      Published
-                    </button>
-                  </div>
-                  <button
-                    type="submit"
-                    name="requestedStatus"
-                    value={currentStatus}
-                    title="Save field changes, keep current status"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-[0_6px_18px_rgba(15,23,42,0.18)] hover:bg-slate-800"
-                  >
-                    <span aria-hidden>💾</span> Save changes
-                  </button>
+                  <EditorStatusControls
+                    currentStatus={currentStatus}
+                    showReviewStatus={showReviewStatus}
+                    canPublish={ROLE_RANK[role] >= ROLE_RANK['admin']}
+                  />
                 </div>
               </div>
+
+              {/* Loud, always-at-top publish/save error. The bottom-center toast
+                  (CmsFormValidator) still scrolls to + highlights the field; this
+                  banner guarantees the reason is visible right where the editor is
+                  looking after a blocked Publish. */}
+              {errorBanner ? (
+                <div
+                  role="alert"
+                  className="mx-4 mt-3 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-800"
+                >
+                  <span
+                    aria-hidden
+                    className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-[11px] font-bold text-red-600"
+                  >
+                    !
+                  </span>
+                  <p className="font-medium">{errorBanner}</p>
+                </div>
+              ) : null}
 
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-4">
                 <div className="space-y-4">
@@ -1380,12 +1425,23 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     allMediaUrls,
                     editorDocKey,
                     {
-                      slugAutoSync: false,
+                      // Auto-generate the slug from the title on new docs only;
+                      // it stops syncing the moment the slug is edited, and never
+                      // touches an existing doc's slug (which would break URLs).
+                      slugAutoSync: !params.slug,
                       titleFieldName: definition.titleField,
                       slugFieldName: definition.slugField,
                     },
                     aiContext
                   )}
+
+                  {/* Reviews are embedded-only (no public page) — show a live
+                      testimonial preview in place of a "View" link. */}
+                  {definition.key === 'customer_reviews' ? (
+                    <div className="mt-6">
+                      <TestimonialPreview formId="cms-editor-form" />
+                    </div>
+                  ) : null}
 
                   {renderCollapsibleSection(
                     'card-section',
@@ -1480,6 +1536,15 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                 Tab labels: each radio must sit immediately before its label as a sibling so
                 `peer-checked/*` styles apply to the active tab chip.
               */}
+              {/* FIX-055: the settings-tab selector used to render a lone, full-width
+                  orange "PUBLISH" chip on collections with no SEO/AEO/GEO tabs (e.g.
+                  team_members) — it looked exactly like a primary Publish CTA but was
+                  just the already-active tab (inert on click), which is why "publish
+                  does nothing". Hide the visible chip bar when there's only one tab
+                  (keep the radio so its panel still renders) and rename the first chip
+                  "Settings" so it never reads as a publish action. The real publish
+                  action is the header button (EditorStatusControls). */}
+              {settingsTabIds.length > 1 ? (
               <div className="sticky top-0 z-20 border-b border-cms-rule bg-[#fcfaf7]/95 px-3 py-3 backdrop-blur supports-[backdrop-filter]:bg-[#fcfaf7]/80">
                 <div
                   className="grid overflow-hidden rounded-lg border border-cms-rule bg-white text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500"
@@ -1497,7 +1562,7 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       htmlFor="cms-tab-publish"
                       className="block cursor-pointer px-2 py-2 text-center transition hover:bg-cms-soft peer-checked/tab-publish:bg-brand-primary/10 peer-checked/tab-publish:text-brand-primary"
                     >
-                      Publish
+                      Settings
                     </label>
                   </div>
                   {showSeoTab ? (
@@ -1535,43 +1600,26 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                   ) : null}
                 </div>
               </div>
+              ) : (
+                /* Single tab (no SEO/AEO/GEO): keep the radio so the panel below
+                   still renders, but show no visible chip — nothing to switch to. */
+                <input
+                  id="cms-tab-publish"
+                  type="radio"
+                  name="cms-settings-tab"
+                  className="sr-only"
+                  defaultChecked
+                />
+              )}
 
               <div className="hidden space-y-3 px-3 pb-3 pt-3 group-has-[#cms-tab-publish:checked]/cms-aside:block">
                 {/*
-                  FIX-047: the multi-button "Stage for publish" panel was the
-                  source of every "I clicked publish but it stayed draft" bug.
-                  Publish actions now live in the single segmented control in
-                  the editor header. This card is just a status indicator.
+                  FIX-047 + CLEANUP: the status-indicator "Workflow" card was
+                  removed — publishing is fully driven by the segmented control in
+                  the editor header (which highlights the current status), so the
+                  card was pure redundancy. Editor publish permissions are
+                  conveyed by the header's disabled Published button + tooltip.
                 */}
-                <div className="rounded-2xl border border-cms-rule bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Workflow</p>
-                  <p className="mt-2 text-xs text-slate-600">
-                    Change status with the{' '}
-                    <span className="font-semibold text-slate-900">Draft / In Review / Published</span>{' '}
-                    control in the editor header. Each click saves and changes status in one step.
-                  </p>
-                  <p className="mt-3 text-xs text-slate-500">
-                    Current status:{' '}
-                    <span
-                      className={
-                        currentStatus === 'published'
-                          ? 'font-semibold text-emerald-700'
-                          : currentStatus === 'in_review'
-                          ? 'font-semibold text-blue-700'
-                          : 'font-semibold text-amber-700'
-                      }
-                    >
-                      {currentStatus.replace(/_/g, ' ')}
-                    </span>
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">Role: {role}</p>
-                  {role === 'editor' ? (
-                    <p className="mt-2 text-[11px] text-slate-500">
-                      Editors can save as draft or send for review. Only owner / admin can publish.
-                    </p>
-                  ) : null}
-                </div>
-
                 {sidePublishFields.length > 0
                   ? renderSidebarSection(
                       'publish',

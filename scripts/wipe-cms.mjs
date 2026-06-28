@@ -19,7 +19,6 @@ import { getFirestore } from 'firebase-admin/firestore'
 // These are exactly the collections the Webflow importer repopulates.
 const CONTENT_COLLECTIONS = [
   'media_assets',
-  'our_customers',
   'tools',
   'customer_reviews',
   'podcasts',
@@ -30,8 +29,6 @@ const CONTENT_COLLECTIONS = [
   'glossary_terms',
   'blog_posts',
   'team_members',
-  'videos',
-  'review_sources',
 ]
 
 // Never delete these — printed in the report for transparency.

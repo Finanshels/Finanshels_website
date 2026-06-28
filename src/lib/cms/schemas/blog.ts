@@ -29,6 +29,9 @@ export const blogPostSchema = z.object({
   card_image: z.string().optional(),
   card_description: z.string().optional(),
   canonical_url: z.string().optional(),
+  // Per-doc JSON-LD type. `schema_type_override` (curated Blocks-tab dropdown) is
+  // canonical; legacy `schema_type` is kept as a read fallback for old docs.
+  schema_type_override: z.string().optional(),
   schema_type: z.string().optional(),
   // FIX-047: `robots_meta` is the single SEO indexing control. The legacy
   // `noindex`/`indexable` booleans remain in the schema as optional so
@@ -45,6 +48,10 @@ export const blogPostSchema = z.object({
   // the asymmetry is intentional: public-read fallback vs. admin-write
   // safety).
   blog_category: z.string().optional(),
+  // Industry vertical slugs (see industryOptions.ts). Multi-select, surfaced so
+  // the /blog listing can render the industry filter + card badge. Legacy docs
+  // stored a single string; parseBlogPost normalizes those to an array.
+  blog_industry: z.array(z.string()).optional(),
   blog_tags: z.array(z.string()).optional(),
   status: z.enum(['draft', 'in_review', 'published']).default('published'),
 })
@@ -61,6 +68,13 @@ export function parseBlogPost(raw: Record<string, unknown>, slug: string): BlogP
     featured_image: (raw.featured_image ?? raw.heroImageUrl) as string | undefined,
     seo_title: (raw.seo_title ?? raw.seoTitle) as string | undefined,
     meta_description: (raw.meta_description ?? raw.seoDescription) as string | undefined,
+    // Normalize legacy single-string industry values to the new array shape so
+    // pre-multi_select docs still parse (and aren't dropped from the listing).
+    blog_industry: Array.isArray(raw.blog_industry)
+      ? raw.blog_industry
+      : raw.blog_industry
+      ? [raw.blog_industry]
+      : undefined,
     publishedAt:
       raw.publishedAt ?? raw.publish_date ?? raw.published_at ?? raw.updatedAt ?? raw.updated_at,
   }

@@ -69,12 +69,29 @@ const FIELD_CODECS: Record<CmsFieldType, Codec> = {
       if (!t) return undefined
       const n = Number(t)
       if (!Number.isFinite(n)) throw new InvalidFieldValueError(field.name, 'not a finite number')
+      if (field.min !== undefined && n < field.min) {
+        throw new InvalidFieldValueError(field.name, `must be ${field.min} or greater`)
+      }
       return n
     },
   },
   tags: {
     encode: (v) => (Array.isArray(v) ? v.join(', ') : v === undefined || v === null ? '' : String(v)),
     decode: (raw) => (raw.trim() ? raw.split(',').map((x) => x.trim()).filter(Boolean) : undefined),
+  },
+  // Constrained multi-pick. Stored as string[]. The editor submits a single
+  // comma-joined value (one hidden input), so decode mirrors `tags` but also
+  // enforces the `maxItems` cap (throws rather than silently truncating).
+  multi_select: {
+    encode: (v) => (Array.isArray(v) ? v.join(', ') : v === undefined || v === null ? '' : String(v)),
+    decode: (raw, field) => {
+      const unique = [...new Set(raw.split(',').map((x) => x.trim()).filter(Boolean))]
+      if (unique.length === 0) return undefined
+      if (field.maxItems !== undefined && unique.length > field.maxItems) {
+        throw new InvalidFieldValueError(field.name, `select at most ${field.maxItems}`)
+      }
+      return unique
+    },
   },
   json: {
     encode: (v) => (v === undefined || v === null ? '' : JSON.stringify(v, null, 2)),

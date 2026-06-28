@@ -1,85 +1,122 @@
-# CMS field guide (admin)
+# CMS field guide (engineer reference)
 
-This describes what each **section** of the CMS editor controls, how fields are typed, and what gets stored in Firestore. Source of truth for field lists: `src/lib/cms/collectionDefinitions.ts` (merged definitions) and `getAllFields()`.
+How CMS fields are defined, typed, encoded, and assembled into the editor. The authoritative field list per collection is **auto-generated**: see [cms/field-inventory.md](./cms/field-inventory.md). This guide explains the *system* behind it.
 
-Related: operational setup in [CMS on GCP + Next.js](./cms-firestore.md).
+Source of truth: `src/lib/cms/collectionDefinitions.ts` (shapes) and `src/lib/cms/fieldCodec.ts` (encode/decode).
 
----
-
-## Sections (tabs / panels)
-
-| Section | Purpose |
-|--------|---------|
-| **Main editor** | Identity (canonical title field + URL slug where applicable) plus long-form content: excerpts, bodies, definitions, blocks. Slug follows the title on **new** documents until you edit the slug manually. |
-| **Publish** (sidebar) | Scheduling, workflow status (draft/published/…), references to other collections, tags, numbers, short text, feature flags, and collection-specific metadata. |
-| **Card** | Overrides for **listing cards** (title, description, image, icon, CTA). If empty, the site falls back to main title / excerpt / featured image. |
-| **Listing** | How this type appears on **index pages**: search, sort, layout, pagination. |
-| **Detail** | **Detail page chrome**: breadcrumbs, related content, share row, template variant. |
-| **Blocks** | Structured `page_blocks` JSON for page-builder sections (hero, stats, FAQ, etc.). |
-| **Relations** | Auto-generated **outbound** links to other collections (per content model). |
-| **SEO** | Meta title, description, canonical, Open Graph, robots, schema type hints. |
-| **AEO** | “Answer engine” extras: direct answer, FAQ JSON, HowTo steps, speakable text. |
-| **GEO** | Generative-search signals: citations, statistics JSON, expert quotes, related entities. |
-
-### Creating new documents
-
-Clicking **+ New …** opens a focused per-type page at `/admin/cms/new/[collection]` that asks only for the essentials needed to ship a draft of that content type. The full editor (sections, SEO, AEO, GEO, blocks) opens automatically after Save. The mapping of essentials per collection lives in `src/lib/cms/createProfiles.ts`; Blog posts and Customer stories also offer optional starter templates on the create page.
+Related: [cms-firestore.md](./cms-firestore.md) (operations) · [cms/hidden-fields-audit.md](./cms/hidden-fields-audit.md) (what's hidden/dead).
 
 ---
 
-## Field types (format → stored value)
+## Field types
+
+Every `CmsFieldType` has exactly one codec in `FIELD_CODECS` (`fieldCodec.ts`). Decode throws `InvalidFieldValueError(field, reason)` on bad input — it never silently drops a value.
 
 | Type | UI | Stored in Firestore |
-|------|----|---------------------|
+|---|---|---|
 | `text` | Single-line input | string |
-| `textarea` | Plain textarea, or **rich text** (Tiptap) when the field is the main body (name contains `body`, `content`, etc.) | string (HTML for rich text) |
-| `number` | number input | number |
-| `boolean` | Checkbox (“Enabled”) | boolean |
-| `datetime` | `datetime-local` | string (ISO slice) / normalized timestamp on save |
-| `email` | email input | string |
-| `url` / `image` / `file` | URL input; image/file may show **datalist** suggestions from Media | string (URL) |
-| `icon` | Text input | string — **Lucide** icon name in kebab-case (e.g. `arrow-right`) **or** a full `https://` image URL |
-| `tags` | Comma-separated text | array of strings (split on save) |
-| `select` | Dropdown | string |
-| `json` | Textarea (monospace) | parsed JSON object/array or dropped if invalid |
-| `reference` | Dropdown of **document IDs** from the target collection (label = title field) | string (referenced document id) |
-| `multi_reference` | Searchable checkbox list | array of string ids |
-| `blocks` | Visual block editor | JSON array of block objects |
+| `textarea` | Plain textarea, or **rich text** (Tiptap) when the field is a long-form body | string (sanitized HTML for rich text) |
+| `number` | Number input (`min` enforced) | number |
+| `boolean` | Checkbox | boolean |
+| `datetime` | `datetime-local` | normalized timestamp |
+| `email` | Email input | string |
+| `url` | URL input | string |
+| `image` / `file` | URL input with inline upload to `/api/admin/cms/media/upload`; datalist suggestions from Media | string (URL) |
+| `icon` | Text input | string — a **Lucide** key (kebab-case, e.g. `arrow-right`) **or** an `https://` image URL |
+| `tags` | Comma-separated text | string[] (split on save) |
+| `select` | Dropdown | string (one of `options`) |
+| `multi_select` | Chip picker (capped by `maxItems`) | string[] of slugs from `options`; `optionLabels` maps slug → display name |
+| `json` | Monospace textarea | parsed JSON object/array |
+| `reference` | Dropdown of target document IDs | string (referenced doc id) |
+| `multi_reference` | Searchable checkbox list | string[] of ids |
+| `blocks` | Visual block editor | JSON array of block objects (`page_blocks`) |
+| `rows` | One row per line, attributes split on `\|` | object[] typed by `rowFormat` (used by GEO citations/stats/quotes so writers never type JSON) |
 
-### Icons and card images
-
-- **Card image** (`image`): always a direct **https** URL. Prefer your CDN or a Media asset URL.
-- **Card icon** (`icon`): either a **Lucide** key (see [Lucide icon search](https://lucide.dev/icons/)) or an image URL if you need a custom asset.
+HTML-bearing fields pass through `sanitize-html` (`src/lib/cms/sanitize.ts`) before storage — raw HTML never reaches Firestore.
 
 ---
 
-## Blog posts (`blog_posts`) — trimmed fields
+## Editor layout
 
-Global core fields that duplicated blog-specific or server-managed data are **hidden** in the Publish form for blog posts only:
+`src/app/admin/cms/page.tsx` splits each collection's fields into two columns:
 
-- `updated_at`, `published_at` — use **`publish_date`** for editors; the API still sets `updatedAt` / resolves `publishedAt` from `publish_date` where needed.
-- `categories`, `tags` — use **`blog_category`** and **`blog_tags`** instead.
-- `short_description` — use **`excerpt`**.
-- `related_content` — use **`related_posts`** (multi-reference).
+- **Main editor (center):** the title + slug, any required / long-form rich-text bodies (the "primary" fields), then collapsible **Card / Listing / Detail / Page blocks / Relationships** groups.
+- **Sidebar (right rail):** a **Publish** tab (metadata, references, flags, collection-specific fields) plus **SEO / AEO / GEO** tabs. A tab only appears when the collection actually has fields for it.
+
+Status lives in the header **Save / Publish** controls (`EditorStatusControls`), not in any tab.
+
+---
+
+## Sections
+
+A collection definition has nine sections (`CmsSectionKey`):
+
+| Section | Purpose |
+|---|---|
+| `publish` | Identity, scheduling, references, flags, and collection-specific metadata |
+| `card` | Listing-card overrides (`card_description`, `card_image`, `featured`, `sort_order`) |
+| `listing` | Index-page config: hero, search, filters, sort, layout, pagination, sticky CTA |
+| `detail` | Detail-page chrome: breadcrumbs, related-content, social share, template variant |
+| `blocks` | `page_blocks` page builder + `schema_type_override` |
+| `relations` | Typed outbound links to other collections |
+| `seo` | Meta/OG/canonical/robots + schema hints |
+| `aeo` | Answer-engine extras: direct answer, FAQ JSON, HowTo, speakable |
+| `geo` | Generative-search signals: GEO summary, citations, statistics, quotes |
+
+---
+
+## How a collection's fields are assembled
+
+Per collection, `collectionDefinitions.ts` builds the final sections by:
+
+1. **Merge globals + override.** `publish` = `globalCoreFields()` ∪ `globalContentLayoutFields()` ∪ the collection's `publish` override (override wins by field name; new names are appended). The other sections come from the universal helpers (`universalCardFields`, `universalListingFields`, `universalDetailFields`, `universalBlocksFields`, `globalSeoFields`, `commonAeoFields`, `commonGeoFields`) and `relationshipFields`.
+2. **Strip.** `HIDDEN_FIELDS_BY_COLLECTION[key]` lists `legacyAliases` (old field names from pre-migration docs) and `strip` (global fields that don't apply here). Both are removed from **every** section.
+3. **Suppress sections.** `SUPPRESSED_SECTIONS_BY_COLLECTION[key]` drops whole sections (e.g. `media_assets` and `team_members` keep only `publish`; `blog_posts` drops `card`/`listing`/`detail`).
+4. **Curate schema options.** `SCHEMA_OVERRIDE_OPTIONS_BY_COLLECTION[key]` narrows the `schema_type_override` dropdown to the types that fit; absent collections fall back to the full catalogue.
+
+> A field can therefore be **hidden in one collection but live in another**. Removing a globally-defined field affects every collection that still shows it — see [cms/hidden-fields-audit.md](./cms/hidden-fields-audit.md) before deleting one.
+
+`getAllFields(definition)` returns every surviving field in stable section order; the save action uses it to know which keys to read from the form.
+
+---
+
+## Adding a field type
+
+Three changes, atomic:
+
+1. Add the literal to the `CmsFieldType` union in `collectionDefinitions.ts`.
+2. Add a `FIELD_CODECS` entry in `fieldCodec.ts` (both `encode` and `decode`; decode must throw `InvalidFieldValueError` on bad input).
+3. Add a render branch in the admin form if the UI differs from `text` / `textarea`.
+
+Then run `npm run typecheck` and regenerate the inventory:
+
+```bash
+npx tsx scripts/gen-field-inventory.mts > docs/cms/field-inventory.md
+```
 
 ---
 
 ## Troubleshooting
 
 | Symptom | Likely cause |
-|---------|----------------|
-| Author dropdown only shows “Select reference” | No `team_members` documents, Firestore not configured locally, or query needed a fallback (the admin now retries without `orderBy`). Add at least one team member with **`full_name`** (or legacy `name`). |
-| Save seems to do nothing | After save, look for the **Saved · cache refreshed** pill in the **top bar** next to Save; errors show there and in a red banner above the form body. |
-| Slug does not follow title | Slug auto-sync applies only when **creating** a new item (`+ New …`). Editing an existing doc keeps the slug until you change it. |
+|---|---|
+| Author dropdown only shows "Select reference" | No `team_members` documents, or Firestore not configured locally. Add a team member with `full_name`. |
+| "Save does nothing" | Look for the **Saved · cache refreshed** pill in the header; errors surface there and in a red banner. Publishing is the green header button, not a tab. |
+| Slug doesn't follow title | Slug auto-sync runs only when **creating** (`?intent=create`); editing keeps the slug until you change it. |
+| A field I expected is missing from the form | It's stripped or its section is suppressed for that collection — check the two maps above, or [cms/field-inventory.md](./cms/field-inventory.md). |
 
 ---
 
 ## Code map
 
 | Concern | File |
-|--------|------|
-| Merged fields & sections | `src/lib/cms/collectionDefinitions.ts` |
+|---|---|
+| Collection shapes & assembly | `src/lib/cms/collectionDefinitions.ts` |
+| Field encode/decode | `src/lib/cms/fieldCodec.ts` |
 | Admin layout & save | `src/app/admin/cms/page.tsx` |
-| Title ↔ slug (client) | `src/components/cms/admin/CmsTitleSlugFields.tsx`, `src/lib/cms/slugify.ts` |
-| Rich text toolbar | `src/components/cms/admin/RichTextField.tsx` |
-| Listing reference options | `src/lib/cms/collectionRepository.ts` → `listReferenceOptions` |
+| Header status controls | `src/components/cms/admin/EditorStatusControls.tsx` |
+| Repository writes / revisions | `src/lib/cms/collectionRepository.ts` |
+| Block catalog ↔ renderer | `CMS_BLOCK_TYPES` ↔ `src/components/cms/PageBlocksRenderer.tsx` |
+| Incoming references | `src/lib/cms/definitions/incomingReferences.ts` |
+| HTML sanitization | `src/lib/cms/sanitize.ts` |
+| Field inventory generator | `scripts/gen-field-inventory.mts` |

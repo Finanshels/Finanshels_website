@@ -9,6 +9,7 @@
 import { lazy, Suspense, useState } from 'react'
 import { CmsMultiReferencePick } from '@/components/cms/admin/CmsMultiReferencePick'
 import { MediaField } from '@/components/cms/admin/MediaField'
+import { MultiSelectField } from '@/components/cms/admin/MultiSelectField'
 import type { CmsFieldDefinition } from '@/lib/cms/collectionDefinitions'
 import type { AiContext } from '@/lib/cms/ai/fieldMap'
 
@@ -75,7 +76,9 @@ function isLongBodyField(field: CmsFieldDefinition): boolean {
 function fieldHint(field: CmsFieldDefinition): string | null {
   if (field.type === 'tags') return 'Use comma-separated values and press save to store.'
   if (field.type === 'json') return 'Valid JSON only. Invalid JSON will not be saved.'
-  if (field.type === 'url') return 'Use full URL including https://'
+  // FIX-054: no `url` hint here — the page-level helper (getFieldHelperText)
+  // already renders "Use a full URL including https://" for *_url/_link fields.
+  // Returning one here too produced a duplicated helper line under URL inputs.
   if (field.type === 'image')
     return 'Paste a stable https:// image URL (CDN recommended). Suggestions come from uploaded Media assets when available.'
   if (field.type === 'file') return 'Paste a downloadable file URL (storage/CDN).'
@@ -156,6 +159,22 @@ export function FieldEditor({
     )
   }
 
+  if (field.type === 'multi_select' && field.options?.length) {
+    return (
+      <>
+        <MultiSelectField
+          key={`${documentHydrationKey}:${field.name}`}
+          name={field.name}
+          options={field.options}
+          optionLabels={field.optionLabels}
+          maxItems={field.maxItems}
+          value={value}
+        />
+        {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+      </>
+    )
+  }
+
   if (field.type === 'select' && field.options?.length) {
     const defaultOption = typeof field.defaultValue === 'string' ? field.defaultValue : field.options[0]
     return (
@@ -168,7 +187,7 @@ export function FieldEditor({
         >
           {field.options.map((opt) => (
             <option key={opt} value={opt}>
-              {opt || '— none —'}
+              {field.optionLabels?.[opt] ?? (opt || '— none —')}
             </option>
           ))}
         </select>
@@ -270,28 +289,23 @@ export function FieldEditor({
       : field.type === 'email'
       ? 'email'
       : 'text'
-  // image/file are handled above by MediaField; only plain `url` keeps the datalist.
-  const showAssetSuggestions = field.type === 'url' && mediaAssetUrls.length > 0
+  // FIX-054: plain `url` fields no longer carry a media-asset datalist. It
+  // rendered a native dropdown arrow and offered image/file URLs as suggestions
+  // for unrelated fields (Twitter/LinkedIn/website URLs) — confusing UI. Image
+  // and file fields use MediaField (with its own library picker) instead.
   return (
     <>
       <input
         type={inputType}
         step={field.type === 'number' ? 'any' : undefined}
+        min={field.type === 'number' ? field.min : undefined}
         name={field.name}
         required={field.required}
         defaultValue={value}
         onChange={field.type === 'tags' ? (e) => setTagDraft(e.target.value) : undefined}
         placeholder={field.placeholder}
-        list={showAssetSuggestions ? `${field.name}-asset-suggestions` : undefined}
         className={inputClass}
       />
-      {showAssetSuggestions ? (
-        <datalist id={`${field.name}-asset-suggestions`}>
-          {mediaAssetUrls.map((url) => (
-            <option key={`${field.name}-${url}`} value={url} />
-          ))}
-        </datalist>
-      ) : null}
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
       {tagPreview.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-1.5">

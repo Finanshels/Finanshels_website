@@ -7,6 +7,7 @@ import { FaqAccordion } from '@/components/cms/FaqAccordion'
 import { isCmsConfigured } from '@/lib/cms/config'
 import { listPublishedFaqs } from '@/lib/cms/faqsRepository'
 import type { CmsFaq } from '@/lib/cms/schemas/faqs'
+import { CONTENT_CATEGORY_OPTIONS, CONTENT_CATEGORY_LABELS } from '@/lib/cms/contentCategoryOptions'
 
 export const revalidate = 300
 
@@ -22,30 +23,12 @@ export const metadata = {
   twitter: { title: PAGE_TITLE, description: PAGE_DESCRIPTION },
 }
 
-function groupByTopic(faqs: CmsFaq[]) {
-  const map = new Map<string, CmsFaq[]>()
-  for (const faq of faqs) {
-    const topic = faq.topic?.trim() || 'General'
-    const existing = map.get(topic)
-    if (existing) {
-      existing.push(faq)
-    } else {
-      map.set(topic, [faq])
-    }
-  }
-  const groups = Array.from(map.entries()).map(([topic, items]) => ({ topic, items }))
-  // Move "General" to end
-  const generalIdx = groups.findIndex((g) => g.topic === 'General')
-  if (generalIdx > 0) groups.push(groups.splice(generalIdx, 1)[0]!)
-  return groups
-}
-
 export default async function FaqPage({
   searchParams,
 }: {
-  searchParams: Promise<{ topic?: string }>
+  searchParams: Promise<{ service?: string }>
 }) {
-  const { topic } = await searchParams
+  const { service } = await searchParams
 
   const cmsReady = isCmsConfigured()
   const allFaqs = cmsReady
@@ -57,14 +40,24 @@ export default async function FaqPage({
 
   const hasCmsFaqs = allFaqs.length > 0
 
-  const allTopics = Array.from(
-    new Set(allFaqs.map((f) => f.topic?.trim()).filter(Boolean) as string[])
-  )
-  const activeTopic = topic && allTopics.includes(topic) ? topic : null
+  // Service chips: only the services that actually appear, in canonical order.
+  const presentServices = new Set<string>()
+  for (const faq of allFaqs) for (const s of faq.service_category ?? []) presentServices.add(s)
+  const serviceChips = CONTENT_CATEGORY_OPTIONS.filter((v) => presentServices.has(v))
 
-  const filteredFaqs = activeTopic
-    ? allFaqs.filter((f) => (f.topic?.trim() || 'General') === activeTopic)
+  const activeService = service && presentServices.has(service) ? service : null
+
+  const filteredFaqs = activeService
+    ? allFaqs.filter((f) => (f.service_category ?? []).includes(activeService))
     : allFaqs
+
+  // A single accordion group; 'General' suppresses the heading (see FaqAccordion).
+  const accordionGroups = [
+    {
+      topic: activeService ? CONTENT_CATEGORY_LABELS[activeService] ?? activeService : 'General',
+      items: filteredFaqs,
+    },
+  ]
 
   // JSON-LD: prefer CMS data, fall back to static
   const faqSchemaItems = hasCmsFaqs
@@ -122,34 +115,34 @@ export default async function FaqPage({
 
       {hasCmsFaqs ? (
         <div className="mx-auto max-w-4xl px-6 py-16 sm:px-10 lg:px-16">
-          {allTopics.length > 0 && (
+          {serviceChips.length > 0 && (
             <div className="mb-10 flex flex-wrap gap-2">
               <Link
                 href="/faq"
                 className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
-                  !activeTopic
+                  !activeService
                     ? 'bg-slate-900 text-white'
                     : 'border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900'
                 }`}
               >
                 All
               </Link>
-              {allTopics.map((t) => (
+              {serviceChips.map((s) => (
                 <Link
-                  key={t}
-                  href={`/faq?topic=${encodeURIComponent(t)}`}
+                  key={s}
+                  href={`/faq?service=${encodeURIComponent(s)}`}
                   className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
-                    activeTopic === t
+                    activeService === s
                       ? 'bg-slate-900 text-white'
                       : 'border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-900'
                   }`}
                 >
-                  {t}
+                  {CONTENT_CATEGORY_LABELS[s] ?? s}
                 </Link>
               ))}
             </div>
           )}
-          <FaqAccordion groups={groupByTopic(filteredFaqs)} />
+          <FaqAccordion groups={accordionGroups} />
         </div>
       ) : (
         <HomeFaqSection showHeader={false} />

@@ -40,7 +40,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // FIX-048: also decode common HTML entities so meta description doesn't
   // ship `&amp;` / `&#39;` to crawlers and SERP previews.
-  const description = decodeEntities(term.definition.replace(/<[^>]+>/g, '')).slice(0, 160)
+  // glossary-trim (2026-06-28): honour per-term SEO overrides; fall back to the
+  // term name / definition when unset.
+  const title = term.seo_title || term.term
+  const description =
+    term.meta_description || decodeEntities(term.definition.replace(/<[^>]+>/g, '')).slice(0, 160)
   const url = term.canonical_url || `${getSiteUrl()}/glossary/${term.slug}`
   // FIX-047: `robots_meta` is the canonical control. Legacy `noindex` /
   // `indexable` booleans are honoured for pre-FIX-047 Firestore docs only.
@@ -50,12 +54,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     term.noindex === true ||
     term.indexable === false
 
+  const ogImage = term.og_image
   return {
-    title: term.term,
+    title,
     description,
     alternates: { canonical: url },
     robots: noindex ? { index: false, follow: false } : undefined,
-    openGraph: { title: term.term, description, url, type: 'article' },
+    openGraph: {
+      title: term.og_title || title,
+      description: term.og_description || description,
+      url,
+      type: 'article',
+      images: ogImage ? [ogImage] : undefined,
+    },
   }
 }
 
@@ -135,6 +146,35 @@ export default async function GlossaryTermPage({ params }: Props) {
           ) : null}
         </div>
       </article>
+
+      {/* General-purpose contact-Finanshels CTA on every glossary page. */}
+      <section className="bg-slate-50">
+        <div className="mx-auto max-w-3xl px-6 py-14 sm:px-10 lg:px-16">
+          <div className="rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 px-8 py-10 text-center text-white sm:px-12">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Need help with {term.term}?</h2>
+            <p className="mx-auto mt-3 max-w-xl text-slate-300">
+              Finanshels handles UAE tax, accounting, and compliance end-to-end. Talk to a specialist and get clarity in
+              minutes.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/contact"
+                className="rounded-full bg-[#f16610] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-900/20 transition hover:bg-[#c14e0d]"
+              >
+                Book a free consultation
+              </Link>
+              <a
+                href="https://wa.me/971521549572"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Chat on WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
     </>
   )
 }

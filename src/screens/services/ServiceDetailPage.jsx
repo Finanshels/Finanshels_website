@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo, useState } from 'react'
 import {
   ArrowRight,
@@ -16,6 +18,7 @@ import {
   Layers,
 } from 'lucide-react'
 import AnimatedSection from '../../components/marketing/AnimatedSection'
+import TestimonialsCarousel from '@/components/marketing/TestimonialsCarousel'
 import { TESTIMONIALS } from '@/content/team'
 
 const createStoryBeats = (title) => [
@@ -50,10 +53,11 @@ const DEFAULT_TRIGGERS = [
 
 const STORY_ICONS = [Compass, Zap, TrendingUp]
 
-export default function ServiceDetailPage({ page }) {
+export default function ServiceDetailPage({ page, cmsTestimonials }) {
   const [lead, setLead] = useState({ name: '', email: '', phone: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState(null)
 
   const testimonials = useMemo(() => TESTIMONIALS.slice(0, 2), [])
 
@@ -88,13 +92,47 @@ export default function ServiceDetailPage({ page }) {
     setLead((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
+    if (submitting) return
+    setError(null)
     setSubmitting(true)
-    setTimeout(() => {
-      setSubmitting(false)
+    try {
+      // The shared /api/contact endpoint requires a `reason` enum and a
+      // message of at least 10 chars. This template only collects name/email/
+      // phone/message, so fold phone + service context into the message and
+      // tag the lead as `sales` intent (it's a "book a strategy call" form).
+      const composedMessage = [
+        lead.message.trim(),
+        lead.phone.trim() ? `Phone / WhatsApp: ${lead.phone.trim()}` : '',
+        `Service interest: ${page.title || 'General enquiry'}`,
+      ]
+        .filter(Boolean)
+        .join('\n')
+
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: lead.name.trim(),
+          email: lead.email.trim(),
+          message: composedMessage,
+          reason: 'sales',
+          pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || `request_failed_${res.status}`)
+      }
       setSubmitted(true)
-    }, 600)
+    } catch {
+      setError(
+        'Something went wrong sending your request. Please email contact@finanshels.com or try again.'
+      )
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -449,7 +487,12 @@ export default function ServiceDetailPage({ page }) {
         </section>
       )}
 
-      {/* TESTIMONIALS */}
+      {/* TESTIMONIALS — real CMS reviews (service-filtered) when present, else the static fallback */}
+      {cmsTestimonials?.length ? (
+      <section className="py-16">
+        <TestimonialsCarousel items={cmsTestimonials} ariaLabel="reviews" />
+      </section>
+      ) : (
       <section className="px-6 sm:px-10 lg:px-16 py-16">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-5">
           {testimonials.map((testimonial, index) => (
@@ -475,6 +518,7 @@ export default function ServiceDetailPage({ page }) {
           ))}
         </div>
       </section>
+      )}
 
       {/* FAQ */}
       {page.faqs && page.faqs.length > 0 && (
@@ -666,6 +710,14 @@ export default function ServiceDetailPage({ page }) {
                       onChange={handleChange}
                       className="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm placeholder:text-slate-300 focus:outline-none focus:border-[#f16610] focus:ring-4 focus:ring-[#f16610]/10 transition-all resize-none"
                     />
+                    {error && (
+                      <p
+                        role="alert"
+                        className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700"
+                      >
+                        {error}
+                      </p>
+                    )}
                     <button
                       type="submit"
                       disabled={submitting}

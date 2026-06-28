@@ -4,8 +4,9 @@ export const faqSchema = z.object({
   slug: z.string().min(1),
   question: z.string().min(1),
   answer: z.string().min(1),
-  topic: z.string().optional(),
-  topic_slug: z.string().optional(),
+  // Shared content-category slugs (see contentCategoryOptions.ts); 'general' /
+  // empty = not tied to a specific service.
+  service_category: z.array(z.string()).optional(),
   featured: z.boolean().optional(),
   sort_order: z.number().optional(),
   status: z.enum(['draft', 'in_review', 'published']).default('published'),

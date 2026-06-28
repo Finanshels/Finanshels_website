@@ -3,14 +3,18 @@
 import { useEffect, useState } from 'react'
 import LandingPageRenderer from '@/components/landing-pages/LandingPageRenderer'
 import type { LandingPageDoc } from '@/lib/landing-pages/types'
+import type { SectionAction } from './studio/studioTypes'
 
 type IncomingMessage =
   | { type: 'lp:render'; page: LandingPageDoc }
   | { type: 'lp:highlight'; sectionId: string | null }
+  | { type: 'lp:hover-highlight'; sectionId: string | null }
+  | { type: 'lp:scrollto'; sectionId: string | null }
 
 export default function LivePreviewClient({ initialPage }: { initialPage: LandingPageDoc }) {
   const [page, setPage] = useState<LandingPageDoc>(initialPage)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   useEffect(() => {
     let received = false
@@ -25,6 +29,11 @@ export default function LivePreviewClient({ initialPage }: { initialPage: Landin
         setPage(data.page)
       } else if (data.type === 'lp:highlight') {
         setSelectedId(data.sectionId ?? null)
+      } else if (data.type === 'lp:hover-highlight') {
+        setHoveredId(data.sectionId ?? null)
+      } else if (data.type === 'lp:scrollto' && data.sectionId) {
+        const el = document.querySelector(`[data-lp-section-id="${data.sectionId}"]`)
+        el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
       }
     }
     window.addEventListener('message', onMessage)
@@ -46,7 +55,7 @@ export default function LivePreviewClient({ initialPage }: { initialPage: Landin
     }
   }, [])
 
-  function emit(message: { type: string; sectionId: string | null }) {
+  function emit(message: { type: string; sectionId: string | null; action?: SectionAction }) {
     if (window.parent && window.parent !== window) {
       window.parent.postMessage(message, window.location.origin)
     }
@@ -58,8 +67,10 @@ export default function LivePreviewClient({ initialPage }: { initialPage: Landin
       isPreview
       editMode
       selectedId={selectedId}
+      hoveredId={hoveredId}
       onSelectSection={(id) => emit({ type: 'lp:select', sectionId: id })}
       onHoverSection={(id) => emit({ type: 'lp:hover', sectionId: id })}
+      onSectionAction={(action, id) => emit({ type: 'lp:action', sectionId: id, action })}
     />
   )
 }

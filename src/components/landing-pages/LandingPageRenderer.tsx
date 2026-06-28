@@ -25,6 +25,8 @@ import StickyCtaBar from './StickyCtaBar'
 import FloatingWhatsAppButton from './FloatingWhatsAppButton'
 import GtagScripts from './GtagScripts'
 import { SectionFrame } from './SectionFrame'
+import { getSectionCatalogEntry } from '@/lib/landing-pages/sectionCatalog'
+import type { SectionAction } from '@/components/cms/admin/landing-pages/studio/studioTypes'
 import type { CtaConfig } from './CtaButtons'
 
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/
@@ -40,16 +42,20 @@ export default function LandingPageRenderer({
   isPreview = false,
   editMode = false,
   selectedId = null,
+  hoveredId = null,
   onSelectSection,
   onHoverSection,
+  onSectionAction,
 }: {
   page: LandingPageDoc
   isPreview?: boolean
   /** Studio live-preview only: wraps each section so it can be clicked to edit. */
   editMode?: boolean
   selectedId?: string | null
+  hoveredId?: string | null
   onSelectSection?: (id: string) => void
   onHoverSection?: (id: string | null) => void
+  onSectionAction?: (action: SectionAction, id: string) => void
 }) {
   const baseCta = buildCtaLinks(page)
   const cta: CtaConfig = {
@@ -109,9 +115,12 @@ export default function LandingPageRenderer({
             <SectionFrame
               key={sec.id}
               sectionId={sec.id}
+              label={getSectionCatalogEntry(sec.type)?.label ?? sec.type}
               selected={selectedId === sec.id}
+              hovered={hoveredId === sec.id}
               onSelect={onSelectSection}
               onHover={onHoverSection}
+              onAction={onSectionAction}
             >
               {node}
             </SectionFrame>

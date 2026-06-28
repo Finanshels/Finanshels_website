@@ -23,9 +23,7 @@ import {
   HelpCircle,
   Briefcase,
   Archive,
-  GraduationCap,
   Newspaper,
-  FileBarChart,
   ListChecks,
   LayoutTemplate,
   Scale,
@@ -43,7 +41,8 @@ import {
   Calculator,
   ClipboardCheck,
   Utensils,
-  Gem
+  Gem,
+  BookMarked
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -96,10 +95,9 @@ const RESOURCES_SECTIONS = [
   {
     title: 'Knowledge',
     items: [
-      { name: 'Guides Hub', href: '/guide', icon: GraduationCap },
+      { name: 'Ebooks & Guides', href: '/guides', icon: BookMarked },
       { name: 'Blog Hub', href: '/blog', icon: Newspaper },
-      { name: 'Glossary Hub', href: '/glossary', icon: BookOpen },
-      { name: 'Reports', href: '/report', icon: FileBarChart }
+      { name: 'Glossary Hub', href: '/glossary', icon: BookOpen }
     ]
   },
   {
@@ -212,7 +210,7 @@ export default function Navbar() {
           text: 'Free guides, calculators, and tools for ambitious operators.',
           primary: { href: '/blog', label: 'View blog' },
           actions: [
-            { href: '/guide', label: 'Browse guides' },
+            { href: '/guides', label: 'Browse guides' },
             { href: '/vat-calculator', label: 'Try a calculator' }
           ]
         }
@@ -445,7 +443,7 @@ export default function Navbar() {
                               const EntryComponent = entry.href?.startsWith('http') ? 'a' : Link
                               const entryProps = entry.href?.startsWith('http')
                                 ? { href: entry.href, target: '_blank', rel: 'noreferrer', onClick: () => setMobileMenuOpen(false) }
-                                : { to: entry.href || '#', onClick: () => setMobileMenuOpen(false) }
+                                : { href: entry.href || '#', onClick: () => setMobileMenuOpen(false) }
                               return (
                                 <EntryComponent
                                   key={entry.name}
@@ -479,7 +477,7 @@ export default function Navbar() {
                                 const ActionComponent = action.href.startsWith('http') ? 'a' : Link
                                 const actionProps = action.href.startsWith('http')
                                   ? { href: action.href, target: '_blank', rel: 'noreferrer', onClick: () => setMobileMenuOpen(false) }
-                                  : { to: action.href, onClick: () => setMobileMenuOpen(false) }
+                                  : { href: action.href, onClick: () => setMobileMenuOpen(false) }
                                 return (
                                   <ActionComponent
                                     key={action.label}

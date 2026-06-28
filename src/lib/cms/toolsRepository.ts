@@ -49,3 +49,35 @@ export async function listPublishedTools(): Promise<Tool[]> {
     return a.toolName.localeCompare(b.toolName)
   })
 }
+
+export interface ToolFaq {
+  question: string
+  answer: string
+}
+
+/** How many faq refs we resolve per tool — caps Firestore reads on the detail page. */
+const FAQ_RESOLVE_LIMIT = 12
+
+/**
+ * Resolve a tool's `faq_items` (faqs doc ids) to published Q&A pairs, preserving
+ * the curated order. Unpublished / missing / malformed refs are skipped silently
+ * so an editor's stale reference never blanks the page.
+ */
+export async function resolveToolFaqs(ids: string[]): Promise<ToolFaq[]> {
+  const db = getDb()
+  if (!db || ids.length === 0) return []
+
+  const out: ToolFaq[] = []
+  for (const id of ids.slice(0, FAQ_RESOLVE_LIMIT)) {
+    if (typeof id !== 'string' || !id.trim()) continue
+    const doc = await db.collection(COLLECTIONS.faqs).doc(id.trim()).get()
+    if (!doc.exists) continue
+    const data = doc.data() as Record<string, unknown>
+    if (data.status !== 'published') continue
+    const question = typeof data.question === 'string' ? data.question.trim() : ''
+    const answer = typeof data.answer === 'string' ? data.answer.trim() : ''
+    if (!question || !answer) continue
+    out.push({ question, answer })
+  }
+  return out
+}

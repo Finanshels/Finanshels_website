@@ -7,12 +7,12 @@ const EXACT: Record<string, string> = {
   body: 'The main content of this page.',
   content: 'The main content of this page.',
   article: 'The article body.',
-  definition_full: 'The full definition or explanation.',
   definition_short: 'A one-line definition shown in previews and search.',
   answer: 'The direct answer shown in search and AI assistants. Lead with the answer.',
   direct_answer: 'A concise 2–3 sentence answer used by AI assistants and answer engines.',
   question: 'The question, phrased the way a customer would ask it.',
   faq_items: 'Question-and-answer pairs shown in an FAQ accordion.',
+  service_category: 'The service(s) this relates to — pick one or more, or "General". Powers service-wise filtering and lets service pages auto-show matching items.',
 
   excerpt: 'A short summary shown on listing cards and previews (2–3 sentences).',
   summary: 'A short summary shown on listing cards and previews (2–3 sentences).',

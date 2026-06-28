@@ -7,8 +7,6 @@ export const glossaryTermSchema = z.object({
   /** Short definition (plain text or single paragraph HTML). */
   definition_short: z.string().optional(),
   definition: z.string().min(1),
-  /** Optional long-form HTML from CMS. */
-  definition_full: z.string().optional(),
   bodyHtml: z.string().optional(),
   term_category: z.string().optional(),
   alphabet_letter: z.string().optional(),
@@ -22,6 +20,13 @@ export const glossaryTermSchema = z.object({
   noindex: z.boolean().optional(),
   indexable: z.boolean().optional(),
   canonical_url: z.string().optional(),
+  // glossary-trim (2026-06-28): per-term SEO overrides, consumed by the glossary
+  // route's generateMetadata. When unset, title/description derive from the term.
+  seo_title: z.string().optional(),
+  meta_description: z.string().optional(),
+  og_title: z.string().optional(),
+  og_description: z.string().optional(),
+  og_image: z.string().optional(),
   faqItems: z
     .array(
       z.object({
@@ -45,7 +50,6 @@ export function parseGlossaryTerm(raw: Record<string, unknown>, slug: string): G
     slug: (raw.slug as string) || slug,
     definition_short: (raw.definition_short ?? raw.definition ?? raw.shortDefinition ?? '') as string,
     definition: (raw.definition ?? raw.shortDefinition ?? '') as string,
-    definition_full: (raw.definition_full ?? raw.bodyHtml ?? raw.body ?? raw.longHtml) as string | undefined,
     bodyHtml: (raw.bodyHtml ?? raw.body ?? raw.longHtml) as string | undefined,
   }
   const parsed = glossaryTermSchema.safeParse(merged)

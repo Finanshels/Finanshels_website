@@ -103,6 +103,13 @@ export function AutosaveManager({
       inFlightRef.current?.abort()
       seqRef.current++ // invalidate any outstanding autosave response
       isDirtyRef.current = false
+      // FIX-058: reset the indicator so a stale autosave "Save failed"/"Saved"
+      // can't survive the server-action redirect (a soft nav that doesn't remount
+      // this component) and sit next to the manual-save confirmation. Use 'idle',
+      // NOT 'saving': the redirect doesn't remount this component and no autosave
+      // completes, so 'saving' would get stuck on "Saving…" forever. The manual
+      // save's own result is shown by SaveConfirmation after the redirect.
+      onStateChange('idle')
     }
 
     form.addEventListener('input', schedule)
@@ -115,7 +122,7 @@ export function AutosaveManager({
       form.removeEventListener('submit', onSubmit)
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [formId, delayMs, doSave])
+  }, [formId, delayMs, doSave, onStateChange])
 
   // FIX-051: warn before navigating away with unsaved edits (still within the
   // debounce window, or after a failed save).

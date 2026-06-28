@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
+import { Download } from 'lucide-react'
 import { requireAdminAuth } from '@/lib/cms/adminAuth'
 import {
   getLead,
@@ -7,8 +8,11 @@ import {
   listLeads,
   updateLeadSyncState,
 } from '@/lib/landing-pages/repository'
+import type { LandingPageLead } from '@/lib/landing-pages/types'
 import { leadToZohoPayload, pushLeadToZoho } from '@/lib/landing-pages/zohoClient'
 import { getServiceInterestLabel } from '@/lib/landing-pages/serviceInterests'
+import { LeadRoster } from '@/components/cms/admin/leads/LeadRoster'
+import type { LeadView } from '@/components/cms/admin/leads/leadTypes'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,6 +55,39 @@ function parseDate(input: string | undefined, endOfDay = false): Date | undefine
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input)) return undefined
   const d = new Date(`${input}T${endOfDay ? '23:59:59.999' : '00:00:00'}Z`)
   return Number.isNaN(d.getTime()) ? undefined : d
+}
+
+/** Maps a firebase-backed lead into the client roster's stringified view-model. */
+function toLeadView(lead: LandingPageLead): LeadView {
+  return {
+    id: lead.id,
+    name: lead.name,
+    email: lead.email,
+    phone: lead.phone,
+    company: lead.company_name ?? '',
+    pageSlug: lead.landing_page_slug,
+    serviceLabel: getServiceInterestLabel(lead.service_interest),
+    zohoStatus: lead.zoho_lead_id ? 'synced' : lead.zoho_sync_error ? 'failed' : 'pending',
+    zohoLeadId: lead.zoho_lead_id ?? '',
+    zohoSyncedLabel: formatDateTime(lead.zoho_synced_at),
+    zohoRetryCount: String(lead.zoho_retry_count),
+    zohoSyncError: lead.zoho_sync_error ?? '',
+    submittedLabel: formatDateTime(lead.submitted_at),
+    resendSentLabel: formatDateTime(lead.resend_email_sent_at),
+    resendError: lead.resend_email_error ?? '',
+    gclid: lead.gclid ?? '',
+    gbraid: lead.gbraid ?? '',
+    wbraid: lead.wbraid ?? '',
+    utmSource: lead.utm_source ?? '',
+    utmMedium: lead.utm_medium ?? '',
+    utmCampaign: lead.utm_campaign ?? '',
+    utmTerm: lead.utm_term ?? '',
+    utmContent: lead.utm_content ?? '',
+    referrer: lead.referrer ?? '',
+    landingUrl: lead.landing_url ?? '',
+    userAgent: lead.user_agent ?? '',
+    ipHash: lead.ip_hash ?? '',
+  }
 }
 
 export default async function LandingPageLeadsView({
@@ -114,173 +151,108 @@ export default async function LandingPageLeadsView({
     )
   }
 
+  const leadViews = leads.map(toLeadView)
+  const hasFilters = Boolean(sp.page || sp.status || sp.from || sp.to)
+  const exportHref = `?${new URLSearchParams({
+    ...(sp.status ? { status: sp.status } : {}),
+    ...(sp.page ? { page: sp.page } : {}),
+    ...(sp.from ? { from: sp.from } : {}),
+    ...(sp.to ? { to: sp.to } : {}),
+    export: '1',
+  }).toString()}`
+
+  const filterFieldClass =
+    'rounded-lg border border-cms-rule bg-white px-3 py-1.5 text-slate-900 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20'
+
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <div>
-          <Link href="/admin/cms/landing-pages" className="text-xs text-slate-500 hover:text-slate-700">← Landing pages</Link>
-          <h1 className="mt-1 text-2xl font-semibold text-slate-900">Landing page leads</h1>
-          <p className="text-sm text-slate-600 mt-1">Every form submission across all landing pages. Source of truth in Firestore.</p>
+    <section className="min-h-screen bg-cms-canvas text-slate-900">
+      <div className="mx-auto max-w-6xl px-3 py-6 sm:px-5">
+        <div className="space-y-4 rounded-2xl border border-cms-rule bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <Link href="/admin/cms/landing-pages" className="text-xs text-slate-500 hover:text-brand-primary">
+                ← Landing pages
+              </Link>
+              <h1 className="mt-1 text-xl font-semibold text-slate-900">Landing page leads</h1>
+              <p className="mt-1 text-sm text-slate-500">
+                Every form submission across all landing pages. Source of truth in Firestore.
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                <strong className="font-semibold text-slate-700">{leadViews.length}</strong>{' '}
+                {leadViews.length === 1 ? 'lead' : 'leads'}
+                {hasFilters ? ' match these filters' : ''}
+              </p>
+            </div>
+            <a
+              href={exportHref}
+              className="inline-flex items-center gap-2 rounded-lg border border-cms-rule bg-cms-soft px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-cms-hover"
+            >
+              <Download size={15} /> Export CSV
+            </a>
+          </header>
+
+          <form method="get" className="flex flex-wrap items-end gap-2 rounded-2xl border border-cms-rule bg-cms-soft p-3 text-sm">
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Landing page</span>
+              <select name="page" defaultValue={sp.page ?? ''} className={`${filterFieldClass} min-w-[180px]`}>
+                <option value="">All pages</option>
+                {allPages.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.internal_name || p.slug}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Zoho status</span>
+              <select name="status" defaultValue={sp.status ?? ''} className={filterFieldClass}>
+                <option value="">All</option>
+                <option value="synced">Synced</option>
+                <option value="failed">Failed</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">From</span>
+              <input type="date" name="from" defaultValue={sp.from ?? ''} className={filterFieldClass} />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">To</span>
+              <input type="date" name="to" defaultValue={sp.to ?? ''} className={filterFieldClass} />
+            </label>
+            <button
+              type="submit"
+              className="rounded-lg border border-cms-rule bg-white px-3 py-1.5 font-medium text-slate-700 transition hover:bg-cms-hover"
+            >
+              Apply
+            </button>
+            {hasFilters ? (
+              <Link
+                href="/admin/cms/landing-page-leads"
+                className="rounded-lg px-3 py-1.5 text-slate-500 transition hover:text-brand-primary"
+              >
+                Clear
+              </Link>
+            ) : null}
+          </form>
+
+          <section className="overflow-hidden rounded-2xl border border-cms-rule bg-white">
+            <header className="flex items-center justify-between border-b border-cms-rule bg-cms-soft px-4 py-3">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Leads</h2>
+              <span className="text-xs text-slate-500">{leadViews.length} total</span>
+            </header>
+            {leadViews.length === 0 ? (
+              <div className="px-4 py-12 text-center">
+                <p className="text-sm font-medium text-slate-600">No leads match these filters</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  Adjust the filters above or clear them to see all submissions.
+                </p>
+              </div>
+            ) : (
+              <LeadRoster leads={leadViews} retryZoho={retryZohoAction} />
+            )}
+          </section>
         </div>
-        <a
-          href={`?${new URLSearchParams({
-            ...(sp.status ? { status: sp.status } : {}),
-            ...(sp.page ? { page: sp.page } : {}),
-            ...(sp.from ? { from: sp.from } : {}),
-            ...(sp.to ? { to: sp.to } : {}),
-            export: '1',
-          }).toString()}`}
-          className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Export CSV
-        </a>
       </div>
-
-      <form method="get" className="flex flex-wrap gap-2 mb-4 text-sm items-end">
-        <label className="flex flex-col gap-0.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Landing page</span>
-          <select name="page" defaultValue={sp.page ?? ''} className="rounded-lg border border-slate-300 px-3 py-1.5 min-w-[180px]">
-            <option value="">All pages</option>
-            {allPages.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.internal_name || p.slug}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-0.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Zoho status</span>
-          <select name="status" defaultValue={sp.status ?? ''} className="rounded-lg border border-slate-300 px-3 py-1.5">
-            <option value="">All</option>
-            <option value="synced">Synced</option>
-            <option value="failed">Failed</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-0.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">From</span>
-          <input type="date" name="from" defaultValue={sp.from ?? ''} className="rounded-lg border border-slate-300 px-3 py-1.5" />
-        </label>
-        <label className="flex flex-col gap-0.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">To</span>
-          <input type="date" name="to" defaultValue={sp.to ?? ''} className="rounded-lg border border-slate-300 px-3 py-1.5" />
-        </label>
-        <button className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium hover:bg-slate-50">Apply</button>
-        {(sp.page || sp.status || sp.from || sp.to) ? (
-          <Link href="/admin/cms/landing-page-leads" className="rounded-lg px-3 py-1.5 text-slate-500 hover:text-slate-700">Clear</Link>
-        ) : null}
-        <span className="text-xs text-slate-500 ml-auto">{leads.length} {leads.length === 1 ? 'lead' : 'leads'}</span>
-      </form>
-
-      <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <Th>When</Th>
-              <Th>Name</Th>
-              <Th>Phone</Th>
-              <Th>Email</Th>
-              <Th>Page</Th>
-              <Th>Service</Th>
-              <Th>UTM source</Th>
-              <Th>Zoho</Th>
-              <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-600 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {leads.length === 0 ? (
-              <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-500">No leads match these filters.</td></tr>
-            ) : leads.flatMap((lead) => [
-              <tr key={lead.id} className="hover:bg-slate-50/60">
-                <Td>{formatDateTime(lead.submitted_at)}</Td>
-                <Td className="font-medium text-slate-900">{lead.name}</Td>
-                <Td><a href={`tel:${lead.phone}`} className="text-blue-700 hover:underline">{lead.phone}</a></Td>
-                <Td><a href={`mailto:${lead.email}`} className="text-blue-700 hover:underline">{lead.email}</a></Td>
-                <Td className="text-xs font-mono text-slate-600">/landing-pages/{lead.landing_page_slug}</Td>
-                <Td>{getServiceInterestLabel(lead.service_interest)}</Td>
-                <Td className="text-slate-600">{lead.utm_source ?? '—'}</Td>
-                <Td>
-                  {lead.zoho_lead_id ? (
-                    <span className="inline-flex items-center rounded-full text-[11px] font-semibold px-2 py-0.5 bg-emerald-100 text-emerald-700" title={`Zoho ID: ${lead.zoho_lead_id}`}>
-                      Synced
-                    </span>
-                  ) : lead.zoho_sync_error ? (
-                    <span className="inline-flex items-center rounded-full text-[11px] font-semibold px-2 py-0.5 bg-rose-100 text-rose-700" title={lead.zoho_sync_error}>
-                      Failed
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-600">Pending</span>
-                  )}
-                </Td>
-                <td className="px-4 py-3 text-right">
-                  <div className="inline-flex items-center gap-1.5">
-                    {!lead.zoho_lead_id ? (
-                      <form action={retryZohoAction}>
-                        <input type="hidden" name="lead_id" value={lead.id} />
-                        <button className="text-xs px-2 py-1 rounded border border-slate-200 hover:bg-white">Retry Zoho</button>
-                      </form>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>,
-              <tr key={`${lead.id}-detail`} className="bg-slate-50/40">
-                <td colSpan={9} className="px-4 py-0">
-                  <details className="group">
-                    <summary className="cursor-pointer list-none py-2 text-xs text-slate-500 hover:text-slate-700 select-none">
-                      <span className="group-open:hidden">▸ Show attribution &amp; sync details</span>
-                      <span className="hidden group-open:inline">▾ Hide details</span>
-                    </summary>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2 pb-4 text-[11px]">
-                      <Detail label="Lead ID" value={lead.id} mono />
-                      <Detail label="Company" value={lead.company_name ?? '—'} />
-                      <Detail label="Submitted at" value={lead.submitted_at?.toISOString() ?? '—'} mono />
-                      <Detail label="Zoho ID" value={lead.zoho_lead_id ?? '—'} mono />
-                      <Detail label="Zoho synced at" value={lead.zoho_synced_at?.toISOString() ?? '—'} mono />
-                      <Detail label="Zoho retries" value={String(lead.zoho_retry_count)} />
-                      <Detail label="Resend sent at" value={lead.resend_email_sent_at?.toISOString() ?? '—'} mono />
-                      <Detail label="Resend error" value={lead.resend_email_error ?? '—'} />
-                      <Detail label="GCLID" value={lead.gclid ?? '—'} mono />
-                      <Detail label="UTM source" value={lead.utm_source ?? '—'} />
-                      <Detail label="UTM medium" value={lead.utm_medium ?? '—'} />
-                      <Detail label="UTM campaign" value={lead.utm_campaign ?? '—'} />
-                      <Detail label="UTM term" value={lead.utm_term ?? '—'} />
-                      <Detail label="UTM content" value={lead.utm_content ?? '—'} />
-                      <Detail label="Referrer" value={lead.referrer ?? '—'} mono />
-                      <Detail label="Landing URL" value={lead.landing_url ?? '—'} mono />
-                      <div className="col-span-2 md:col-span-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">User agent</p>
-                        <p className="text-[11px] font-mono text-slate-700 truncate" title={lead.user_agent}>{lead.user_agent || '—'}</p>
-                      </div>
-                      {lead.zoho_sync_error ? (
-                        <div className="col-span-2 md:col-span-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-600">Last Zoho sync error</p>
-                          <p className="text-[11px] font-mono text-rose-700 whitespace-pre-wrap break-all">{lead.zoho_sync_error}</p>
-                        </div>
-                      ) : null}
-                    </div>
-                  </details>
-                </td>
-              </tr>,
-            ])}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wide whitespace-nowrap">{children}</th>
-}
-
-function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 ${className ?? ''}`}>{children}</td>
-}
-
-function Detail({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div>
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className={`text-[11px] text-slate-800 truncate ${mono ? 'font-mono' : ''}`} title={value}>{value}</p>
-    </div>
+    </section>
   )
 }

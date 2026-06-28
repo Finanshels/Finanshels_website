@@ -57,9 +57,16 @@ export function CmsTitleSlugFields({
     slugManual.current = true
   }
 
+  // FIX-057: when the AI "Suggest" button renders, the title group can't be a
+  // <label> — a label with no `htmlFor` associates with its first labelable
+  // descendant (the Suggest <button>, which precedes the input), so clicking the
+  // label caption forwarded a synthetic click to Suggest and popped the AI panel.
+  // Use a <div> in that case; keep <label> (correct focus) when there's no button.
+  const TitleTag = aiContext ? 'div' : 'label'
+
   return (
     <>
-      <label className={titleClassName}>
+      <TitleTag className={titleClassName}>
         <span className="flex items-center gap-2">
           {titleLabel}
           {titleRequired ? (
@@ -89,7 +96,7 @@ export function CmsTitleSlugFields({
         {autoSyncSlug ? (
           <p className="mt-1 text-xs text-slate-500">The slug below updates from the title until you edit the slug.</p>
         ) : null}
-      </label>
+      </TitleTag>
       <label className={slugClassName}>
         <span className="flex items-center gap-2">
           {slugLabel}

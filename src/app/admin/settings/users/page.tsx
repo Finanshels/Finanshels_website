@@ -30,6 +30,9 @@ import { getSiteUrl, isCmsConfigured } from '@/lib/cms/config'
 import { isEmailConfigured, sendEmail } from '@/lib/email/resend'
 import { renderInviteEmail } from '@/lib/email/templates/invite'
 import { Alert, Button } from '@/components/cms/admin/ui'
+import { RolePill } from '@/components/cms/admin/settings/MemberBadges'
+import { MemberRoster } from '@/components/cms/admin/settings/MemberRoster'
+import type { MemberView } from '@/components/cms/admin/settings/memberTypes'
 
 export const dynamic = 'force-dynamic'
 
@@ -320,168 +323,22 @@ async function deleteUserAction(formData: FormData) {
 
 function fmtDate(d?: Date): string {
   if (!d) return '—'
-  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+  // Pin an explicit locale so the formatted string is deterministic across
+  // deployment regions / Node versions (it's serialized to client components).
+  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-function StatusPill({ status }: { status: CmsUserStatus }) {
-  const map: Record<CmsUserStatus, { box: string; dot: string; label: string }> = {
-    active: { box: 'border-emerald-300 bg-emerald-50 text-emerald-700', dot: 'text-emerald-700', label: 'active' },
-    invited: { box: 'border-amber-300 bg-amber-50 text-amber-800', dot: 'text-amber-700', label: 'invited' },
-    disabled: { box: 'border-slate-300 bg-slate-100 text-slate-700', dot: 'text-slate-500', label: 'disabled' },
+/** Maps a repository user into the client roster's view-model. */
+function toMemberView(user: CmsUserPublic): MemberView {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    createdLabel: fmtDate(user.createdAt),
+    lastLoginLabel: fmtDate(user.lastLoginAt),
   }
-  const s = map[status]
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wider ${s.box}`}>
-      <span className={s.dot} aria-hidden>●</span>
-      {s.label}
-    </span>
-  )
-}
-
-function RolePill({ role }: { role: CmsUserRole }) {
-  const map: Record<CmsUserRole, string> = {
-    owner: 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary',
-    admin: 'border-violet-300 bg-violet-50 text-violet-700',
-    editor: 'border-sky-300 bg-sky-50 text-sky-700',
-    viewer: 'border-slate-300 bg-slate-100 text-slate-700',
-  }
-  return (
-    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] uppercase tracking-wider ${map[role]}`}>
-      {ROLE_LABEL[role]}
-    </span>
-  )
-}
-
-function UserRow({
-  user,
-  actorRole,
-  actorUserId,
-}: {
-  user: CmsUserPublic
-  actorRole: CmsUserRole
-  actorUserId: string | null
-}) {
-  const isSelf = user.id === actorUserId
-  const protectedOwner = user.role === 'owner' && actorRole !== 'owner'
-  const canEditTarget = !protectedOwner
-
-  const assignableRoles: CmsUserRole[] = (['viewer', 'editor', 'admin', 'owner'] as CmsUserRole[]).filter((r) => {
-    if (r === 'owner') return actorRole === 'owner'
-    return true
-  })
-
-  return (
-    <tr className="align-top">
-      <td className="px-4 py-3">
-        <p className="font-semibold text-slate-900">
-          {user.name || '(no name)'} {isSelf ? <span className="text-xs text-slate-500">(you)</span> : null}
-        </p>
-        <p className="mt-0.5 text-xs text-slate-500">{user.email}</p>
-      </td>
-      <td className="px-4 py-3">
-        <RolePill role={user.role} />
-      </td>
-      <td className="px-4 py-3">
-        <StatusPill status={user.status} />
-      </td>
-      <td className="hidden whitespace-nowrap px-4 py-3 text-xs text-slate-500 lg:table-cell">{fmtDate(user.lastLoginAt)}</td>
-      <td className="hidden whitespace-nowrap px-4 py-3 text-xs text-slate-500 lg:table-cell">{fmtDate(user.createdAt)}</td>
-      <td className="px-4 py-3">
-        <div className="flex flex-col gap-2">
-          {canEditTarget ? (
-            <form action={updateRoleAction} className="flex items-center gap-2">
-              <input type="hidden" name="userId" value={user.id} />
-              <select
-                name="role"
-                defaultValue={user.role}
-                className="rounded-lg border border-cms-rule bg-white px-2 py-1 text-xs text-slate-700"
-              >
-                {assignableRoles.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_LABEL[r]}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                className="rounded-lg border border-cms-rule bg-cms-soft px-2 py-1 text-xs text-slate-700 hover:bg-cms-hover"
-              >
-                Save role
-              </button>
-            </form>
-          ) : null}
-
-          {canEditTarget && !isSelf && user.status !== 'invited' ? (
-            <form action={updateStatusAction} className="flex items-center gap-2">
-              <input type="hidden" name="userId" value={user.id} />
-              <input type="hidden" name="status" value={user.status === 'active' ? 'disabled' : 'active'} />
-              <button
-                type="submit"
-                className={`rounded-lg border px-2 py-1 text-xs transition ${
-                  user.status === 'active'
-                    ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                    : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                }`}
-              >
-                {user.status === 'active' ? 'Disable' : 'Enable'}
-              </button>
-            </form>
-          ) : null}
-
-          {canEditTarget && user.status === 'invited' ? (
-            <form action={resendInviteAction} className="flex items-center gap-2">
-              <input type="hidden" name="userId" value={user.id} />
-              <button
-                type="submit"
-                className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
-                title="Generate a new invite link and email it"
-              >
-                Resend invite
-              </button>
-            </form>
-          ) : null}
-
-          {canEditTarget && user.status === 'active' ? (
-            <form action={resetPasswordAction} className="flex items-center gap-2">
-              <input type="hidden" name="userId" value={user.id} />
-              <input
-                // FIX-048: was `type="text"` — exposed the new password in
-                // plaintext on screen while the admin typed it. `type="password"`
-                // masks input the standard way.
-                type="password"
-                name="newPassword"
-                placeholder="New password (≥ 8 chars)"
-                autoComplete="new-password"
-                className="w-44 rounded-lg border border-cms-rule bg-white px-2 py-1 text-xs text-slate-700 placeholder:text-slate-400"
-              />
-              <button
-                type="submit"
-                className="rounded-lg border border-cms-rule bg-cms-soft px-2 py-1 text-xs text-slate-700 hover:bg-cms-hover"
-              >
-                Reset
-              </button>
-            </form>
-          ) : null}
-
-          {canEditTarget && !isSelf ? (
-            <form action={deleteUserAction}>
-              <input type="hidden" name="userId" value={user.id} />
-              <button
-                type="submit"
-                className="rounded-lg border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100"
-              >
-                Delete user
-              </button>
-            </form>
-          ) : null}
-
-          {protectedOwner ? (
-            <p className="text-xs text-slate-500">Only an owner can modify another owner.</p>
-          ) : null}
-        </div>
-      </td>
-    </tr>
-  )
 }
 
 export default async function UsersSettingsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -525,6 +382,8 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
 
   const users = await listUsers()
   const owners = users.filter((u) => u.role === 'owner').length
+  const pending = users.filter((u) => u.status === 'invited').length
+  const members = users.map(toMemberView)
   const errorMessages: Record<string, string> = {
     'invalid-role': 'Invalid role value.',
     'only-owner-can-create-owner': 'Only an owner can create another owner.',
@@ -563,14 +422,31 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
           />
 
           <div className="space-y-4 rounded-2xl border border-cms-rule bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.06)] xl:overflow-y-auto">
-            <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Settings</p>
-                <h1 className="mt-1 text-xl font-semibold text-slate-900">Users & access</h1>
-                <p className="mt-1 text-sm text-slate-500">
-                  Add your marketing team, control roles, reset passwords. {users.length} {users.length === 1 ? 'user' : 'users'} ·{' '}
-                  {owners} {owners === 1 ? 'owner' : 'owners'}.
-                </p>
+                <h1 className="mt-1 text-xl font-semibold text-slate-900">Users &amp; access</h1>
+                <p className="mt-1 text-sm text-slate-500">Add your team, control roles, and reset passwords.</p>
+                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                  <span>
+                    <strong className="font-semibold text-slate-700">{users.length}</strong>{' '}
+                    {users.length === 1 ? 'member' : 'members'}
+                  </span>
+                  <span aria-hidden className="text-slate-300">·</span>
+                  <span>
+                    <strong className="font-semibold text-slate-700">{owners}</strong>{' '}
+                    {owners === 1 ? 'owner' : 'owners'}
+                  </span>
+                  {pending > 0 ? (
+                    <>
+                      <span aria-hidden className="text-slate-300">·</span>
+                      <span className="text-amber-700">
+                        <strong className="font-semibold">{pending}</strong> pending{' '}
+                        {pending === 1 ? 'invite' : 'invites'}
+                      </span>
+                    </>
+                  ) : null}
+                </div>
               </div>
               <form action={logoutAction}>
                 <Button type="submit" variant="secondary" size="sm">
@@ -628,32 +504,32 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
                 it any time.
               </p>
               <form action={inviteUserAction} className="mt-4 grid gap-3 md:grid-cols-2">
-                <label className="block text-sm text-slate-700">
+                <label className="block text-sm font-medium text-slate-700">
                   Full name
                   <input
                     type="text"
                     name="name"
                     required
-                    className="mt-1.5 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900"
+                    className="mt-1.5 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                     placeholder="Sara Marketing"
                   />
                 </label>
-                <label className="block text-sm text-slate-700">
+                <label className="block text-sm font-medium text-slate-700">
                   Email
                   <input
                     type="email"
                     name="email"
                     required
-                    className="mt-1.5 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900"
+                    className="mt-1.5 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                     placeholder="sara@finanshels.com"
                   />
                 </label>
-                <label className="block text-sm text-slate-700 md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 md:col-span-2">
                   Role
                   <select
                     name="role"
                     defaultValue="editor"
-                    className="mt-1.5 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm text-slate-900"
+                    className="mt-1.5 w-full rounded-lg border border-cms-rule bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20"
                   >
                     <option value="viewer">{ROLE_LABEL.viewer} — read-only</option>
                     <option value="editor">{ROLE_LABEL.editor} — content edit/publish</option>
@@ -672,37 +548,33 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
               </form>
             </section>
 
-            <section className="rounded-2xl border border-cms-rule bg-white">
+            <section className="overflow-hidden rounded-2xl border border-cms-rule bg-white">
               <header className="flex items-center justify-between border-b border-cms-rule bg-cms-soft px-4 py-3">
                 <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Team members</h2>
                 <Link href="#role-reference" className="text-xs text-slate-500 hover:text-brand-primary">
                   Role reference ↓
                 </Link>
               </header>
-              {users.length === 0 ? (
-                <div className="px-4 py-10 text-center text-sm text-slate-400">
-                  No users yet. Use the invite form above to add your first team member.
+              {members.length === 0 ? (
+                <div className="px-4 py-12 text-center">
+                  <p className="text-sm font-medium text-slate-600">No team members yet</p>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Use the invite form above to add your first team member.
+                  </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="border-b border-cms-rule bg-cms-soft text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                      <tr>
-                        <th className="px-4 py-3 font-semibold">Name / email</th>
-                        <th className="px-4 py-3 font-semibold">Role</th>
-                        <th className="px-4 py-3 font-semibold">Status</th>
-                        <th className="hidden px-4 py-3 font-semibold lg:table-cell">Last login</th>
-                        <th className="hidden px-4 py-3 font-semibold lg:table-cell">Created</th>
-                        <th className="px-4 py-3 font-semibold">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-cms-rule">
-                      {users.map((u) => (
-                        <UserRow key={u.id} user={u} actorRole={actorRole} actorUserId={actorId} />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <MemberRoster
+                  members={members}
+                  actorRole={actorRole}
+                  actorUserId={actorId}
+                  actions={{
+                    updateRole: updateRoleAction,
+                    updateStatus: updateStatusAction,
+                    resendInvite: resendInviteAction,
+                    resetPassword: resetPasswordAction,
+                    deleteUser: deleteUserAction,
+                  }}
+                />
               )}
             </section>
 

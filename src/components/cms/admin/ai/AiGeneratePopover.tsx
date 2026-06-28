@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/cn'
 import { useAiGeneration, type AiGeneratePayload } from './useAiGeneration'
 
@@ -10,9 +11,17 @@ interface AiGeneratePopoverProps {
   charLimit?: { min: number; max: number }
   onUse: (text: string) => void
   onClose: () => void
-  /** Positioning override for the absolutely-positioned panel. */
+  /** The trigger element the panel is anchored to. */
+  anchorRef: React.RefObject<HTMLElement | null>
+  /** Align the panel's left or right edge to the trigger. */
   align?: 'left' | 'right'
 }
+
+const PANEL_WIDTH = 420
+const PANEL_MAX_HEIGHT = 420
+const VIEWPORT_MARGIN = 8
+
+type PanelPosition = { top: number; left: number; width: number }
 
 function parseOptions(raw: string): string[] {
   return raw
@@ -29,10 +38,41 @@ export function AiGeneratePopover({
   charLimit,
   onUse,
   onClose,
+  anchorRef,
   align = 'right',
 }: AiGeneratePopoverProps) {
   const ref = useRef<HTMLDivElement>(null)
   const { text, status, error, generate, stop, reset } = useAiGeneration()
+  // FIX-054: the panel is portaled to <body> and fixed-positioned against the
+  // trigger's rect. Rendering it inline made it clip against the editor's
+  // scrollable rails (overflow-y-auto clips horizontal overflow too), cutting
+  // off the suggestion text. Portaling escapes every overflow/stacking context.
+  const [pos, setPos] = useState<PanelPosition | null>(null)
+
+  useLayoutEffect(() => {
+    const place = () => {
+      const anchor = anchorRef.current
+      if (!anchor) return
+      const rect = anchor.getBoundingClientRect()
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const width = Math.min(PANEL_WIDTH, vw - VIEWPORT_MARGIN * 2)
+      let left = align === 'left' ? rect.left : rect.right - width
+      left = Math.max(VIEWPORT_MARGIN, Math.min(left, vw - width - VIEWPORT_MARGIN))
+      // Drop below the trigger, but never let the panel run off the bottom edge.
+      let top = rect.bottom + VIEWPORT_MARGIN
+      top = Math.max(VIEWPORT_MARGIN, Math.min(top, vh - PANEL_MAX_HEIGHT - VIEWPORT_MARGIN))
+      setPos({ top, left, width })
+    }
+    place()
+    window.addEventListener('resize', place)
+    // Capture phase so the editor rails' internal scroll repositions the panel.
+    window.addEventListener('scroll', place, true)
+    return () => {
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', place, true)
+    }
+  }, [anchorRef, align])
   // FIX-052: track the selection by index, not by option text. The option strings
   // change as the stream arrives, so a text-keyed selection silently deselected.
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
@@ -47,10 +87,12 @@ export function AiGeneratePopover({
   // Outside click + Escape close.
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        stop()
-        onClose()
-      }
+      const target = e.target as Node
+      if (ref.current?.contains(target)) return
+      // Clicking the trigger toggles it shut on its own — don't double-handle.
+      if (anchorRef.current?.contains(target)) return
+      stop()
+      onClose()
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -64,7 +106,7 @@ export function AiGeneratePopover({
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [onClose, stop])
+  }, [onClose, stop, anchorRef])
 
   const isLoading = status === 'loading'
   // FIX-052: only expose selectable options once streaming is DONE. Parsing the
@@ -82,15 +124,23 @@ export function AiGeneratePopover({
 
   const canUse = Boolean(chosen) && status !== 'loading'
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div
       ref={ref}
       role="dialog"
       aria-label="AI suggestion"
       onClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'fixed',
+        top: pos?.top ?? -9999,
+        left: pos?.left ?? -9999,
+        width: pos?.width ?? PANEL_WIDTH,
+        visibility: pos ? 'visible' : 'hidden',
+      }}
       className={cn(
-        'absolute top-full z-50 mt-2 w-[420px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-cms-rule bg-white shadow-xl',
-        align === 'right' ? 'right-0' : 'left-0',
+        'z-[100] overflow-hidden rounded-xl border border-cms-rule bg-white shadow-xl',
       )}
     >
       {/* Header */}
@@ -186,6 +236,7 @@ export function AiGeneratePopover({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

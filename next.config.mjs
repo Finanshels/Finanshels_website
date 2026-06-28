@@ -14,9 +14,11 @@
  *     Next.js share the same path pattern — no redirect needed; Next.js handles
  *     these natively. They are NOT listed below for that reason.
  *   - Detail pages for collections that have NO dedicated Next.js route
- *     (customer_stories, customer_reviews, podcasts, webinars, ebooks, tools,
- *     faqs, videos) are routed via the generic /content/<collection>/<slug>
- *     resolver.
+ *     (customer_stories, customer_reviews, podcasts, ebooks, faqs, videos) are
+ *     routed via the generic /content/<collection>/<slug> resolver.
+ *   - `webinars` (/webinars/[slug]) and `tools` (/tools/[slug]) DO have
+ *     dedicated routes — never redirect those bare patterns to /content or you
+ *     create a loop with the content page's reverse redirect (see FIX-058).
  *
  * @returns {Promise<Array<{ source: string, destination: string, permanent: boolean }>>}
  */
@@ -37,8 +39,13 @@ async function legacyRedirects() {
     { source: '/podcasts/:slug', destination: '/content/podcasts/:slug', permanent: true },
     { source: '/podcast/:slug', destination: '/content/podcasts/:slug', permanent: true },
 
-    { source: '/webinars/:slug', destination: '/content/webinars/:slug', permanent: true },
-    { source: '/webinar/:slug', destination: '/content/webinars/:slug', permanent: true },
+    // FIX-058: `/webinars/:slug` is now a real Next.js route (webinar revamp,
+    // 2026-06-28). It must NOT redirect — the old `→ /content/webinars/:slug`
+    // rule formed an infinite loop with the content page's reverse redirect
+    // (`/content/webinars/:slug → /webinars/:slug`), causing ERR_TOO_MANY_REDIRECTS.
+    // Same treatment the dedicated /tools/[slug] route got below. Only the
+    // singular legacy alias still redirects — straight to the canonical route.
+    { source: '/webinar/:slug', destination: '/webinars/:slug', permanent: true },
 
     { source: '/ebooks/:slug', destination: '/content/ebooks/:slug', permanent: true },
     { source: '/ebook/:slug', destination: '/content/ebooks/:slug', permanent: true },

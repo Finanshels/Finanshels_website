@@ -16,6 +16,7 @@ import {
   Star,
 } from 'lucide-react'
 import { LEADERSHIP_TEAM, TESTIMONIALS } from '@/content/team'
+import TestimonialsCarousel from '@/components/marketing/TestimonialsCarousel'
 
 const WHATSAPP_HREF =
   'https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20let%E2%80%99s%20talk%20finance.'
@@ -344,13 +345,13 @@ const TEAM_MEMBERS = LEADERSHIP_TEAM.slice(0, 8)
 // Reviews carousel — a mix of written reviews and (dummy) video testimonials.
 // Video thumbnails are placeholder Unsplash portraits until real videos exist.
 const REVIEWS = [
-  { type: 'video', name: 'Priya M Nair', role: 'Founder, ZWAG AI', company: 'ZWAG AI', duration: '2:14', img: 'photo-1494790108377-be9c29b29330' },
+  { type: 'video', name: 'Priya M Nair', role: 'Founder, ZWAG AI', company: 'ZWAG AI', img: 'photo-1494790108377-be9c29b29330' },
   { type: 'text', name: 'Nassib Sawaya', role: 'Director, UAE Business', quote: TESTIMONIALS[1].quote },
-  { type: 'video', name: 'Elie Ronin', role: 'Co-Founder', company: 'Ronin Labs', duration: '1:08', img: 'photo-1500648767791-00dcc994a43e' },
+  { type: 'video', name: 'Elie Ronin', role: 'Co-Founder', company: 'Ronin Labs', img: 'photo-1500648767791-00dcc994a43e' },
   { type: 'text', name: 'Sami Khan', role: 'CEO, desertcart.ae', quote: TESTIMONIALS[5].quote },
-  { type: 'video', name: 'Ranya Al Suwaidi', role: 'Founder, Bloom Cafe', company: 'Bloom Cafe', duration: '0:47', img: 'photo-1573497019940-1c28c88b4f3e' },
+  { type: 'video', name: 'Ranya Al Suwaidi', role: 'Founder, Bloom Cafe', company: 'Bloom Cafe', img: 'photo-1573497019940-1c28c88b4f3e' },
   { type: 'text', name: 'Leena Kurian', role: 'Co-founder, Atlas Clinics', quote: TESTIMONIALS[6].quote },
-  { type: 'video', name: 'Ahmed Khalil', role: 'CEO, Greenfield Properties', company: 'Greenfield', duration: '1:32', img: 'photo-1519085360753-af0119f7cbe7' },
+  { type: 'video', name: 'Ahmed Khalil', role: 'CEO, Greenfield Properties', company: 'Greenfield', img: 'photo-1519085360753-af0119f7cbe7' },
   { type: 'text', name: 'Rohan Mehta', role: 'Managing Partner, Premier Realty', quote: TESTIMONIALS[3].quote },
 ]
 
@@ -398,7 +399,6 @@ const FAQS = [
 ]
 
 const unsplash = (id) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=70`
-
 /* ───────────────────────── small components ───────────────────────── */
 
 // Thin top scroll-progress bar.
@@ -475,7 +475,7 @@ function FaqItem({ item, isOpen, onToggle }) {
   )
 }
 
-export default function Home4() {
+export default function Home4({ testimonials } = {}) {
   const [openFaq, setOpenFaq] = useState(0)
   const [stopIndex, setStopIndex] = useState(4)
   const [noTxns, setNoTxns] = useState(false)
@@ -672,39 +672,10 @@ export default function Home4() {
         </div>
 
         <div className="mt-12">
-          <ScrollRow ariaLabel="reviews">
-            {REVIEWS.map((r) =>
-              r.type === 'video' ? (
-                <div key={r.name} className="relative h-[440px] w-[300px] shrink-0 snap-start overflow-hidden rounded-[24px] bg-slate-800 shadow-sm">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={unsplash(r.img)} alt={r.name} className="h-full w-full object-cover" loading="lazy" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/25" />
-                  <span className="absolute right-3 top-3 rounded-md bg-black/55 px-2 py-0.5 text-xs font-semibold text-white">{r.duration}</span>
-                  <span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/25 ring-1 ring-white/50 backdrop-blur-sm transition group-hover:scale-105">
-                    <Play size={24} className="ml-0.5 fill-white text-white" />
-                  </span>
-                  <div className="absolute inset-x-0 bottom-0 p-5">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-white/70">{r.company}</p>
-                    <p className="mt-1 text-lg font-bold text-white" style={display}>{r.name}</p>
-                    <p className="text-xs text-white/80">{r.role}</p>
-                  </div>
-                </div>
-              ) : (
-                <div key={r.name} className="flex h-[440px] w-[300px] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex">{[1, 2, 3, 4, 5].map((i) => <Star key={i} size={16} className="fill-amber-500 text-amber-500" />)}</div>
-                  <p className="mt-4 flex-1 overflow-hidden text-sm leading-relaxed text-slate-700">{r.quote}</p>
-                  <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={avatarUrl(r.name)} alt={r.name} className="h-11 w-11 rounded-full bg-[#fff4ec]" loading="lazy" />
-                    <div>
-                      <p className="text-sm font-bold text-[#0b1224]">{r.name}</p>
-                      <p className="text-xs text-slate-500">{r.role}</p>
-                    </div>
-                  </div>
-                </div>
-              )
-            )}
-          </ScrollRow>
+          <TestimonialsCarousel
+            items={testimonials?.length ? testimonials : REVIEWS}
+            ariaLabel="reviews"
+          />
         </div>
 
         <div className="mt-8 flex justify-center">

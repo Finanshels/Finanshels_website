@@ -174,6 +174,197 @@ export async function listCmsDocuments(
   })
 }
 
+export type CustomerStoryCardData = {
+  slug: string
+  title: string
+  customer: string
+  industry: string | null
+  heroImage: string | null
+  summary: string
+  metric: { label: string; value: string } | null
+  featured: boolean
+  publishedAt?: Date
+}
+
+/**
+ * Published customer stories (case studies) for the public `/customers` hub.
+ * Reads card fields directly (the collection has no per-doc schema) and sorts
+ * featured-first, then newest. Uses a single `status` equality filter — no
+ * composite index required; the small case-study set is ordered in memory.
+ */
+export async function listPublishedCustomerStories(limit = 60): Promise<CustomerStoryCardData[]> {
+  const db = getDb()
+  if (!db) return []
+  const def = CMS_COLLECTION_DEFINITION_MAP.customer_stories
+
+  const snap = await db
+    .collection('customer_stories')
+    .where('status', '==', 'published')
+    .limit(limit)
+    .get()
+
+  const stripHtml = (s: unknown) =>
+    String(s ?? '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+  const cards = snap.docs.map((doc): CustomerStoryCardData => {
+    const d = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+    const metrics = Array.isArray(d.metrics_highlights) ? d.metrics_highlights : []
+    const firstMetric = metrics.find(
+      (m): m is Record<string, unknown> => !!m && typeof m === 'object'
+    )
+    const metric =
+      firstMetric && (firstMetric.value || firstMetric.label)
+        ? { label: String(firstMetric.label ?? ''), value: String(firstMetric.value ?? '') }
+        : null
+    const publishedAt =
+      d.publishedAt instanceof Date
+        ? d.publishedAt
+        : d.publish_date instanceof Date
+        ? d.publish_date
+        : undefined
+    return {
+      slug: readSlug(doc.id, d, def.slugField),
+      title: readTitle(d[def.titleField]),
+      customer: typeof d.customer === 'string' ? d.customer : '',
+      industry: typeof d.industry === 'string' && d.industry ? d.industry : null,
+      heroImage: typeof d.hero_image === 'string' && d.hero_image.trim() ? d.hero_image.trim() : null,
+      summary: stripHtml(d.results_summary || d.challenge_summary).slice(0, 180),
+      metric,
+      featured: d.featured === true,
+      publishedAt,
+    }
+  })
+
+  return cards.sort((a, b) => {
+    if (a.featured !== b.featured) return a.featured ? -1 : 1
+    return (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0)
+  })
+}
+
+export type CustomerReviewCardData = {
+  id: string
+  quote: string
+  customerName: string
+  designation: string | null
+  company: string | null
+  rating: number | null
+  photo: string | null
+  videoUrl: string | null
+  featured: boolean
+}
+
+/**
+ * Published + approved customer reviews (testimonials) for the `/customers` hub.
+ * Reviews have no public detail page (embedded-only / blocklisted from
+ * `/content`), so this returns inline quote data. Requires
+ * `approved_for_publication === true` (PDPL/GDPR consent gate) on top of
+ * `status === 'published'`; the consent flag is filtered in memory to avoid a
+ * composite index. Featured first.
+ */
+export async function listPublishedCustomerReviews(limit = 60): Promise<CustomerReviewCardData[]> {
+  const db = getDb()
+  if (!db) return []
+
+  const snap = await db
+    .collection('customer_reviews')
+    .where('status', '==', 'published')
+    .limit(limit)
+    .get()
+
+  const stripHtml = (s: unknown) =>
+    String(s ?? '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+  const reviews: CustomerReviewCardData[] = []
+  for (const doc of snap.docs) {
+    const d = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+    if (d.approved_for_publication !== true) continue
+    const quote = stripHtml(d.review_text)
+    if (!quote) continue
+    const ratingRaw = typeof d.rating === 'number' ? d.rating : Number(d.rating)
+    reviews.push({
+      id: doc.id,
+      quote,
+      customerName: typeof d.customer_name === 'string' ? d.customer_name : '',
+      designation:
+        typeof d.customer_designation === 'string' && d.customer_designation ? d.customer_designation : null,
+      company: typeof d.company === 'string' && d.company ? d.company : null,
+      rating: Number.isFinite(ratingRaw) && ratingRaw > 0 ? Math.min(5, Math.round(ratingRaw)) : null,
+      photo: typeof d.customer_photo === 'string' && d.customer_photo.trim() ? d.customer_photo.trim() : null,
+      videoUrl: typeof d.video_review_url === 'string' && d.video_review_url.trim() ? d.video_review_url.trim() : null,
+      featured: d.featured === true,
+    })
+  }
+
+  return reviews.sort((a, b) => (a.featured === b.featured ? 0 : a.featured ? -1 : 1))
+}
+
+export type PodcastCardData = {
+  slug: string
+  title: string
+  podcastName: string | null
+  episodeNumber: number | null
+  duration: string | null
+  summary: string
+  heroImage: string | null
+  topics: string[]
+  publishedAt?: Date
+}
+
+/**
+ * Published podcast episodes for the `/podcasts` hub, newest first. Reads card
+ * fields directly (no per-doc schema). Single `status` equality filter — no
+ * composite index required; the episode set is sorted in memory.
+ */
+export async function listPublishedPodcasts(limit = 60): Promise<PodcastCardData[]> {
+  const db = getDb()
+  if (!db) return []
+  const def = CMS_COLLECTION_DEFINITION_MAP.podcasts
+
+  const snap = await db
+    .collection('podcasts')
+    .where('status', '==', 'published')
+    .limit(limit)
+    .get()
+
+  const stripHtml = (s: unknown) =>
+    String(s ?? '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+  const cards = snap.docs.map((doc): PodcastCardData => {
+    const d = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+    const epRaw = typeof d.episode_number === 'number' ? d.episode_number : Number(d.episode_number)
+    const publishedAt =
+      d.publishedAt instanceof Date
+        ? d.publishedAt
+        : d.publish_date instanceof Date
+        ? d.publish_date
+        : undefined
+    return {
+      slug: readSlug(doc.id, d, def.slugField),
+      title: readTitle(d[def.titleField]),
+      podcastName: typeof d.podcast_name === 'string' && d.podcast_name ? d.podcast_name : null,
+      episodeNumber: Number.isFinite(epRaw) && epRaw > 0 ? epRaw : null,
+      duration: typeof d.duration === 'string' && d.duration ? d.duration : null,
+      summary: stripHtml(d.episode_summary).slice(0, 180),
+      heroImage: typeof d.featured_image === 'string' && d.featured_image.trim() ? d.featured_image.trim() : null,
+      topics: (Array.isArray(d.key_topics) ? d.key_topics : []).filter(
+        (t): t is string => typeof t === 'string' && t.trim().length > 0
+      ),
+      publishedAt,
+    }
+  })
+
+  return cards.sort((a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0))
+}
+
 export type CmsMediaLibraryItem = {
   id: string
   slug: string

@@ -21,12 +21,13 @@ Marketing site + CMS for [finanshels.com](https://finanshels.com). Next.js 15 Ap
 
 | Area | Entry point | Notes |
 |---|---|---|
-| CMS definitions (SoT) | [src/lib/cms/collectionDefinitions.ts](src/lib/cms/collectionDefinitions.ts) | ~1300 LOC. 14 collections × 9 sections (`CmsCollectionKey` is the authoritative list). Read [docs/cms-firestore.md](docs/cms-firestore.md) before editing. |
+| CMS definitions (SoT) | [src/lib/cms/collectionDefinitions.ts](src/lib/cms/collectionDefinitions.ts) | ~1400 LOC. 12 collections × 9 sections (`CmsCollectionKey` is the authoritative list). Read [docs/cms-firestore.md](docs/cms-firestore.md) before editing. |
 | Field encode/decode (SoT) | [src/lib/cms/fieldCodec.ts](src/lib/cms/fieldCodec.ts) | Every `CmsFieldType` has exactly one codec. Decode throws `InvalidFieldValueError` on bad input. |
 | Firestore client | [src/lib/cms/firestore.ts](src/lib/cms/firestore.ts) | `normalizePrivateKey` handles 5 mangled env formats. |
 | Admin auth | [src/lib/cms/adminAuth.ts](src/lib/cms/adminAuth.ts) + [src/middleware.ts](src/middleware.ts) | Cookie HMAC, `tokenVersion` invalidation, PBKDF2-SHA256 200k. |
 | Revalidation | [src/app/api/revalidate/route.ts](src/app/api/revalidate/route.ts) | Bearer-auth POST, called from GCP Functions on Firestore write. |
 | Page-blocks renderer | [src/components/cms/PageBlocksRenderer.tsx](src/components/cms/PageBlocksRenderer.tsx) | One branch per block type in `CMS_BLOCK_TYPES`. |
+| Blog article template | [src/app/blog/](src/app/blog/) + [src/components/cms/blog/](src/components/cms/blog/) | "The Index" reading layout. Read time, sticky TOC, progress bar, share are **derived from existing fields** (read [docs/cms-firestore.md](docs/cms-firestore.md) § Blog article template). `cheerio` TOC builder ([src/lib/cms/articleToc.ts](src/lib/cms/articleToc.ts)) is **server-only**. Don't add CMS fields for these. |
 | Admin panel | [src/app/admin/cms/](src/app/admin/cms/) | Collection-driven editor. One editor serves edit (`?slug=…`) and create (`?intent=create`, blank doc; autosave stays off until the first manual save). |
 | Routed content | [src/app/content/](src/app/content/) | Generic detail page resolves every routed collection. |
 | Employee onboarding | [src/app/admin/onboarding/](src/app/admin/onboarding/) | Gamified internal onboarding behind `requireAdminAuth()`. UI: [src/components/onboarding/](src/components/onboarding/), state: [src/contexts/OnboardingContext.jsx](src/contexts/OnboardingContext.jsx). |
@@ -46,10 +47,12 @@ Marketing site + CMS for [finanshels.com](https://finanshels.com). Next.js 15 Ap
 
 ## Read these first when starting CMS work
 
-1. [docs/cms-firestore.md](docs/cms-firestore.md) — collections, indexes, env, security, workflow
-2. [docs/cms-field-guide.md](docs/cms-field-guide.md) — every field type, per editor section (engineer reference)
-3. [docs/cms/marketing-field-guide.md](docs/cms/marketing-field-guide.md) — every field ranked by priority for the marketing team (which to fill, hide, or ignore)
-4. [.claude/rules/cms.md](.claude/rules/cms.md) — CMS invariants
+1. [docs/cms-firestore.md](docs/cms-firestore.md) — collections, public surfaces, status workflow, revalidation, env, security
+2. [docs/cms-field-guide.md](docs/cms-field-guide.md) — field types, sections, and the merge/strip assembly model (engineer reference)
+3. [docs/cms/field-inventory.md](docs/cms/field-inventory.md) — **auto-generated** exact field list per collection (`npx tsx scripts/gen-field-inventory.mts`); never hand-edit
+4. [docs/cms/marketing-field-guide.md](docs/cms/marketing-field-guide.md) — what the marketing team fills, per collection (priorities)
+5. [docs/cms/hidden-fields-audit.md](docs/cms/hidden-fields-audit.md) — what's hidden / dead and the remove-vs-keep verdicts
+6. [.claude/rules/cms.md](.claude/rules/cms.md) — CMS invariants
 
 ## Hard invariants
 

@@ -106,7 +106,6 @@ export function getDb(): Firestore | null {
 
 export const COLLECTIONS = {
   mediaAssets: 'media_assets',
-  ourCustomers: 'our_customers',
   tools: 'tools',
   customerReviews: 'customer_reviews',
   podcasts: 'podcasts',

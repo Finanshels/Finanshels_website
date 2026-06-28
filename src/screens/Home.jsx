@@ -18,6 +18,7 @@ import {
 import AnimatedSection from '../components/marketing/AnimatedSection'
 import { Card } from '../components/ui/Card'
 import TestimonialCarousel from '../components/marketing/TestimonialCarousel'
+import TestimonialsCarousel from '@/components/marketing/TestimonialsCarousel'
 import HomeFaqSection from '../components/marketing/HomeFaqSection'
 import { TESTIMONIALS } from '@/content/team'
 
@@ -403,7 +404,7 @@ function HeroDashboard() {
   )
 }
 
-export default function Home() {
+export default function Home({ cmsTestimonials } = {}) {
   return (
     <div className="bg-[#fffdfb] text-slate-900 overflow-hidden">
       {/* HERO */}
@@ -905,7 +906,11 @@ export default function Home() {
             </div>
           </AnimatedSection>
           <AnimatedSection animation="fade-up" delay={100}>
-            <TestimonialCarousel testimonials={TESTIMONIALS} />
+            {cmsTestimonials?.length ? (
+              <TestimonialsCarousel items={cmsTestimonials} ariaLabel="reviews" />
+            ) : (
+              <TestimonialCarousel testimonials={TESTIMONIALS} />
+            )}
           </AnimatedSection>
         </div>
       </section>

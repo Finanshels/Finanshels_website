@@ -4,31 +4,22 @@ import { Timestamp } from 'firebase-admin/firestore'
 import { getDb } from './firestore'
 import { normalizeFirestoreTimestamps } from './normalizeDoc'
 
+import {
+  ROLE_RANK,
+  ROLE_LABEL,
+  ROLE_DESCRIPTION,
+  isValidRole,
+  roleAtLeast,
+} from './roles'
+import type { CmsUserRole, CmsUserStatus } from './roles'
+
 export const USERS_COLLECTION = 'cms_users'
 
-export type CmsUserRole = 'owner' | 'admin' | 'editor' | 'viewer'
-export type CmsUserStatus = 'active' | 'disabled' | 'invited'
-
-export const ROLE_RANK: Record<CmsUserRole, number> = {
-  viewer: 1,
-  editor: 2,
-  admin: 3,
-  owner: 4,
-}
-
-export const ROLE_LABEL: Record<CmsUserRole, string> = {
-  owner: 'Owner',
-  admin: 'Admin',
-  editor: 'Editor',
-  viewer: 'Viewer',
-}
-
-export const ROLE_DESCRIPTION: Record<CmsUserRole, string> = {
-  owner: 'Full access. Can manage users, including other owners.',
-  admin: 'Full CMS + user management (cannot remove owners).',
-  editor: 'Create, edit, and publish content. No user management.',
-  viewer: 'Read-only access to CMS content.',
-}
+// Role catalog lives in the client-safe `./roles` module (no firebase-admin) so
+// it can be shared with client components. Re-export here so existing
+// `@/lib/cms/usersRepository` imports continue to resolve unchanged.
+export { ROLE_RANK, ROLE_LABEL, ROLE_DESCRIPTION, isValidRole, roleAtLeast }
+export type { CmsUserRole, CmsUserStatus }
 
 export type CmsUserPublic = {
   id: string
@@ -84,14 +75,6 @@ export function verifyPassword(password: string, salt: string, iterations: numbe
   const expected = Buffer.from(expectedHash, 'hex')
   if (computed.length !== expected.length) return false
   return timingSafeEqual(computed, expected)
-}
-
-export function isValidRole(value: unknown): value is CmsUserRole {
-  return value === 'owner' || value === 'admin' || value === 'editor' || value === 'viewer'
-}
-
-export function roleAtLeast(actual: CmsUserRole, required: CmsUserRole): boolean {
-  return ROLE_RANK[actual] >= ROLE_RANK[required]
 }
 
 function toPublicUser(record: CmsUserRecord): CmsUserPublic {

@@ -72,50 +72,57 @@ export default async function EditLandingPage({
   const bucketConfigured = Boolean(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET)
 
   return (
-    <div className="mx-auto max-w-[1680px] px-4 sm:px-6 lg:px-8 py-6">
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <div>
-          <Link href="/admin/cms/landing-pages" className="text-xs text-slate-500 hover:text-slate-700">← All landing pages</Link>
-          <h1 className="mt-1 text-xl font-semibold text-slate-900">{page.internal_name || 'Untitled landing page'}</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            /landing-pages/{page.slug}{' '}
-            {page.status === 'published' ? (
-              <a className="text-blue-700 hover:underline" target="_blank" rel="noreferrer" href={`/landing-pages/${page.slug}`}>
-                View live →
-              </a>
-            ) : (
-              <a className="text-blue-700 hover:underline" target="_blank" rel="noreferrer" href={`/landing-pages/${page.slug}`}>
-                Preview (logged in) →
-              </a>
-            )}
-          </p>
+    <div className="flex flex-col bg-slate-50 lg:h-screen lg:overflow-hidden">
+      {/* Static app-shell header */}
+      <header className="flex flex-none items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-2 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Link href="/admin/cms/landing-pages" className="shrink-0 text-xs text-slate-500 hover:text-slate-700">
+            ← All
+          </Link>
+          <span className="h-4 w-px shrink-0 bg-slate-200" aria-hidden />
+          <h1 className="truncate text-sm font-semibold text-slate-900">
+            {page.internal_name || 'Untitled landing page'}
+          </h1>
+          <span className="hidden truncate text-xs text-slate-400 md:inline">/landing-pages/{page.slug}</span>
+          <a
+            className="hidden shrink-0 text-xs text-blue-700 hover:underline sm:inline"
+            target="_blank"
+            rel="noreferrer"
+            href={`/landing-pages/${page.slug}`}
+          >
+            {page.status === 'published' ? 'View live ↗' : 'Preview ↗'}
+          </a>
         </div>
         <ConfirmDeleteForm
           action={deleteAction}
           id={page.id}
           confirmMessage="Delete this landing page? This cannot be undone."
         >
-          <button className="text-xs px-3 py-1.5 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50">Delete</button>
+          <button className="shrink-0 rounded-lg border border-rose-200 px-3 py-1.5 text-xs text-rose-700 hover:bg-rose-50">
+            Delete
+          </button>
         </ConfirmDeleteForm>
-      </div>
+      </header>
 
       {sp.saved ? (
-        <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 text-sm">
+        <div className="flex-none border-b border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm text-emerald-800 sm:px-6">
           Saved.
         </div>
       ) : null}
       {sp.error ? (
-        <div className="mb-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 px-3 py-2 text-sm">
+        <div className="flex-none border-b border-rose-200 bg-rose-50 px-4 py-1.5 text-sm text-rose-800 sm:px-6">
           {decodeURIComponent(sp.error)}
         </div>
       ) : null}
 
-      <LandingPageEditor
-        page={page}
-        saveAction={saveAction}
-        mediaItems={mediaItems}
-        bucketConfigured={bucketConfigured}
-      />
+      <div className="min-h-0 flex-1">
+        <LandingPageEditor
+          page={page}
+          saveAction={saveAction}
+          mediaItems={mediaItems}
+          bucketConfigured={bucketConfigured}
+        />
+      </div>
     </div>
   )
 }

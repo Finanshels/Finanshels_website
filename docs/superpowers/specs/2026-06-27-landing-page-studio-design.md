@@ -3,7 +3,7 @@
 **Date:** 2026-06-27
 **Status:** Draft for review
 **Owner:** meet@finanshels.com
-**Supersedes/extends:** [2026-05-14-landing-pages-design.md](./2026-05-14-landing-pages-design.md) (the original landing-page system this builds on)
+**Supersedes/extends:** the original 2026-05-14 landing-page system this builds on (spec since archived from git history)
 
 ---
 

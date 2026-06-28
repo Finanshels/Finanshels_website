@@ -23,6 +23,8 @@ const EXISTING_APP_ROUTES = new Set<string>([
   '/services',
   '/solutions',
   '/customers',
+  '/guides',
+  '/webinars',
   '/careers',
   '/home2',
   '/home3',

@@ -1,6 +1,11 @@
+// Pure-data registry (no React/lucide) — safe to import here (this module is
+// shared by server + admin client). Industry verticals are a single source of
+// truth reused by blog_industry and the customer collections' `industry` field.
+import { INDUSTRY_VALUES, INDUSTRY_LABELS } from './industryOptions'
+import { CONTENT_CATEGORY_OPTIONS, CONTENT_CATEGORY_LABELS } from './contentCategoryOptions'
+
 export type CmsCollectionKey =
   | 'media_assets'
-  | 'our_customers'
   | 'tools'
   | 'customer_reviews'
   | 'podcasts'
@@ -11,8 +16,6 @@ export type CmsCollectionKey =
   | 'glossary_terms'
   | 'blog_posts'
   | 'team_members'
-  | 'videos'
-  | 'review_sources'
 
 export type CmsFieldType =
   | 'text'
@@ -27,6 +30,9 @@ export type CmsFieldType =
   | 'url'
   | 'number'
   | 'select'
+  // Constrained multi-pick: stores string[] of slugs chosen from `options`.
+  // The editor renders a chip picker (max `maxItems`); codec joins/splits on ','.
+  | 'multi_select'
   | 'json'
   | 'reference'
   | 'multi_reference'
@@ -44,6 +50,18 @@ export type CmsFieldDefinition = {
   placeholder?: string
   required?: boolean
   options?: string[]
+  // Used by `select` and `multi_select`. Optional value→display-name map so the
+  // picker can show "Small Business" while still storing the slug
+  // `small-business`. Falls back to the raw option value when absent.
+  optionLabels?: Record<string, string>
+  // Only used when `type === 'multi_select'`. Caps how many options can be
+  // selected; enforced in the editor (chips disable at the cap) and in the codec
+  // (decode throws above it).
+  maxItems?: number
+  // Only used when `type === 'number'`. Enforced both in the HTML input and in
+  // the number codec (decode throws below `min`). Used to forbid negative
+  // sort_order values.
+  min?: number
   referenceCollection?: CmsCollectionKey
   // FIX-031: widened to `unknown` so future field types (e.g. blocks/json) can
   // carry typed defaults without casting. Callers must narrow before use.
@@ -123,8 +141,12 @@ function globalCoreFields(): CmsFieldDefinition[] {
     { name: 'icon', label: 'Icon', type: 'icon', placeholder: 'Icon name or image URL' },
     { name: 'author', label: 'Author', type: 'reference', referenceCollection: 'team_members' },
     { name: 'published_at', label: 'Published at', type: 'datetime' },
-    { name: 'updated_at', label: 'Updated at', type: 'datetime', required: true },
-    { name: 'sort_order', label: 'Sort order', type: 'number' },
+    // updated_at is server-managed: collectionRepository overwrites it with
+    // Timestamp.now() on every write (and deletes any form value), so the form
+    // input is ignored. It must NOT be required — a required+empty `updated_at`
+    // blocked saves with "Updated at is required". (title-required fix, 2026-06-28)
+    { name: 'updated_at', label: 'Updated at', type: 'datetime' },
+    { name: 'sort_order', label: 'Sort order', type: 'number', min: 0 },
     { name: 'tags', label: 'Tags', type: 'tags', placeholder: 'tag-a, tag-b' },
     { name: 'categories', label: 'Categories', type: 'tags', placeholder: 'category-a, category-b' },
     { name: 'related_content', label: 'Related content', type: 'multi_reference', referenceCollection: 'blog_posts' },
@@ -144,12 +166,9 @@ function globalSeoFields(): CmsFieldDefinition[] {
     { name: 'og_title', label: 'OG title', type: 'text', placeholder: 'Social title' },
     { name: 'og_description', label: 'OG description', type: 'textarea', placeholder: 'Social description' },
     { name: 'og_image', label: 'OG image', type: 'image', placeholder: 'https://...' },
-    {
-      name: 'twitter_card_type',
-      label: 'Twitter card type',
-      type: 'select',
-      options: ['summary_large_image', 'summary', 'app', 'player'],
-    },
+    // schema-options-trim (2026-06-28): `twitter_card_type` removed — it's an
+    // org-wide setting (always `summary_large_image`; the routes hardcode/default
+    // to it) masquerading as a per-post field, and the blog route never read it.
     { name: 'twitter_creator_handle', label: 'Twitter creator handle', type: 'text', placeholder: '@finanshels' },
     {
       name: 'robots_meta',
@@ -157,32 +176,11 @@ function globalSeoFields(): CmsFieldDefinition[] {
       type: 'select',
       options: ['index,follow', 'noindex,follow', 'index,nofollow', 'noindex,nofollow'],
     },
-    {
-      name: 'schema_type',
-      label: 'Schema type',
-      type: 'select',
-      options: [
-        'Article',
-        'BlogPosting',
-        'NewsArticle',
-        'DefinedTerm',
-        'FAQPage',
-        'HowTo',
-        'WebPage',
-        'CollectionPage',
-        'ItemList',
-        'VideoObject',
-        'PodcastEpisode',
-        'Event',
-        'Course',
-        'SoftwareApplication',
-        'Product',
-        'Person',
-        'Organization',
-        'Review',
-        'Book',
-      ],
-    },
+    // schema-options-trim (2026-06-28): the SEO `schema_type` field was removed as
+    // a duplicate. Per-doc schema type is now set via the curated
+    // `schema_type_override` (Blocks tab) → collection `defaultSchemaType`.
+    // Legacy stored `schema_type` values are still honored as a read fallback in
+    // resolveSchemaType / the blog route.
     // FIX-047: `indexable` + `noindex` booleans removed — they contradicted each
     // other (both ON → noindex silently won) and duplicated `robots_meta` above.
     // `robots_meta` is now the single control for index/follow directives.
@@ -347,7 +345,7 @@ function universalCardFields(): CmsFieldDefinition[] {
     { name: 'card_description', label: 'Card description', type: 'textarea', placeholder: 'Falls back to the excerpt. Used as <meta> description fallback on /content/[collection]/[slug].' },
     { name: 'card_image', label: 'Card image', type: 'image', placeholder: 'https://... Used as OG image fallback on /content/[collection]/[slug].' },
     { name: 'featured', label: 'Featured', type: 'boolean' },
-    { name: 'sort_order', label: 'Sort order', type: 'number' },
+    { name: 'sort_order', label: 'Sort order', type: 'number', min: 0 },
   ]
 }
 
@@ -446,10 +444,40 @@ function universalDetailFields(): CmsFieldDefinition[] {
 }
 
 /**
+ * Full schema.org type catalogue offered by the schema-type override when a
+ * collection doesn't narrow it. Most collections curate this down to the handful
+ * that fit their content type via SCHEMA_OVERRIDE_OPTIONS_BY_COLLECTION.
+ */
+const ALL_SCHEMA_TYPES = [
+  'Article',
+  'BlogPosting',
+  'NewsArticle',
+  'DefinedTerm',
+  'FAQPage',
+  'HowTo',
+  'WebPage',
+  'CollectionPage',
+  'ItemList',
+  'VideoObject',
+  'PodcastEpisode',
+  'Event',
+  'Course',
+  'SoftwareApplication',
+  'Product',
+  'Person',
+  'Organization',
+  'Review',
+  'Book',
+]
+
+/**
  * Page-builder JSON storage. The structured editor compiles to this shape:
  * `[{ type: "hero", id, ...fields }, ...]`. Schema type override sits next to it.
+ * `schemaOptions` narrows the override dropdown to the types relevant for the
+ * collection; falls back to the full catalogue when omitted.
  */
-function universalBlocksFields(defaultSchemaType?: string): CmsFieldDefinition[] {
+function universalBlocksFields(defaultSchemaType?: string, schemaOptions?: string[]): CmsFieldDefinition[] {
+  const types = schemaOptions && schemaOptions.length > 0 ? schemaOptions : ALL_SCHEMA_TYPES
   return [
     {
       name: 'page_blocks',
@@ -462,28 +490,7 @@ function universalBlocksFields(defaultSchemaType?: string): CmsFieldDefinition[]
       name: 'schema_type_override',
       label: 'Schema type (override)',
       type: 'select',
-      options: [
-        '',
-        'Article',
-        'BlogPosting',
-        'NewsArticle',
-        'DefinedTerm',
-        'FAQPage',
-        'HowTo',
-        'WebPage',
-        'CollectionPage',
-        'ItemList',
-        'VideoObject',
-        'PodcastEpisode',
-        'Event',
-        'Course',
-        'SoftwareApplication',
-        'Product',
-        'Person',
-        'Organization',
-        'Review',
-        'Book',
-      ],
+      options: ['', ...types],
       defaultValue: defaultSchemaType ?? '',
       description: 'Defaults to the collection-level schema type when blank.',
     },
@@ -557,18 +564,17 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
   },
   podcasts: {
     multiReferences: [
-      { name: 'hostRefs', label: 'Hosts', target: 'team_members' },
-      { name: 'guestRefs', label: 'Guests', target: 'team_members' },
-      { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
+      // Hosts/guests/related-blogs are canonical in the publish section
+      // (`hosts` → team_members, `guests` tags, `related_resources` → blog_posts).
+      // Relations keeps only the podcast-to-podcast link to avoid duplicates.
       { name: 'relatedPodcastRefs', label: 'Related episodes', target: 'podcasts' },
     ],
   },
   ebooks: {
+    // ebook-trim (2026-06-28): keep Authors only — the related-content cross-links
+    // had no public surface to render into (ebooks have no public route, FIX-048).
     multiReferences: [
       { name: 'authorRefs', label: 'Authors', target: 'team_members' },
-      { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
-      { name: 'relatedEbookRefs', label: 'Related ebooks', target: 'ebooks' },
-      { name: 'relatedWebinarRefs', label: 'Related webinars', target: 'webinars' },
     ],
   },
   webinars: {
@@ -593,28 +599,19 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
     ],
   },
   customer_reviews: {
-    references: [
-      { name: 'customerRef', label: 'Customer', target: 'our_customers' },
-    ],
     multiReferences: [
       { name: 'relatedStoryRefs', label: 'Related customer stories', target: 'customer_stories' },
     ],
   },
   customer_stories: {
     references: [
-      { name: 'customerRef', label: 'Customer', target: 'our_customers' },
       { name: 'leadAuthorRef', label: 'Lead author', target: 'team_members' },
     ],
     multiReferences: [
       // `relatedBlogRefs` REMOVED — canonical is publish `related_blog_posts` (FIX-024).
-      { name: 'reviewRefs', label: 'Related customer reviews', target: 'customer_reviews' },
+      // `reviewRefs` REMOVED — duplicate of the publish `testimonial_reference`
+      // (both multi-ref → customer_reviews). The publish field is canonical.
       { name: 'relatedStoryRefs', label: 'Related customer stories', target: 'customer_stories' },
-    ],
-  },
-  our_customers: {
-    multiReferences: [
-      { name: 'storyRefs', label: 'Customer stories', target: 'customer_stories' },
-      { name: 'reviewRefs', label: 'Customer reviews', target: 'customer_reviews' },
     ],
   },
   team_members: {
@@ -623,8 +620,6 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
     ],
   },
   media_assets: {},
-  videos: {},
-  review_sources: {},
 }
 
 type BaseCollectionDefinition = Omit<CmsCollectionDefinition, 'sections'> & {
@@ -691,65 +686,36 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
           label: 'Blog category',
           type: 'select',
           required: true,
-          options: [
-            'corporate-tax',
-            'vat',
-            'transfer-pricing',
-            'audit',
-            'accounting',
-            'bookkeeping',
-            'payroll',
-            'compliance',
-            'advisory',
-            'cfo-services',
-            'esr-aml-ubo',
-            'regulatory-updates',
-            'founder-stories',
-            'how-to-guides',
-          ],
+          options: CONTENT_CATEGORY_OPTIONS,
+          optionLabels: CONTENT_CATEGORY_LABELS,
         },
-        // CMO-redesign: industry vertical the post serves (optional).
+        // industry vertical the post serves (optional). Options are the shared
+        // INDUSTRY_OPTIONS registry; the dropdown shows display names while the
+        // stored value stays the slug. Icons live in the registry for the /blog
+        // industry filter + card badge.
         {
           name: 'blog_industry',
           label: 'Blog industry',
-          type: 'select',
-          options: [
-            'technology',
-            'ecommerce',
-            'professional-services',
-            'manufacturing',
-            'healthcare',
-            'real-estate',
-            'hospitality',
-            'retail',
-            'fintech',
-            'logistics',
-            'general',
-          ],
+          // Multi-select (max 3): an article often serves a few related
+          // verticals. Stored as string[]; surfaces under each industry facet on
+          // /blog. Leave empty for horizontal/all-industry content.
+          type: 'multi_select',
+          options: INDUSTRY_VALUES,
+          optionLabels: INDUSTRY_LABELS,
+          maxItems: 3,
         },
         { name: 'blog_tags', label: 'Blog tags', type: 'tags' },
-        // CMO-redesign: persona the post is written for.
-        {
-          name: 'target_persona',
-          label: 'Target persona',
-          type: 'select',
-          options: ['founder', 'ceo', 'cfo', 'finance-manager', 'accountant', 'controller', 'business-owner', 'agency-owner', 'none'],
-        },
-        { name: 'table_of_contents_enabled', label: 'TOC enabled', type: 'boolean' },
         { name: 'featured_post', label: 'Featured post', type: 'boolean' },
         { name: 'related_posts', label: 'Related posts', type: 'multi_reference', referenceCollection: 'blog_posts' },
-        // CMO-redesign: series_ref links to the parent post in a multi-part series.
-        { name: 'series_ref', label: 'Series parent post', type: 'reference', referenceCollection: 'blog_posts' },
-        // CMO-redesign: replaces the lead_magnet_cta JSON blob with three plain inputs.
-        { name: 'lead_magnet_label', label: 'Lead magnet label', type: 'text', placeholder: 'Download the founder tax checklist' },
-        { name: 'lead_magnet_url', label: 'Lead magnet URL', type: 'url', placeholder: 'https://...' },
-        { name: 'lead_magnet_form_id', label: 'Lead magnet form ID', type: 'text', placeholder: 'hubspot-form-uuid' },
+        // blog-field-trim (2026-06-28): removed `series_ref`, the `lead_magnet_*`
+        // trio, `target_persona`, `table_of_contents_enabled`, and the
+        // `detail_*` CTA trio (`detail_lead_capture_form_id`,
+        // `detail_sticky_side_cta_label`, `detail_sticky_side_cta_link`) — all dead
+        // fields (no renderer, schema, or listing read them). Per-post CTAs are
+        // handled by a CTA page-block (Blocks tab), which renders and is fully
+        // editable; an always-on CTA collided with that block in the layout.
         // FIX-047: removed `indexable` + `noindex` per-post booleans — use the
         // `robots_meta` select in the SEO tab (single source of truth).
-        // CMO-redesign: the three detail-page knobs worth keeping per-post.
-        { name: 'detail_lead_capture_form_id', label: 'Lead-capture form ID (detail page)', type: 'text', placeholder: 'hubspot-form-uuid' },
-        { name: 'detail_sticky_side_cta_label', label: 'Sticky side CTA label', type: 'text' },
-        { name: 'detail_sticky_side_cta_link', label: 'Sticky side CTA link', type: 'url', placeholder: 'https://...' },
         // reading_time is auto-computed at save time (~200 wpm) and stored back into the doc;
         // editors do not see this field — it is added to legacyAliases below.
       ],
@@ -770,48 +736,13 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true, placeholder: 'corporate-tax' },
         { name: 'term', label: 'Term', type: 'text', required: true },
-        { name: 'definition_short', label: 'Definition short', type: 'textarea', required: true },
-        { name: 'definition_full', label: 'Definition full', type: 'textarea', required: true },
-        { name: 'term_category', label: 'Term category', type: 'text', required: true },
-        { name: 'alphabet_letter', label: 'Alphabet letter', type: 'text', required: true, placeholder: 'A' },
-        { name: 'synonyms', label: 'Synonyms', type: 'tags' },
+        { name: 'definition_short', label: 'Description', type: 'textarea', required: true },
+        { name: 'term_category', label: 'Category', type: 'select', options: CONTENT_CATEGORY_OPTIONS, optionLabels: CONTENT_CATEGORY_LABELS },
+        // glossary-trim (2026-06-28): removed alphabet_letter, synonyms, faq_items,
+        // example_usage, applicability_region, featured — all dead. parseGlossaryTerm
+        // strips them and no renderer/listing reads them. The live FAQ field is the
+        // AEO `faqItems` JSON; the live category filter is `term_category`.
         { name: 'related_terms', label: 'Related terms', type: 'multi_reference', referenceCollection: 'glossary_terms' },
-        { name: 'faq_items', label: 'Related FAQs', type: 'multi_reference', referenceCollection: 'faqs' },
-        { name: 'example_usage', label: 'Example usage', type: 'textarea' },
-        { name: 'applicability_region', label: 'Applicability region', type: 'tags' },
-        { name: 'featured', label: 'Featured', type: 'boolean' },
-      ],
-    },
-  },
-  {
-    key: 'our_customers',
-    label: 'Our Customers',
-    singularLabel: 'Customer Profile',
-    description: 'Company profiles and logos for trust sections.',
-    template: 'Customer logo + profile template',
-    // FIX-048: dedicated `/customers/[slug]` route does not exist; collection
-    // is blocklisted from the generic /content/ route. No public detail
-    // surface — kept admin-editable for embedding via blocks/references.
-    titleField: 'company_name',
-    slugField: 'slug',
-    defaultSchemaType: 'Organization',
-    sections: {
-      publish: [
-        { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'company_name', label: 'Company name', type: 'text', required: true },
-        { name: 'logo', label: 'Logo', type: 'image', required: true },
-        { name: 'cover_image', label: 'Cover image', type: 'image' },
-        { name: 'website_url', label: 'Website URL', type: 'url' },
-        { name: 'industry', label: 'Industry', type: 'text' },
-        { name: 'company_size', label: 'Company size', type: 'text' },
-        { name: 'hq_location', label: 'HQ location', type: 'text' },
-        { name: 'region', label: 'Region', type: 'tags' },
-        { name: 'service_used', label: 'Service used', type: 'tags' },
-        { name: 'relationship_type', label: 'Relationship type', type: 'select', options: ['customer', 'partner', 'featured_customer'], required: true },
-        { name: 'summary', label: 'Summary', type: 'textarea' },
-        { name: 'testimonial_reference', label: 'Testimonial reference', type: 'reference', referenceCollection: 'customer_reviews' },
-        { name: 'story_reference', label: 'Story reference', type: 'reference', referenceCollection: 'customer_stories' },
-        { name: 'is_featured', label: 'Is featured', type: 'boolean' },
       ],
     },
   },
@@ -863,28 +794,25 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     singularLabel: 'Customer Review',
     description: 'Testimonials and social proof snippets.',
     template: 'Review quote template',
-    // FIX-048: dedicated `/reviews/[slug]` route does not exist. Doc is
-    // renderable via the generic `/content/customer_reviews/[slug]` route;
-    // canonical resolves to that URL via `resolveCanonical` fallback.
-    titleField: 'review_title',
+    // reviews-trim (2026-06-28): embedded-testimonials only. Blocklisted from the
+    // generic /content route (no standalone page). titleField is the customer name.
+    titleField: 'customer_name',
     slugField: 'slug',
     defaultSchemaType: 'Review',
     sections: {
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'review_title', label: 'Review title', type: 'text' },
         { name: 'customer_name', label: 'Customer name', type: 'text', required: true },
         { name: 'customer_designation', label: 'Customer designation', type: 'text' },
-        { name: 'company', label: 'Company', type: 'reference', referenceCollection: 'our_customers' },
+        { name: 'company', label: 'Company', type: 'text' },
         { name: 'rating', label: 'Rating (1-5)', type: 'number' },
         { name: 'review_text', label: 'Review text', type: 'textarea', required: true },
         { name: 'video_review_url', label: 'Video review URL', type: 'url' },
         { name: 'customer_photo', label: 'Customer photo', type: 'image' },
-        { name: 'company_logo_override', label: 'Company logo override', type: 'image' },
-        { name: 'service_category', label: 'Service category', type: 'tags' },
-        { name: 'industry', label: 'Industry', type: 'tags' },
-        { name: 'location', label: 'Location', type: 'text' },
-        { name: 'review_date', label: 'Review date', type: 'datetime' },
+        { name: 'company_logo_override', label: 'Company logo', type: 'image' },
+        // reviews-trim (2026-06-28): controlled multi-select so testimonial sections
+        // can be filtered by service. Shares the blog/glossary service taxonomy.
+        { name: 'service_category', label: 'Services', type: 'multi_select', options: CONTENT_CATEGORY_OPTIONS, optionLabels: CONTENT_CATEGORY_LABELS },
         { name: 'approved_for_publication', label: 'Approved for publication', type: 'boolean', required: true },
         { name: 'featured', label: 'Featured', type: 'boolean' },
       ],
@@ -940,14 +868,13 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
         { name: 'question', label: 'Question', type: 'text', required: true },
         { name: 'answer', label: 'Answer', type: 'textarea', required: true },
-        { name: 'topic', label: 'Topic', type: 'text', placeholder: 'Corporate Tax' },
-        { name: 'topic_slug', label: 'Topic slug', type: 'text', placeholder: 'corporate-tax' },
-        { name: 'related_service', label: 'Related service', type: 'tags' },
-        { name: 'related_blog_posts', label: 'Related blog posts', type: 'multi_reference', referenceCollection: 'blog_posts' },
-        { name: 'related_tools', label: 'Related tools', type: 'multi_reference', referenceCollection: 'tools' },
-        { name: 'search_keywords', label: 'Search keywords', type: 'tags' },
+        // FAQ categorization axis — pick one or more services, or "General" for
+        // FAQs not tied to a service. Shares the blog/glossary/reviews taxonomy
+        // (CONTENT_CATEGORY_OPTIONS); drives /faq filtering + the service-filtered
+        // FAQ block. (Replaced free-text `topic` + `related_service`, 2026-06-28.)
+        { name: 'service_category', label: 'Services', type: 'multi_select', options: CONTENT_CATEGORY_OPTIONS, optionLabels: CONTENT_CATEGORY_LABELS },
         { name: 'featured', label: 'Featured', type: 'boolean' },
-        { name: 'sort_order', label: 'Sort order', type: 'number' },
+        { name: 'sort_order', label: 'Sort order', type: 'number', min: 0 },
       ],
     },
   },
@@ -966,8 +893,8 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
         { name: 'story_title', label: 'Story title', type: 'text', required: true },
-        { name: 'customer', label: 'Customer', type: 'reference', referenceCollection: 'our_customers', required: true },
-        { name: 'industry', label: 'Industry', type: 'tags', required: true },
+        { name: 'customer', label: 'Customer', type: 'text', required: true },
+        { name: 'industry', label: 'Industry', type: 'select', options: INDUSTRY_VALUES, optionLabels: INDUSTRY_LABELS, required: true },
         { name: 'region', label: 'Region', type: 'text' },
         { name: 'hero_image', label: 'Hero image', type: 'image' },
         { name: 'challenge_summary', label: 'Challenge summary', type: 'textarea', required: true },
@@ -988,29 +915,36 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     singularLabel: 'Ebook',
     description: 'Downloadable long-form guides and lead magnets.',
     template: 'Ebook listing + download template',
-    // FIX-048: dedicated `/ebooks/[slug]` route does not exist; collection
-    // is blocklisted from the generic /content/ route to avoid leaking
-    // download URLs. Admin-editable only.
+    // ebook-landing (2026-06-28): ebooks publish to a dedicated public route at
+    // `/guides/[slug]` (hub at `/guides`) — NOT the generic `/content`
+    // route, which stays blocklisted (SENSITIVE_GENERIC_ROUTE_BLOCKLIST) so the
+    // raw doc (incl. download URLs) is never dumped. routePattern/listingRoute
+    // below auto-wire revalidation + sitemap + llms.txt + the admin preview link.
+    // Gated download URLs are delivered only by `/api/guides/lead` after a
+    // lead capture; the public read model omits them (see ebooksRepository.ts).
     titleField: 'ebook_title',
     slugField: 'slug',
+    routePattern: '/guides/[slug]',
+    listingRoute: '/guides',
     defaultSchemaType: 'Book',
     sections: {
+      // ebook-trim (2026-06-28): admin-only lead-magnet catalog — only the fields
+      // an editor needs to catalog a downloadable. Removed: `short_description`
+      // (required + stripped — the D.3 required-but-hidden bug), `file_size`
+      // (low-value download metadata), `author` (→ `authorRefs` relation),
+      // `form_embed` + `thank_you_page_url` (gating is owned by the Download
+      // page-block's formId, not the catalog record), and `related_content`
+      // (→ `relatedBlogRefs` relation).
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
         { name: 'ebook_title', label: 'Ebook title', type: 'text', required: true },
         { name: 'cover_image', label: 'Cover image', type: 'image', required: true },
-        { name: 'short_description', label: 'Short description', type: 'textarea', required: true },
         { name: 'full_description', label: 'Full description', type: 'textarea' },
         { name: 'file_upload', label: 'File upload', type: 'file', required: true },
-        { name: 'file_size', label: 'File size', type: 'text' },
         { name: 'page_count', label: 'Page count', type: 'number' },
         { name: 'format', label: 'Format', type: 'select', options: ['pdf', 'ebook', 'guide'], required: true },
         { name: 'topics', label: 'Topics', type: 'tags' },
-        { name: 'author', label: 'Author', type: 'reference', referenceCollection: 'team_members' },
         { name: 'gated', label: 'Gated download', type: 'boolean' },
-        { name: 'form_embed', label: 'Form embed', type: 'textarea' },
-        { name: 'thank_you_page_url', label: 'Thank-you page URL', type: 'url' },
-        { name: 'related_content', label: 'Related content', type: 'multi_reference', referenceCollection: 'blog_posts' },
         { name: 'featured', label: 'Featured', type: 'boolean' },
       ],
     },
@@ -1019,33 +953,116 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     key: 'webinars',
     label: 'Webinars',
     singularLabel: 'Webinar',
-    description: 'Live and on-demand webinar sessions.',
-    template: 'Webinar listing template',
-    // FIX-048: dedicated `/webinars/[slug]` route does not exist. Doc is
-    // renderable via the generic `/content/webinars/[slug]` route.
+    description: 'Promote-then-replay webinar pages. One URL, two lifecycle states.',
+    template: 'Webinar registration + replay template',
+    // webinar-revamp (2026-06-28): dedicated state-driven route at `/webinars/[slug]`
+    // (hub at `/webinars`). The page renders registration when `webinar_status` is
+    // upcoming/live and the on-demand replay + gated downloads when completed — the
+    // editor "converts" the page by flipping the status on the same doc. routePattern
+    // + listingRoute auto-wire revalidation + sitemap + llms.txt + the preview link.
     titleField: 'webinar_title',
     slugField: 'slug',
+    routePattern: '/webinars/[slug]',
+    listingRoute: '/webinars',
     defaultSchemaType: 'Event',
     sections: {
+      // Grouped for the editor: identity → schedule → platform/host →
+      // registration → post-event → content. `speakers` lives in the Relations
+      // tab as `speakerRefs` (canonical); related blogs/webinars too.
       publish: [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
-        // FIX-047: removed status override. Inherits the global 3-state set
-        // (draft / in_review / published) from globalCoreFields().
-        { name: 'webinar_status', label: 'Webinar status', type: 'select', options: ['upcoming', 'live', 'completed'], required: true },
+        {
+          name: 'webinar_status',
+          label: 'Webinar status',
+          type: 'select',
+          options: ['upcoming', 'live', 'completed'],
+          required: true,
+          defaultValue: 'upcoming',
+          description: 'Drives the page. upcoming/live → promo + registration; completed → on-demand replay + downloads on the SAME URL.',
+        },
         { name: 'webinar_title', label: 'Webinar title', type: 'text', required: true },
         { name: 'banner_image', label: 'Banner image', type: 'image' },
-        { name: 'summary', label: 'Summary', type: 'textarea' },
-        { name: 'description', label: 'Description', type: 'textarea' },
+        { name: 'summary', label: 'Summary', type: 'textarea', placeholder: 'One-line hook for the hub card and hero subheading.' },
+        { name: 'description', label: 'Description', type: 'textarea', placeholder: 'What attendees will learn. Basic HTML allowed (sanitized).' },
         { name: 'start_datetime', label: 'Start datetime', type: 'datetime', required: true },
         { name: 'end_datetime', label: 'End datetime', type: 'datetime' },
-        { name: 'timezone', label: 'Timezone', type: 'text', required: true },
-        { name: 'registration_url', label: 'Registration URL', type: 'url' },
-        { name: 'recording_url', label: 'Recording URL', type: 'url' },
-        { name: 'platform', label: 'Platform', type: 'select', options: ['zoom', 'meet', 'teams', 'other'] },
-        { name: 'speakers', label: 'Speakers', type: 'multi_reference', referenceCollection: 'team_members' },
-        { name: 'agenda_items', label: 'Agenda items', type: 'json', placeholder: '["..."]' },
+        {
+          name: 'timezone',
+          label: 'Timezone',
+          type: 'select',
+          required: true,
+          defaultValue: 'Asia/Dubai',
+          // IANA zone ids — the value drives `formatWebinarDate()` so the public
+          // page shows the start/end time in the right zone (real offsets, not
+          // free text). UAE/GCC first, then common attendee zones.
+          options: [
+            'Asia/Dubai',
+            'Asia/Riyadh',
+            'Asia/Qatar',
+            'Asia/Kuwait',
+            'Asia/Bahrain',
+            'Asia/Muscat',
+            'Asia/Kolkata',
+            'Asia/Karachi',
+            'Asia/Singapore',
+            'Europe/London',
+            'Europe/Paris',
+            'America/New_York',
+            'America/Los_Angeles',
+            'UTC',
+          ],
+          optionLabels: {
+            'Asia/Dubai': 'Dubai — GST (UTC+4)',
+            'Asia/Riyadh': 'Riyadh — AST (UTC+3)',
+            'Asia/Qatar': 'Doha — AST (UTC+3)',
+            'Asia/Kuwait': 'Kuwait — AST (UTC+3)',
+            'Asia/Bahrain': 'Manama — AST (UTC+3)',
+            'Asia/Muscat': 'Muscat — GST (UTC+4)',
+            'Asia/Kolkata': 'India — IST (UTC+5:30)',
+            'Asia/Karachi': 'Pakistan — PKT (UTC+5)',
+            'Asia/Singapore': 'Singapore — SGT (UTC+8)',
+            'Europe/London': 'London — GMT/BST',
+            'Europe/Paris': 'Central Europe — CET/CEST',
+            'America/New_York': 'US Eastern — ET',
+            'America/Los_Angeles': 'US Pacific — PT',
+            UTC: 'UTC',
+          },
+          description: 'Drives how the start/end time is displayed to visitors.',
+        },
+        { name: 'platform', label: 'Platform', type: 'select', options: ['zoho', 'zoom', 'meet', 'teams', 'other'] },
+        { name: 'host_partner_name', label: 'Co-host / partner name', type: 'text', placeholder: 'Only for collab webinars' },
+        { name: 'host_partner_logo', label: 'Co-host / partner logo', type: 'image' },
+        // Registration
+        {
+          name: 'registration_mode',
+          label: 'Registration mode',
+          type: 'select',
+          options: ['native', 'external'],
+          defaultValue: 'native',
+          description: 'native = capture the lead on our page (Zoho CRM + confirmation email). external = send visitors to a partner-hosted registration URL.',
+        },
+        { name: 'registration_url', label: 'External registration URL', type: 'url', placeholder: 'Used only when registration mode is External' },
+        { name: 'join_url', label: 'Join link', type: 'url', placeholder: 'Emailed to registrants on native registration' },
+        {
+          name: 'service_interest',
+          label: 'Service interest (CRM)',
+          type: 'select',
+          options: CONTENT_CATEGORY_OPTIONS,
+          optionLabels: CONTENT_CATEGORY_LABELS,
+          description: 'Tags the Zoho CRM lead created on registration.',
+        },
+        // Post-event
+        { name: 'recording_url', label: 'Recording URL', type: 'url', placeholder: 'On-demand replay (shown when Completed). Plays openly.' },
+        {
+          name: 'downloadable_resources',
+          label: 'Downloadable resources',
+          type: 'multi_reference',
+          referenceCollection: 'ebooks',
+          description: 'Gated slides/templates — reuses the resources download gate (email required). Add them as Resources first.',
+        },
+        // Content
+        { name: 'agenda_items', label: 'Agenda items', type: 'json', placeholder: '["09:00 — Intro", "09:15 — UAE CT basics"]' },
         { name: 'key_topics', label: 'Key topics', type: 'tags' },
-        { name: 'related_resources', label: 'Related resources', type: 'multi_reference', referenceCollection: 'blog_posts' },
         { name: 'featured', label: 'Featured', type: 'boolean' },
       ],
     },
@@ -1067,59 +1084,37 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
         { name: 'slug', label: 'Slug', type: 'text', required: true },
         // FIX-047: removed status override. Inherits the global 3-state set.
         { name: 'full_name', label: 'Full name', type: 'text', required: true },
-        { name: 'photo', label: 'Photo', type: 'image', required: true },
+        { name: 'photo', label: 'Photo', type: 'image' },
         { name: 'job_title', label: 'Job title', type: 'text', required: true },
-        { name: 'department', label: 'Department', type: 'text' },
-        { name: 'short_bio', label: 'Short bio', type: 'textarea', required: true },
+        {
+          name: 'department',
+          label: 'Department',
+          type: 'select',
+          options: [
+            'Management',
+            'Centre of Excellence',
+            'Marketing',
+            'Sales',
+            'Partnerships',
+            'HR',
+            'Tech and Product',
+            'FinOps',
+            'Taxation',
+            'Compliance',
+            'Legal',
+            'Internal Finance',
+          ],
+        },
+        { name: 'short_bio', label: 'Short bio', type: 'textarea' },
         { name: 'full_bio', label: 'Full bio', type: 'textarea' },
         { name: 'email', label: 'Email', type: 'email' },
         { name: 'phone', label: 'Phone', type: 'text' },
         { name: 'linkedin_url', label: 'LinkedIn URL', type: 'url' },
         { name: 'twitter_url', label: 'Twitter URL', type: 'url' },
+        { name: 'instagram_url', label: 'Instagram URL', type: 'url' },
         { name: 'website_url', label: 'Website URL', type: 'url' },
-        { name: 'location', label: 'Location', type: 'text' },
         { name: 'expertise_tags', label: 'Expertise tags', type: 'tags' },
-        { name: 'display_on_team_page', label: 'Display on team page', type: 'boolean', required: true },
-        { name: 'display_as_author', label: 'Display as author', type: 'boolean', required: true },
-        { name: 'sort_order', label: 'Sort order', type: 'number' },
-      ],
-    },
-  },
-  {
-    key: 'videos',
-    label: 'Videos',
-    singularLabel: 'Video',
-    description: 'Embedded videos (YouTube, Vimeo, etc.) shown on resource pages.',
-    template: 'Video card/embed template',
-    titleField: 'video_title',
-    slugField: 'slug',
-    defaultSchemaType: 'VideoObject',
-    sections: {
-      publish: [
-        { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'video_title', label: 'Title', type: 'text', required: true },
-        { name: 'video_url', label: 'Video URL', type: 'url', required: true, placeholder: 'https://youtu.be/...' },
-        { name: 'description', label: 'Description', type: 'textarea' },
-        { name: 'thumbnail_image', label: 'Thumbnail image', type: 'image' },
-        { name: 'featured', label: 'Featured', type: 'boolean' },
-      ],
-    },
-  },
-  {
-    key: 'review_sources',
-    label: 'Review Sources',
-    singularLabel: 'Review Source',
-    description: 'External review platforms (Google, Trustpilot, etc.) referenced by customer reviews.',
-    template: 'Review-source label template',
-    titleField: 'source_name',
-    slugField: 'slug',
-    defaultSchemaType: 'Organization',
-    sections: {
-      publish: [
-        { name: 'slug', label: 'Slug', type: 'text', required: true },
-        { name: 'source_name', label: 'Source name', type: 'text', required: true, placeholder: 'Google Reviews' },
-        { name: 'icon', label: 'Icon', type: 'image' },
-        { name: 'source_url', label: 'Source URL', type: 'url' },
+        { name: 'sort_order', label: 'Sort order', type: 'number', min: 0 },
       ],
     },
   },
@@ -1163,6 +1158,14 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
       'tags',
       'short_description',
       'related_content',
+      // blog-field-trim (2026-06-28): redundant with featured_image / no icon
+      // concept for an article. Global fields, so stripped (not deleted).
+      'thumbnail_image',
+      'icon',
+      // Status is owned by the header workflow buttons (EditorStatusControls);
+      // the sidebar select is a phantom input the server ignores (see the status
+      // precedence block in saveCmsDocumentAction). Strip the duplicate.
+      'status',
       // FIX-036: canonical relation is `relatedPostRefs` (relations); `related_posts` in publish is stripped.
       // NOTE: we keep the new blog_posts `related_posts` in publish (which is the canonical
       // editor-facing field) — the strip removes the *global-core* `related_content` only.
@@ -1176,7 +1179,7 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
       'relatedEntities',
       'regionsCovered',
       'languagesCovered',
-      // Universal CTA duplicates (replaced by lead_magnet_* triple).
+      // Universal CTA duplicates — blog lead capture uses the detail_* sticky-CTA group.
       'cta_label',
       'cta_link',
       // Universal "featured" boolean is a duplicate of the publish-section `featured_post`.
@@ -1201,25 +1204,178 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
   glossary_terms: {
     legacyAliases: ['definition', 'bodyHtml', 'relatedSlugs'],
     // FIX-036: `related_terms` moves to strip so `relatedTermRefs` (relations) is canonical.
-    // FIX-036: `body` is stripped because the canonical long-form glossary field is `definition_full`.
-    strip: ['related_terms', 'body'],
+    // `body` is stripped — glossary long-form renders from imported `bodyHtml`; the
+    // editor `definition_full` field was removed (glossary-trim 2026-06-28).
+    // glossary-trim (2026-06-28): AEO keeps only `faqItems` (→ FAQPage JSON-LD); the
+    // other AEO signals and the unused SEO fields are stripped. Wired SEO fields
+    // (seo_title / meta_description / og_*) + canonical_url + robots_meta stay.
+    strip: [
+      'related_terms',
+      'body',
+      // AEO: keep faqItems only
+      'directAnswer',
+      'answerSnippet',
+      'howToSteps',
+      'speakableContent',
+      // SEO: not consumed by the glossary route
+      'focus_keyword',
+      'meta_keywords',
+      'secondary_keywords',
+      'twitter_creator_handle',
+      'faq_schema_enabled',
+      'breadcrumbs_title',
+      // glossary-trim (2026-06-28): global bloat irrelevant to a definition page.
+      'status',            // header Save/Publish buttons own status
+      'short_description', // duplicate of the Description (definition_short) field
+      'categories',        // duplicate of term_category
+      'cta_label',
+      'cta_link',
+      'hero_heading',
+      'hero_subheading',
+      'sections',
+      'sidebar_cta_enabled',
+      'primary_cta_variant',
+      'template_variant',
+      // minimal glossary (2026-06-28): a definition page has no excerpt / image /
+      // author / CTA; `updated_at` is a server-managed automated field; `icon`,
+      // `sort_order`, `tags`, `related_content` are unused. Fully minimal editor.
+      'excerpt',
+      'featured_image',
+      'thumbnail_image',
+      'icon',
+      'author',
+      'published_at',
+      'updated_at',
+      'sort_order',
+      'tags',
+      'related_content',
+    ],
   },
   // FIX-028 strip lists below come from the per-collection findings (STORY-003, TOOL-005, etc.).
-  our_customers: { legacyAliases: ['companyName', 'logoUrl'], strip: ['title', 'excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content'] },
   tools: {
     legacyAliases: ['name', 'description', 'toolUrl', 'iconUrl'],
     strip: ['title', 'excerpt', 'thumbnail_image', 'author', 'published_at', 'sort_order', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link'],
   },
-  customer_reviews: { legacyAliases: ['title', 'quote', 'reviewerName', 'reviewerRole', 'companyName'], strip: ['excerpt', 'short_description', 'thumbnail_image', 'icon', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link'] },
-  podcasts: { legacyAliases: ['title', 'summary', 'audioUrl', 'platformUrls'], strip: ['excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'categories', 'related_content', 'cta_label', 'cta_link'] },
-  faqs: { legacyAliases: [], strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link'] },
+  customer_reviews: {
+    legacyAliases: ['title', 'quote', 'reviewerName', 'reviewerRole', 'companyName'],
+    // reviews-trim (2026-06-28): embedded-testimonials only — strip everything that
+    // isn't part of the testimonial card. status is the header control; `title` is
+    // dropped via the custom titleField (customer_name).
+    strip: [
+      'excerpt',
+      'short_description',
+      'featured_image',
+      'thumbnail_image',
+      'icon',
+      'author',
+      'published_at',
+      'updated_at',
+      'sort_order',
+      'tags',
+      'categories',
+      'related_content',
+      'cta_label',
+      'cta_link',
+      'status',
+      'hero_heading',
+      'hero_subheading',
+      'body',
+      'sections',
+      'sidebar_cta_enabled',
+      'primary_cta_variant',
+      'template_variant',
+    ],
+  },
+  podcasts: {
+    legacyAliases: ['title', 'summary', 'audioUrl', 'platformUrls'],
+    // podcast-trim (2026-06-28): keeps the episode fields (audio_url / embed_code,
+    // episode_summary, show_notes, transcript, hosts, guests, duration,
+    // episode_number, key_topics, related_resources, featured_image). Strips
+    // generic bloat: `status` is header-owned; server timestamps; `sort_order` +
+    // generic `tags` (key_topics is the episode tag field and there's no podcast
+    // listing to sort); the dead marketing page-layout fields; `body`
+    // (episode_summary + show_notes + page_blocks carry the content); the org-wide
+    // twitter handle. card/listing/detail/aeo/geo are dropped via
+    // SUPPRESSED_SECTIONS_BY_COLLECTION below.
+    strip: [
+      'excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'categories', 'related_content', 'cta_label', 'cta_link',
+      'status', 'published_at', 'updated_at', 'sort_order', 'tags',
+      'hero_heading', 'hero_subheading', 'body', 'sections', 'sidebar_cta_enabled', 'primary_cta_variant', 'template_variant',
+      'twitter_creator_handle',
+    ],
+  },
+  faqs: {
+    legacyAliases: [],
+    // faq-trim (2026-06-28): FAQs are embed-only Q&A units — indexed via the
+    // /faq page's auto FAQPage schema (built from question+answer) and embedded
+    // on service pages via the FAQ block. `body` duplicates `answer`; `status`
+    // is the header control; `tags` is superseded by `service_category`;
+    // `updated_at` is server-managed. The marketing-layout block + every
+    // non-publish section (card/listing/detail/blocks/relations/SEO/AEO/GEO) are
+    // dead config — sections dropped via SUPPRESSED_SECTIONS_BY_COLLECTION.
+    strip: [
+      'title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image',
+      'icon', 'author', 'published_at', 'updated_at', 'categories', 'related_content',
+      'cta_label', 'cta_link', 'status', 'tags',
+      ...PROFILE_LAYOUT_STRIP,
+    ],
+  },
   customer_stories: {
     legacyAliases: ['title', 'companyName', 'challenge', 'solution', 'results'],
-    // From STORY-003: keeps story_title / challenge_summary / full_story_body / publish_date / hero_image instead of the global duplicates.
-    strip: ['excerpt', 'short_description', 'featured_image', 'body', 'published_at', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link', 'author', 'sort_order', 'updated_at'],
+    // Keeps the case-study fields the detail renderer surfaces: story_title / customer /
+    // industry / region / challenge|solution|results / metrics_highlights /
+    // full_story_body / services_used / testimonial_reference / hero_image / publish_date.
+    // case-study-trim (2026-06-28): `status` is owned by the header Save/Publish controls
+    // (the select is a phantom input); no thumbnail/icon concept (hero_image is the
+    // visual); the marketing page-layout fields and the org-wide twitter handle are dead.
+    // card/listing/detail/aeo/geo are dropped via SUPPRESSED_SECTIONS_BY_COLLECTION below.
+    strip: [
+      'excerpt', 'short_description', 'featured_image', 'body', 'published_at', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link', 'author', 'sort_order', 'updated_at',
+      'status', 'thumbnail_image', 'icon',
+      'hero_heading', 'hero_subheading', 'sections', 'sidebar_cta_enabled', 'primary_cta_variant', 'template_variant',
+      'twitter_creator_handle',
+    ],
   },
-  ebooks: { legacyAliases: ['title', 'summary', 'downloadUrl', 'coverImageUrl'], strip: ['excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content'] },
-  webinars: { legacyAliases: ['title', 'registrationUrl', 'hostName', 'speakers'], strip: ['excerpt', 'short_description', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content'] },
+  ebooks: {
+    legacyAliases: ['title', 'summary', 'downloadUrl', 'coverImageUrl'],
+    // ebook-trim (2026-06-28): ebooks are a catalog of downloadable lead magnets,
+    // published to a gated landing page (/guides/[slug]). The record keeps the
+    // catalog fields (cover_image, full_description, file_upload, page_count,
+    // format, topics, gated, featured) + Authors (relations) + the SEO tab (the
+    // landing page ranks/converts). `status` is the header Save/Publish control;
+    // `cover_image` is the only visual (no featured_image / thumbnail / icon);
+    // `topics` is the taxonomy (no categories / tags); the single `author` ref +
+    // global `related_content` defer to the relations tab (`authorRefs` /
+    // `relatedBlogRefs`). Server timestamps, sort_order, the universal CTAs, the
+    // marketing page-layout fields, and the org-wide `twitter_creator_handle` are
+    // dead here. card/listing/detail/blocks/AEO/GEO are dropped via
+    // SUPPRESSED_SECTIONS_BY_COLLECTION below (SEO stays).
+    strip: [
+      'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon',
+      'author', 'published_at', 'updated_at', 'categories', 'related_content',
+      'cta_label', 'cta_link', 'sort_order', 'tags', 'status',
+      'twitter_creator_handle',
+      ...PROFILE_LAYOUT_STRIP,
+    ],
+  },
+  webinars: {
+    // `speakers` (publish) is a legacy alias of the canonical `speakerRefs` (relations);
+    // `related_resources` superseded by relations `relatedBlogRefs`.
+    legacyAliases: ['title', 'registrationUrl', 'hostName', 'speakers', 'related_resources'],
+    // webinar-revamp (2026-06-28): the bespoke /webinars/[slug] template reads the
+    // publish fields + relations + SEO directly. Strip the global editorial noise
+    // (excerpt/author/CTA/marketing-layout) so the editor only sees webinar fields.
+    // `status` is the header Save/Publish control; `updated_at` is server-managed;
+    // `banner_image` is the only visual (no featured/thumbnail/icon); `key_topics`
+    // is the tag axis (no generic tags); order is start_datetime + featured.
+    strip: [
+      'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon',
+      'author', 'published_at', 'updated_at', 'categories', 'related_content',
+      'cta_label', 'cta_link', 'tags', 'sort_order', 'status',
+      'twitter_creator_handle',
+      ...PROFILE_LAYOUT_STRIP,
+    ],
+  },
   team_members: {
     legacyAliases: ['name', 'role', 'bio', 'photoUrl', 'linkedinUrl', 'twitterUrl'],
     // From TEAM-003: keeps full_name / short_bio / photo / linkedin_url etc.
@@ -1227,20 +1383,9 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
     // page-layout fields (hero/body/CTA) and the generic `tags` (replaced by
     // `expertise_tags`) are pure noise. The SEO/AEO/GEO/blocks/card/listing/
     // detail/relations sections are suppressed in SUPPRESSED_SECTIONS_BY_COLLECTION.
-    strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link', 'updated_at', 'tags', ...PROFILE_LAYOUT_STRIP],
-  },
-  // CLEANUP: videos are embedded on resource pages, not standalone SEO routes —
-  // strip the global publish duplicates + page-layout fields. `thumbnail_image`
-  // is kept because the videos collection defines its own.
-  videos: {
-    legacyAliases: [],
-    strip: ['title', 'excerpt', 'short_description', 'featured_image', 'icon', 'author', 'published_at', 'updated_at', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link', ...PROFILE_LAYOUT_STRIP],
-  },
-  // CLEANUP: review_sources is a label/reference entity (Google, Trustpilot) —
-  // only slug/source_name/icon/source_url matter. `icon` is kept (its own field).
-  review_sources: {
-    legacyAliases: [],
-    strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'author', 'published_at', 'updated_at', 'tags', 'categories', 'related_content', 'cta_label', 'cta_link', 'sort_order', ...PROFILE_LAYOUT_STRIP],
+    // `status` is driven by the header workflow control (not this select), and
+    // `language` is meaningless for an internal profile — both are stripped.
+    strip: ['title', 'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon', 'author', 'published_at', 'categories', 'related_content', 'cta_label', 'cta_link', 'updated_at', 'tags', 'status', 'language', ...PROFILE_LAYOUT_STRIP],
   },
   // FIX-022: media_assets is a utility (library), not editorial content. Strip
   // global publish fields that are meaningless here: locale/excerpt/featured-image
@@ -1283,18 +1428,78 @@ const SUPPRESSED_SECTIONS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsSec
   // detail/blocks/relations and the SEO/AEO/GEO answer-engine tabs never render
   // anywhere — drop them so the editor only sees the real fields.
   team_members: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
-  videos: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
-  review_sources: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
   // CMO-redesign: card/listing duplicate publish + index settings respectively;
   // detail keeps only the three knobs promoted into publish above.
   blog_posts: ['card', 'listing', 'detail'],
+  // glossary-trim (2026-06-28): the glossary detail route + custom listing read
+  // none of these (parseGlossaryTerm strips them). SEO stays (wired below) and
+  // AEO stays for `faqItems`; the rest are dead for a definition page.
+  glossary_terms: ['card', 'listing', 'detail', 'blocks', 'relations', 'geo'],
+  // reviews-trim (2026-06-28): embedded-testimonials only (blocklisted from
+  // /content) — no standalone page, so every non-publish section is dead.
+  customer_reviews: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
+  // case-study-trim (2026-06-28): the case-study renderer reads the publish fields
+  // directly + page_blocks; there is no case-studies listing route (so `listing` is
+  // dead config) and the generic detail route ignores the `detail_*` chrome. AEO/GEO
+  // answer-engine signals add nothing to a case study. SEO + blocks + relations stay.
+  customer_stories: ['card', 'listing', 'detail', 'aeo', 'geo'],
+  // faq-trim (2026-06-28): embed-only Q&A — indexed via the /faq page's auto
+  // FAQPage schema (from question+answer) and embedded on service pages via the
+  // FAQ block. No standalone FAQ page is an SEO surface, so every non-publish
+  // section (incl. SEO/AEO/GEO) is dead config.
+  faqs: ['card', 'listing', 'detail', 'blocks', 'relations', 'seo', 'aeo', 'geo'],
+  // podcast-trim (2026-06-28): no podcast listing route (so `listing` is dead
+  // config) and the generic detail route ignores the `detail_*` chrome + `card`.
+  // AEO/GEO answer-engine signals add nothing to an episode. SEO + blocks +
+  // relations (related episodes) stay.
+  podcasts: ['card', 'listing', 'detail', 'aeo', 'geo'],
+  // ebook-trim (2026-06-28): lead-magnet catalog. The card/listing chrome,
+  // detail_* knobs, page_blocks and the AEO/GEO answer-engine tabs add nothing to
+  // a gated download. SEO STAYS — ebooks get a public gated landing page
+  // (/guides/[slug]) that ranks + converts, so seo_title/meta/OG/canonical are
+  // live. Publish catalog fields + Authors (relations) carry the content.
+  ebooks: ['card', 'listing', 'detail', 'blocks', 'aeo', 'geo'],
+  // webinar-revamp (2026-06-28): bespoke state-driven landing page (/webinars/[slug]).
+  // Publish fields + relations (speakers / related) carry the content; SEO STAYS
+  // (the page is an Event/VideoObject SEO surface). card/listing chrome, detail_*
+  // knobs and the AEO/GEO tabs add nothing.
+  // blocks-on-webinars (2026-06-28): page-builder ENABLED so editors can append
+  // custom sections below the structured webinar content (rendered by
+  // PageBlocksRenderer at the foot of /webinars/[slug]).
+  webinars: ['card', 'listing', 'detail', 'aeo', 'geo'],
+}
+
+/**
+ * schema-options-trim (2026-06-28): the schema-type override defaulted to all 19
+ * schema.org types on every collection — most are nonsense for a given content
+ * type (a blog post is never a `PodcastEpisode`). Each collection here narrows
+ * the override dropdown to the types that actually apply; the leading "— none —"
+ * (use the collection default) is added automatically. Collections absent from
+ * this map fall back to the full catalogue. `media_assets`/`team_members`
+ * suppress the blocks section entirely, so they're omitted.
+ */
+const SCHEMA_OVERRIDE_OPTIONS_BY_COLLECTION: Partial<Record<CmsCollectionKey, string[]>> = {
+  blog_posts: ['Article', 'BlogPosting', 'NewsArticle', 'HowTo', 'FAQPage'],
+  glossary_terms: ['DefinedTerm', 'Article', 'FAQPage'],
+  faqs: ['Question', 'FAQPage', 'HowTo'],
+  customer_stories: ['Article', 'NewsArticle', 'Review'],
+  customer_reviews: ['Review'],
+  tools: ['SoftwareApplication', 'Product', 'WebPage'],
+  podcasts: ['PodcastEpisode', 'VideoObject', 'Article'],
+  webinars: ['Event', 'VideoObject', 'Course'],
+  // ebook-trim (2026-06-28): ebooks suppress the blocks section (no public page),
+  // so the schema-type override never renders — omitted like media_assets/team_members.
+  team_members: ['Person'],
 }
 
 export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECTION_DEFINITIONS_BASE.map((definition) => {
   const cardFields = universalCardFields()
   const listingFields = universalListingFields()
   const detailFields = universalDetailFields()
-  const blocksFields = universalBlocksFields(definition.defaultSchemaType)
+  const blocksFields = universalBlocksFields(
+    definition.defaultSchemaType,
+    SCHEMA_OVERRIDE_OPTIONS_BY_COLLECTION[definition.key]
+  )
   const relations = relationshipFields(RELATIONSHIPS[definition.key] ?? {})
 
   // FIX-026: content-layout fields are merged into publish (not aeo).
@@ -1308,6 +1513,12 @@ export const CMS_COLLECTION_DEFINITIONS: CmsCollectionDefinition[] = CMS_COLLECT
   // have it removed from SEO; same pattern for AEO/GEO fields that only some
   // collections care about.
   const stripped = new Set<string>([...hidden.legacyAliases, ...hidden.strip])
+  // title-required fix (2026-06-28): collections with a custom titleField (e.g.
+  // glossary `term`, webinars `webinar_title`) don't render the global `title`, but
+  // it stayed in the field set as `required` — so save validation demanded a value
+  // the form never collected ("Title is required — fill it in, then publish"). The
+  // titleField is the real title here; drop the redundant global `title`.
+  if (definition.titleField !== 'title') stripped.add('title')
   const filter = (fields: CmsFieldDefinition[]) => fields.filter((f) => !stripped.has(f.name))
 
   const suppressed = new Set<CmsSectionKey>(SUPPRESSED_SECTIONS_BY_COLLECTION[definition.key] ?? [])

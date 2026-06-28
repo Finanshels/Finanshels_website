@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { ArticleBody } from '@/components/cms/ArticleBody'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { getCmsDocument, listCmsDocuments } from '@/lib/cms/collectionRepository'
+import { listPublishedFaqsByService } from '@/lib/cms/faqsRepository'
 import {
   CMS_COLLECTION_DEFINITION_MAP,
   type CmsCollectionKey,
@@ -171,16 +172,28 @@ function CtaBlock({ block }: { block: Block }) {
 }
 
 // FIX-049: subheading field was defined in block schema but never rendered.
-function FaqAccordionBlock({ block }: { block: Block }) {
+async function FaqAccordionBlock({ block }: { block: Block }) {
   const heading = readString(block.heading)
   const subheading = readString(block.subheading)
-  const items = readArray(block.items).filter(
-    (item): item is { question: string; answer: string } =>
-      Boolean(item) &&
-      typeof item === 'object' &&
-      typeof (item as Record<string, unknown>).question === 'string' &&
-      typeof (item as Record<string, unknown>).answer === 'string'
-  )
+  const service = readString(block.service)
+
+  // Collection-backed when a service is chosen: pull published FAQs tagged with
+  // it. Otherwise fall back to the manually authored Items JSON.
+  const items = service
+    ? (await listPublishedFaqsByService(service)).map((f) => ({
+        question: f.question,
+        answer: f.answer,
+      }))
+    : readArray(block.items).filter(
+        (item): item is { question: string; answer: string } =>
+          Boolean(item) &&
+          typeof item === 'object' &&
+          typeof (item as Record<string, unknown>).question === 'string' &&
+          typeof (item as Record<string, unknown>).answer === 'string'
+      )
+
+  if (items.length === 0) return null
+
   return (
     <section className="bg-white py-12">
       <div className="mx-auto max-w-3xl px-6">

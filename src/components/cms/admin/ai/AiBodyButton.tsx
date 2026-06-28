@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { AiContext } from '@/lib/cms/ai/fieldMap'
 import { AiGeneratePopover } from './AiGeneratePopover'
 import type { AiGeneratePayload } from './useAiGeneration'
@@ -21,6 +21,7 @@ function readFieldValue(name?: string): string {
 export function AiBodyButton({ context, onInsert }: AiBodyButtonProps) {
   const [open, setOpen] = useState(false)
   const [payload, setPayload] = useState<AiGeneratePayload | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
 
   function handleToggle() {
     if (open) {
@@ -39,6 +40,7 @@ export function AiBodyButton({ context, onInsert }: AiBodyButtonProps) {
   return (
     <span className="relative inline-flex">
       <button
+        ref={btnRef}
         type="button"
         onClick={handleToggle}
         title="Write a full draft with AI"
@@ -52,6 +54,7 @@ export function AiBodyButton({ context, onInsert }: AiBodyButtonProps) {
           payload={payload}
           onUse={(html) => onInsert(html)}
           onClose={() => setOpen(false)}
+          anchorRef={btnRef}
           align="left"
         />
       )}

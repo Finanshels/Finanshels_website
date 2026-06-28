@@ -1,6 +1,7 @@
 // FIX-033: page-builder block catalogue extracted from collectionDefinitions.ts.
 // Pure data — used by the admin block-type picker and by PageBlocksRenderer.
 import type { CmsCollectionKey, CmsFieldDefinition } from '../collectionDefinitions'
+import { CONTENT_CATEGORY_OPTIONS, CONTENT_CATEGORY_LABELS } from '../contentCategoryOptions'
 
 export type CmsBlockField = CmsFieldDefinition
 
@@ -81,21 +82,26 @@ export const CMS_BLOCK_TYPES: CmsBlockType[] = [
   {
     type: 'faq_accordion',
     label: 'FAQ accordion',
-    description: 'A list of expandable questions and answers.',
+    description: 'Expandable Q&A — auto-pull FAQs by service, or hand-write them.',
     icon: 'list',
     fields: [
       { name: 'heading', label: 'Heading', type: 'text' },
       { name: 'subheading', label: 'Subheading', type: 'textarea' },
       {
+        name: 'service',
+        label: 'Pull FAQs for service',
+        type: 'select',
+        options: ['', ...CONTENT_CATEGORY_OPTIONS],
+        optionLabels: CONTENT_CATEGORY_LABELS,
+        description:
+          'Auto-list published FAQs tagged with this service. Leave blank to use the manual Items JSON below.',
+      },
+      {
         name: 'items',
-        label: 'Items JSON',
+        label: 'Items JSON (manual fallback)',
         type: 'json',
         placeholder: '[{"question":"...","answer":"..."}]',
       },
-      // FIX-048: `questionRefs` (multi_reference → faqs) was defined here but
-      // never resolved by FaqAccordionBlock — editors who populated it got
-      // no output. Removed to avoid the confusion. Re-add together with a
-      // renderer branch that fetches the referenced docs.
     ],
   },
   {

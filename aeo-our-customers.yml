@@ -1,0 +1,324 @@
+- generic [ref=e1]:
+  - generic [ref=e105]:
+    - complementary [ref=e106]:
+      - generic [ref=e108]:
+        - generic [ref=e110]: F
+        - generic [ref=e111]:
+          - paragraph [ref=e112]: Finanshels
+          - paragraph [ref=e113]: Content Studio
+      - paragraph [ref=e115]: Content
+      - navigation [ref=e116]:
+        - link "Media 1" [ref=e117] [cursor=pointer]:
+          - /url: /admin/cms?collection=media_assets
+          - generic [ref=e118]: Media
+          - generic [ref=e119]: "1"
+        - link "Blog Posts 0" [ref=e120] [cursor=pointer]:
+          - /url: /admin/cms?collection=blog_posts
+          - generic [ref=e121]: Blog Posts
+          - generic [ref=e122]: "0"
+        - link "Glossaries 0" [ref=e123] [cursor=pointer]:
+          - /url: /admin/cms?collection=glossary_terms
+          - generic [ref=e124]: Glossaries
+          - generic [ref=e125]: "0"
+        - link "Our Customers 0" [ref=e126] [cursor=pointer]:
+          - /url: /admin/cms?collection=our_customers
+          - generic [ref=e127]: Our Customers
+          - generic [ref=e128]: "0"
+        - link "Tools 0" [ref=e129] [cursor=pointer]:
+          - /url: /admin/cms?collection=tools
+          - generic [ref=e130]: Tools
+          - generic [ref=e131]: "0"
+        - link "Customer Reviews 0" [ref=e132] [cursor=pointer]:
+          - /url: /admin/cms?collection=customer_reviews
+          - generic [ref=e133]: Customer Reviews
+          - generic [ref=e134]: "0"
+        - link "Podcasts 0" [ref=e135] [cursor=pointer]:
+          - /url: /admin/cms?collection=podcasts
+          - generic [ref=e136]: Podcasts
+          - generic [ref=e137]: "0"
+        - link "FAQs 0" [ref=e138] [cursor=pointer]:
+          - /url: /admin/cms?collection=faqs
+          - generic [ref=e139]: FAQs
+          - generic [ref=e140]: "0"
+        - link "Customer Stories 0" [ref=e141] [cursor=pointer]:
+          - /url: /admin/cms?collection=customer_stories
+          - generic [ref=e142]: Customer Stories
+          - generic [ref=e143]: "0"
+        - link "Ebooks 0" [ref=e144] [cursor=pointer]:
+          - /url: /admin/cms?collection=ebooks
+          - generic [ref=e145]: Ebooks
+          - generic [ref=e146]: "0"
+        - link "Webinars 0" [ref=e147] [cursor=pointer]:
+          - /url: /admin/cms?collection=webinars
+          - generic [ref=e148]: Webinars
+          - generic [ref=e149]: "0"
+        - link "Team Members 2" [ref=e150] [cursor=pointer]:
+          - /url: /admin/cms?collection=team_members
+          - generic [ref=e151]: Team Members
+          - generic [ref=e152]: "2"
+      - paragraph [ref=e154]: Marketing
+      - navigation [ref=e155]:
+        - link "Landing pages Ad-only" [ref=e156] [cursor=pointer]:
+          - /url: /admin/cms/landing-pages
+          - generic [ref=e157]: Landing pages
+          - generic [ref=e158]: Ad-only
+        - link "Lead inbox" [ref=e159] [cursor=pointer]:
+          - /url: /admin/cms/landing-page-leads
+      - paragraph [ref=e161]: Settings
+      - navigation [ref=e162]:
+        - link "Team & Users" [ref=e163] [cursor=pointer]:
+          - /url: /admin/settings/users
+        - link "My Profile" [ref=e164] [cursor=pointer]:
+          - /url: /admin/settings/profile
+        - link "View site ↗" [ref=e165] [cursor=pointer]:
+          - /url: /
+      - generic [ref=e166]:
+        - generic [ref=e167]:
+          - generic [ref=e168]: O
+          - paragraph [ref=e170]: Owner (env)
+        - generic [ref=e171]:
+          - generic [ref=e172]: Owner
+          - button "Sign out →" [ref=e174] [cursor=pointer]
+    - generic [ref=e175]:
+      - generic [ref=e176]:
+        - generic [ref=e177]:
+          - link "Back to Our Customers" [ref=e178] [cursor=pointer]:
+            - /url: /admin/cms?collection=our_customers
+            - generic [ref=e179]: ←
+          - generic [ref=e180]:
+            - generic [ref=e181]:
+              - heading "New Customer Profile" [level=1] [ref=e182]
+              - generic [ref=e183]:
+                - generic [ref=e184]: ●
+                - text: draft
+            - paragraph [ref=e185]: /customer profile-slug
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - button "Draft" [ref=e188] [cursor=pointer]
+              - button "Published" [ref=e189] [cursor=pointer]
+            - button "Save changes" [ref=e190] [cursor=pointer]:
+              - generic [ref=e191]: 💾
+              - text: Save changes
+        - generic [ref=e193]:
+          - generic [ref=e194]:
+            - heading "Main Editor" [level=3] [ref=e195]
+            - generic [ref=e196]:
+              - generic [ref=e197]:
+                - generic [ref=e198]
+                - textbox [ref=e203]: Nimbus Logistics FZ-LLC
+                - paragraph [ref=e204]: The slug below updates from the title until you edit the slug.
+              - generic [ref=e205]:
+                - generic [ref=e206]
+                - textbox "Slug Required" [ref=e208]: nimbus-logistics
+              - generic [ref=e209]:
+                - generic [ref=e210]: Body
+                - generic [ref=e212]
+                - paragraph [ref=e287]: The main content of this page.
+          - generic [ref=e288]:
+            - generic [ref=e289]:
+              - heading "Card" [level=3] [ref=e290]
+              - generic [ref=e291]:
+                - generic [ref=e292]
+                - generic [ref=e300]
+                - generic [ref=e324]
+                - generic [ref=e330]
+            - generic [ref=e335]:
+              - paragraph [ref=e336]: Card preview
+              - paragraph [ref=e337]: Live preview of how this entry renders on listing pages. Falls back to publish-section fields.
+              - article [ref=e338]:
+                - generic [ref=e340]
+          - generic [ref=e353]:
+            - heading "Listing page (/our_customers)" [level=3] [ref=e354]
+            - generic [ref=e355]:
+              - generic [ref=e356]:
+                - generic [ref=e357]: Listing hero heading
+                - textbox "Listing hero heading" [ref=e358]: Our Customers
+              - generic [ref=e359]:
+                - generic [ref=e360]: Listing hero subheading
+                - textbox "Listing hero subheading Supports rich text/HTML where applicable." [ref=e361]: Finance and compliance teams across the UAE trust Finanshels.
+                - paragraph [ref=e362]: Supports rich text/HTML where applicable.
+              - generic [ref=e363]:
+                - generic [ref=e364]: Listing hero image
+                - textbox "Listing hero image" [ref=e365]: https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200
+              - generic [ref=e366]:
+                - generic [ref=e367]: Listing intro HTML
+                - textbox "Listing intro HTML Supports rich text/HTML where applicable." [ref=e368]: <p>Meet the companies scaling with confidence.</p>
+                - paragraph [ref=e369]: Supports rich text/HTML where applicable.
+              - generic [ref=e370]:
+                - generic [ref=e371]: Search bar enabled
+                - generic [ref=e372]
+              - generic [ref=e375]:
+                - generic [ref=e376]: Search placeholder
+                - textbox "Search placeholder" [ref=e377]: Search customers...
+              - generic [ref=e378]:
+                - generic [ref=e379]: Filter facets
+                - textbox "Filter facets Use comma-separated values and press save to store. industry region" [ref=e712]:
+                  - /placeholder: category, tag, region, industry
+                - paragraph [ref=e381]: Use comma-separated values and press save to store.
+                - generic [ref=e713]
+              - generic [ref=e382]:
+                - generic [ref=e383]: Sort options
+                - textbox "Sort options Use comma-separated values and press save to store. newest alphabetical featured" [ref=e716]:
+                  - /placeholder: newest, oldest, alphabetical, popular, featured
+                - paragraph [ref=e385]: Use comma-separated values and press save to store.
+                - generic [ref=e717]
+              - generic [ref=e386]:
+                - generic [ref=e387]: Default sort
+                - combobox "Default sort" [ref=e388]
+              - generic [ref=e389]:
+                - generic [ref=e390]: Featured count
+                - spinbutton "Featured count" [ref=e391]: "3"
+              - generic [ref=e392]:
+                - generic [ref=e393]: Layout
+                - combobox "Layout" [ref=e394]
+              - generic [ref=e395]:
+                - generic [ref=e396]: Page size
+                - spinbutton "Page size" [ref=e397]: "12"
+              - generic [ref=e398]:
+                - generic [ref=e399]: Pagination style
+                - combobox "Pagination style" [ref=e400]
+              - generic [ref=e401]:
+                - generic [ref=e402]: Sticky CTA enabled
+                - generic [ref=e403]
+              - generic [ref=e406]:
+                - generic [ref=e407]
+                - textbox [ref=e411]: Book a free consultation
+              - generic [ref=e412]:
+                - generic [ref=e413]: Sticky CTA link
+                - textbox "Sticky CTA link Use a full URL including https://" [ref=e414]: https://finanshels.com/contact
+                - paragraph [ref=e415]: Use a full URL including https://
+          - generic [ref=e417]:
+            - heading "Detail page (/content/our_customers/[slug])" [level=3] [ref=e418]
+            - generic [ref=e419]:
+              - generic [ref=e420]:
+                - generic [ref=e421]: Breadcrumbs enabled
+                - generic [ref=e422]
+              - generic [ref=e425]:
+                - generic [ref=e426]: Breadcrumbs title override
+                - textbox "Breadcrumbs title override" [ref=e427]: Customers
+              - generic [ref=e428]:
+                - generic [ref=e429]: Metadata row enabled
+                - generic [ref=e430]
+              - generic [ref=e433]:
+                - generic [ref=e434]: Social share enabled
+                - generic [ref=e435]
+              - generic [ref=e438]:
+                - generic [ref=e439]: Social networks
+                - textbox "Social networks Use comma-separated values and press save to store. twitter linkedin" [ref=e722]:
+                  - /placeholder: twitter, linkedin, facebook, whatsapp
+                - paragraph [ref=e441]: Use comma-separated values and press save to store.
+                - generic [ref=e723]
+              - generic [ref=e442]:
+                - generic [ref=e443]: Sticky side CTA enabled
+                - generic [ref=e444]
+              - generic [ref=e447]:
+                - generic [ref=e448]
+                - textbox [ref=e452]: Talk to our team
+              - generic [ref=e453]:
+                - generic [ref=e454]: Sticky side CTA link
+                - textbox "Sticky side CTA link Use a full URL including https://" [ref=e455]: https://finanshels.com/contact
+                - paragraph [ref=e456]: Use a full URL including https://
+              - generic [ref=e457]:
+                - generic [ref=e458]: Lead capture enabled
+                - generic [ref=e459]
+              - generic [ref=e462]:
+                - generic [ref=e463]: Lead capture form ID
+                - textbox "Lead capture form ID" [ref=e464]: hubspot-1234
+              - generic [ref=e465]:
+                - generic [ref=e466]: Related content block enabled
+                - generic [ref=e467]
+              - generic [ref=e470]:
+                - generic [ref=e471]: Related content mode
+                - combobox "Related content mode" [ref=e472]
+              - generic [ref=e473]:
+                - generic [ref=e474]: Related content max items
+                - spinbutton "Related content max items" [ref=e475]: "3"
+              - generic [ref=e476]:
+                - generic [ref=e477]: Detail template variant
+                - combobox "Detail template variant" [ref=e478]
+          - generic [ref=e480]:
+            - heading "Page blocks" [level=3] [ref=e481]
+            - generic [ref=e482]:
+              - generic [ref=e483]:
+                - generic [ref=e484]: Page blocks
+                - generic [ref=e485]
+              - generic [ref=e492]:
+                - generic [ref=e493]: Schema type (override)
+                - combobox "Schema type (override)" [ref=e494]
+          - generic [ref=e496]:
+            - heading "Relationships" [level=3] [ref=e497]
+            - generic [ref=e498]:
+              - generic [ref=e499]:
+                - generic [ref=e500]: Customer stories
+                - generic [ref=e501]
+              - generic [ref=e508]:
+                - generic [ref=e509]: Customer reviews
+                - generic [ref=e510]
+      - complementary [ref=e517]:
+        - generic [ref=e519]:
+          - generic [ref=e520]:
+            - radio "Publish" [ref=e521]
+            - generic [ref=e522] [cursor=pointer]: Publish
+          - generic [ref=e523]:
+            - radio "SEO" [ref=e524]
+            - generic [ref=e525] [cursor=pointer]: SEO
+          - generic [ref=e526]:
+            - radio "AEO" [checked] [active] [ref=e527]
+            - generic [ref=e528] [cursor=pointer]: AEO
+          - generic [ref=e529]:
+            - radio "GEO" [ref=e530]
+            - generic [ref=e531] [cursor=pointer]: GEO
+        - generic [ref=e965]:
+          - generic [ref=e966]:
+            - paragraph [ref=e967]: AEO Tips - Answer Engines
+            - list [ref=e968]:
+              - listitem [ref=e969]: "- Use exact question phrasing users search for"
+              - listitem [ref=e970]: "- Keep direct answer snippets under 50 words"
+              - listitem [ref=e971]: "- Add 3+ FAQ items for rich-result eligibility"
+          - generic [ref=e972]:
+            - paragraph [ref=e973]: AEO Score
+            - generic [ref=e974]:
+              - paragraph [ref=e975]: "0"
+              - paragraph [ref=e976]: out of 42
+            - paragraph [ref=e977]: "Direct answer length: 0/300"
+          - generic [ref=e978]:
+            - paragraph [ref=e979]: AI answers (AEO)
+            - paragraph [ref=e980]: FAQ, direct answers, and speakable schema
+            - generic [ref=e981]:
+              - generic [ref=e982]:
+                - generic [ref=e983]: Direct answer (AI summary)
+                - generic [ref=e985]
+              - generic [ref=e1056]:
+                - generic [ref=e1057]: FAQ items JSON
+                - textbox "FAQ items JSON Valid JSON only. Invalid JSON will not be saved." [ref=e1058]:
+                  - /placeholder: "[{\"question\":\"...\",\"answer\":\"...\"}]"
+                - paragraph [ref=e1059]: Valid JSON only. Invalid JSON will not be saved.
+              - generic [ref=e1060]:
+                - generic [ref=e1061]: Direct answer snippet
+                - generic [ref=e1063]
+              - generic [ref=e1134]:
+                - generic [ref=e1135]: HowTo steps JSON
+                - textbox "HowTo steps JSON Valid JSON only. Invalid JSON will not be saved." [ref=e1136]:
+                  - /placeholder: "[{\"title\":\"Step 1\",\"description\":\"...\"}]"
+                - paragraph [ref=e1137]: Valid JSON only. Invalid JSON will not be saved.
+              - generic [ref=e1138]:
+                - generic [ref=e1139]: Speakable content
+                - generic [ref=e1141]
+          - generic [ref=e1212]:
+            - paragraph [ref=e1213]: AEO Checklist
+            - list [ref=e1214]:
+              - listitem [ref=e1215]:
+                - generic [ref=e1216]: ○ Direct answer available
+                - generic [ref=e1217]: "+12"
+              - listitem [ref=e1218]:
+                - generic [ref=e1219]: ○ 3+ FAQs for FAQPage schema
+                - generic [ref=e1220]: "+12"
+              - listitem [ref=e1221]:
+                - generic [ref=e1222]: ○ HowTo steps defined
+                - generic [ref=e1223]: "+10"
+              - listitem [ref=e1224]:
+                - generic [ref=e1225]: ○ Speakable content prepared
+                - generic [ref=e1226]: "+8"
+  - button "Open Next.js Dev Tools" [ref=e98] [cursor=pointer]:
+    - img [ref=e99]
+  - alert [ref=e102]

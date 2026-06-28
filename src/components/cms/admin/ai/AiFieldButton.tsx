@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import type { AiContext, AiFieldConfig } from '@/lib/cms/ai/fieldMap'
 import { AiGeneratePopover } from './AiGeneratePopover'
@@ -35,6 +35,7 @@ function injectValue(name: string, value: string): void {
 export function AiFieldButton({ targetName, fieldLabel, config, context }: AiFieldButtonProps) {
   const [open, setOpen] = useState(false)
   const [payload, setPayload] = useState<AiGeneratePayload | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
 
   function handleToggle() {
     if (open) {
@@ -55,6 +56,7 @@ export function AiFieldButton({ targetName, fieldLabel, config, context }: AiFie
   return (
     <span className="relative ml-auto inline-flex">
       <button
+        ref={btnRef}
         type="button"
         onClick={handleToggle}
         className={cn(
@@ -73,6 +75,7 @@ export function AiFieldButton({ targetName, fieldLabel, config, context }: AiFie
           charLimit={config.charLimit}
           onUse={(text) => injectValue(targetName, text)}
           onClose={() => setOpen(false)}
+          anchorRef={btnRef}
         />
       )}
     </span>

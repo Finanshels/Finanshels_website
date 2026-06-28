@@ -27,7 +27,6 @@ function loadEnvLocal() {
 const COLLECTIONS = [
   'blog_posts',
   'glossary_terms',
-  'our_customers',
   'tools',
   'customer_reviews',
   'podcasts',

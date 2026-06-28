@@ -72,13 +72,13 @@ export async function importCustomerStories(ctx: ImportContext): Promise<void> {
         .filter(Boolean)
         .join('\n\n')
 
-      // Webflow customer-stories has no reference to our-customers — just a
-      // client-name text field. Admins link the `customer` ref manually after import.
+      // `customer` is a plain text field — write the Webflow client-name straight
+      // through. It's required, so warn when the source row has no client name.
       const clientName = transformDirect(fd['client-name'])
-      if (clientName) {
+      if (!clientName) {
         ctx.report.recordWarning({
           webflowId: item.id,
-          message: `client "${clientName}" not auto-linked to our_customers; admin should set 'customer' ref manually`,
+          message: `customer-story "${storyTitle}" has no client-name; required 'customer' field left blank`,
         })
       }
 
@@ -88,7 +88,7 @@ export async function importCustomerStories(ctx: ImportContext): Promise<void> {
 
       const data: Record<string, unknown> = {
         story_title: storyTitle,
-        customer: '',
+        customer: clientName || '',
         industry: [DEFAULT_INDUSTRY],
         hero_image: heroImage,
         challenge_summary: challengeSummary,

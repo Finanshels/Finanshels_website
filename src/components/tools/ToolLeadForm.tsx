@@ -11,6 +11,10 @@ interface ToolLeadFormProps {
   /** A JSON-serializable snapshot of the user's inputs + computed result. */
   resultSnapshot: Record<string, unknown>
   onSuccess?: () => void
+  /** Headline shown after a successful submit. Defaults to the breakdown wording. */
+  successTitle?: string
+  /** Sub-copy shown after a successful submit. */
+  successMessage?: string
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -21,6 +25,8 @@ export function ToolLeadForm({
   submitLabel,
   resultSnapshot,
   onSuccess,
+  successTitle = 'Done — check your inbox.',
+  successMessage = 'Your full breakdown is on its way.',
 }: ToolLeadFormProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -67,8 +73,8 @@ export function ToolLeadForm({
   if (state === 'success') {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-900">
-        <p className="font-semibold">Done — check your inbox.</p>
-        <p className="mt-1 text-sm">Your full breakdown is on its way.</p>
+        <p className="font-semibold">{successTitle}</p>
+        <p className="mt-1 text-sm">{successMessage}</p>
       </div>
     )
   }

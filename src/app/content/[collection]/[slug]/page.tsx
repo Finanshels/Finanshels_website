@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { ArticleBody } from '@/components/cms/ArticleBody'
 import { PageBlocksRenderer } from '@/components/cms/PageBlocksRenderer'
 import { getSiteUrl } from '@/lib/cms/config'
@@ -86,7 +86,33 @@ function resolveCanonical(collection: CmsCollectionKey, doc: Record<string, unkn
   return `${site}/content/${collection}/${slug}`
 }
 
-function renderTemplate(collection: CmsCollectionKey, doc: Record<string, unknown>) {
+type StoryTestimonial = { quote: string; name: string; role: string }
+
+// Customer stories link testimonials via `testimonial_reference` (ids of
+// customer_reviews docs). Resolve the first few to render real quotes inline.
+async function resolveStoryTestimonials(doc: Record<string, unknown>): Promise<StoryTestimonial[]> {
+  const refs = Array.isArray(doc.testimonial_reference) ? doc.testimonial_reference : []
+  const out: StoryTestimonial[] = []
+  for (const ref of refs.slice(0, 3)) {
+    if (typeof ref !== 'string' || !ref) continue
+    const review = await getCmsDocument('customer_reviews', ref)
+    if (!review) continue
+    const quote = String(review.review_text ?? review.quote ?? '').trim()
+    if (!quote) continue
+    out.push({
+      quote,
+      name: String(review.customer_name ?? review.reviewer_name ?? review.reviewerName ?? '').trim(),
+      role: String(review.customer_designation ?? '').trim(),
+    })
+  }
+  return out
+}
+
+function renderTemplate(
+  collection: CmsCollectionKey,
+  doc: Record<string, unknown>,
+  extras: { storyTestimonials?: StoryTestimonial[] } = {}
+) {
   const title = resolveTitle(doc, 'Untitled')
   if (collection === 'blog_posts') {
     const body = sanitizeCmsHtml(String(doc.body ?? doc.bodyHtml ?? ''))
@@ -101,40 +127,78 @@ function renderTemplate(collection: CmsCollectionKey, doc: Record<string, unknow
     )
   }
 
-  if (collection === 'glossary_terms') {
-    const definition = sanitizeCmsHtml(String(doc.definition_short ?? doc.definition ?? ''))
-    const body = sanitizeCmsHtml(String(doc.definition_full ?? doc.body ?? doc.bodyHtml ?? ''))
+  if (collection === 'podcasts') {
+    const art = typeof doc.featured_image === 'string' ? doc.featured_image.trim() : ''
+    const podcastName = typeof doc.podcast_name === 'string' ? doc.podcast_name.trim() : ''
+    const epNum = typeof doc.episode_number === 'number' ? doc.episode_number : Number(doc.episode_number)
+    const duration = typeof doc.duration === 'string' ? doc.duration.trim() : ''
+    const audioUrl = typeof doc.audio_url === 'string' ? doc.audio_url.trim() : ''
+    const summary = typeof doc.episode_summary === 'string' ? doc.episode_summary.trim() : ''
+    const showNotes = sanitizeCmsHtml(String(doc.show_notes ?? ''))
+    const transcript = sanitizeCmsHtml(String(doc.transcript ?? ''))
+    const topics = (Array.isArray(doc.key_topics) ? doc.key_topics : []).filter(
+      (t): t is string => typeof t === 'string' && t.trim().length > 0
+    )
+    const meta = [podcastName, Number.isFinite(epNum) && epNum > 0 ? `Episode ${epNum}` : '', duration]
+      .filter(Boolean)
+      .join('  ·  ')
     return (
       <article className="mx-auto max-w-3xl px-6 py-16 sm:px-10">
-        <h1 className="text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-[#fffaf6] p-5">
-          <ArticleBody html={definition} className="prose-base" />
-        </div>
-        {body ? (
-          <div className="mt-8">
-            <ArticleBody html={body} />
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+          {art ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={art} alt={title} className="h-32 w-32 shrink-0 rounded-2xl border border-slate-200 object-cover" />
+          ) : null}
+          <div>
+            {meta ? <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#b3470a]">{meta}</p> : null}
+            <h1 className="mt-2 text-balance text-4xl font-bold tracking-tight text-slate-900">{title}</h1>
           </div>
+        </div>
+
+        {summary ? <p className="mt-6 text-lg text-slate-600">{summary}</p> : null}
+
+        {audioUrl ? (
+          <audio controls preload="none" src={audioUrl} className="mt-8 w-full">
+            Your browser does not support the audio element.
+          </audio>
+        ) : null}
+
+        {topics.length ? (
+          <div className="mt-8 flex flex-wrap gap-2">
+            {topics.map((t) => (
+              <span key={t} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700">
+                {t}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        {showNotes ? (
+          <div className="mt-10">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Show notes</h2>
+            <div className="mt-4">
+              <ArticleBody html={showNotes} />
+            </div>
+          </div>
+        ) : null}
+
+        {transcript ? (
+          <details className="mt-10 rounded-2xl border border-slate-200 bg-white p-6">
+            <summary className="cursor-pointer text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
+              Transcript
+            </summary>
+            <div className="mt-4">
+              <ArticleBody html={transcript} />
+            </div>
+          </details>
         ) : null}
       </article>
     )
   }
 
-  if (collection === 'podcasts' || collection === 'webinars') {
-    return (
-      <section className="mx-auto max-w-4xl px-6 py-16 sm:px-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-500">{collection.replace('_', ' ')}</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
-        {(doc.summary || doc.episode_summary || doc.short_description) ? (
-          <p className="mt-4 text-lg text-slate-600">{String(doc.summary ?? doc.episode_summary ?? doc.short_description)}</p>
-        ) : null}
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-6">
-          {(doc.video_url || doc.videoUrl) ? <p className="text-sm text-slate-700">Video URL: {String(doc.video_url ?? doc.videoUrl)}</p> : null}
-          {(doc.audio_url || doc.audioUrl) ? <p className="text-sm text-slate-700">Audio URL: {String(doc.audio_url ?? doc.audioUrl)}</p> : null}
-          {(doc.registration_url || doc.registrationUrl) ? <p className="text-sm text-slate-700">Registration: {String(doc.registration_url ?? doc.registrationUrl)}</p> : null}
-        </div>
-      </section>
-    )
-  }
+  // webinar-revamp (2026-06-28): the webinars branch is gone — webinars render on
+  // the dedicated `/webinars/[slug]` route and the page component redirects there
+  // before this helper runs.
 
   if (collection === 'faqs') {
     // FIX-048: title already shows the question (titleField=question on faqs).
@@ -155,7 +219,81 @@ function renderTemplate(collection: CmsCollectionKey, doc: Record<string, unknow
     )
   }
 
-  if (collection === 'customer_stories' || collection === 'customer_reviews') {
+  if (collection === 'customer_stories') {
+    const heroImage = typeof doc.hero_image === 'string' ? doc.hero_image.trim() : ''
+    const customer = typeof doc.customer === 'string' ? doc.customer.trim() : ''
+    const industry = typeof doc.industry === 'string' ? doc.industry.trim() : ''
+    const region = typeof doc.region === 'string' ? doc.region.trim() : ''
+    const eyebrow = [customer, industry, region].filter(Boolean).join('  ·  ')
+    const metrics = (Array.isArray(doc.metrics_highlights) ? doc.metrics_highlights : []).filter(
+      (m): m is Record<string, unknown> => !!m && typeof m === 'object'
+    )
+    const services = (Array.isArray(doc.services_used) ? doc.services_used : []).filter(
+      (s): s is string => typeof s === 'string' && s.trim().length > 0
+    )
+    const storyBody = sanitizeCmsHtml(String(doc.full_story_body ?? ''))
+    const summaryCards: Array<[string, unknown]> = [
+      ['Challenge', doc.challenge_summary ?? doc.challenge],
+      ['Solution', doc.solution_summary ?? doc.solution],
+      ['Results', doc.results_summary ?? doc.results],
+    ]
+    const testimonials = extras.storyTestimonials ?? []
+    return (
+      <article className="mx-auto max-w-4xl px-6 py-16 sm:px-10">
+        {eyebrow ? <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">{eyebrow}</p> : null}
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
+        {heroImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={heroImage} alt={title} className="mt-8 w-full rounded-2xl border border-slate-200 object-cover" />
+        ) : null}
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {summaryCards.map(([label, value]) =>
+            value ? (
+              <div key={label} className="rounded-xl border border-slate-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+                <p className="mt-2 text-sm text-slate-700">{String(value)}</p>
+              </div>
+            ) : null
+          )}
+        </div>
+        {metrics.length ? (
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            {metrics.map((m, i) => (
+              <div key={i} className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center">
+                <p className="text-3xl font-semibold tracking-tight text-slate-900">{String(m.value ?? '')}</p>
+                <p className="mt-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">{String(m.label ?? '')}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {storyBody ? <div className="mt-10"><ArticleBody html={storyBody} /></div> : null}
+        {services.length ? (
+          <div className="mt-10">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Services used</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {services.map((s) => (
+                <span key={s} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700">{s}</span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {testimonials.length ? (
+          <div className="mt-10 space-y-4">
+            {testimonials.map((t, i) => (
+              <blockquote key={i} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                <p className="text-lg text-slate-700">“{t.quote}”</p>
+                {(t.name || t.role) ? (
+                  <footer className="mt-3 text-sm font-medium text-slate-500">{[t.name, t.role].filter(Boolean).join(', ')}</footer>
+                ) : null}
+              </blockquote>
+            ))}
+          </div>
+        ) : null}
+      </article>
+    )
+  }
+
+  if (collection === 'customer_reviews') {
     return (
       <section className="mx-auto max-w-4xl px-6 py-16 sm:px-10">
         <h1 className="text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
@@ -164,11 +302,6 @@ function renderTemplate(collection: CmsCollectionKey, doc: Record<string, unknow
             “{String(doc.review_text ?? doc.quote)}”
           </blockquote>
         ) : null}
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {(doc.challenge_summary || doc.challenge) ? <div className="rounded-xl border border-slate-200 p-4"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Challenge</p><p className="mt-2 text-sm text-slate-700">{String(doc.challenge_summary ?? doc.challenge)}</p></div> : null}
-          {(doc.solution_summary || doc.solution) ? <div className="rounded-xl border border-slate-200 p-4"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Solution</p><p className="mt-2 text-sm text-slate-700">{String(doc.solution_summary ?? doc.solution)}</p></div> : null}
-          {(doc.results_summary || doc.results) ? <div className="rounded-xl border border-slate-200 p-4"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Results</p><p className="mt-2 text-sm text-slate-700">{String(doc.results_summary ?? doc.results)}</p></div> : null}
-        </div>
       </section>
     )
   }
@@ -206,12 +339,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const noindex =
     (robotsMetaRaw && robotsMetaRaw.toLowerCase().includes('noindex')) ||
     doc.noindex === true ||
-    doc.indexable === false
+    doc.indexable === false ||
+    // faq-trim (2026-06-28): FAQs are embed-only — the canonical surface is the
+    // /faq hub (auto FAQPage schema) + service-page blocks. This generic page
+    // exists only for admin preview, so keep individual thin FAQ URLs out of the
+    // index rather than competing with the hub.
+    collection === 'faqs'
   const ogImage =
     (typeof doc.og_image === 'string' && doc.og_image) ||
     (typeof doc.ogImageUrl === 'string' && doc.ogImageUrl) ||
     (typeof doc.card_image === 'string' && doc.card_image) ||
     (typeof doc.featured_image === 'string' && doc.featured_image) ||
+    (typeof doc.hero_image === 'string' && doc.hero_image) ||
     (typeof doc.heroImageUrl === 'string' && doc.heroImageUrl) ||
     null
 
@@ -262,6 +401,11 @@ export default async function CmsCollectionContentPage({ params }: Props) {
   const definition = getCmsCollectionDefinition(collection)
   if (!definition) notFound()
 
+  // webinar-revamp (2026-06-28): webinars have a dedicated state-driven route at
+  // `/webinars/[slug]`. Redirect the generic URL to the canonical one so there's
+  // no duplicate-content page (and no bare JSON-ish fallback).
+  if (collection === 'webinars') redirect(`/webinars/${slug}`)
+
   const doc = await getCmsDocument(definition.key, slug)
   if (!doc) notFound()
   // FIX-047: collapsed 6-state enum to 3. Only `published` renders publicly.
@@ -286,13 +430,19 @@ export default async function CmsCollectionContentPage({ params }: Props) {
   const SENSITIVE_GENERIC_ROUTE_BLOCKLIST = new Set([
     'ebooks',
     'team_members',
-    'our_customers',
     'media_assets',
     // FIX-048: `tools` has no `renderTemplate` branch and no dedicated
     // `/tools/[slug]` route. Without this entry the generic content page
     // falls through to `<pre>JSON.stringify(doc)</pre>` and leaks the
     // entire Firestore document (including `tool_embed_code`).
     'tools',
+    // glossary-trim (2026-06-28): glossary has a dedicated `/glossary/[slug]`
+    // route — serving it here too was a duplicate-content URL. Refuse it here.
+    'glossary_terms',
+    // reviews-trim (2026-06-28): reviews are embedded testimonials only — no
+    // standalone page. (The consent gate + Review JSON-LD above are kept as a
+    // defense-in-depth safety net if a review page is ever re-enabled.)
+    'customer_reviews',
   ])
   if (SENSITIVE_GENERIC_ROUTE_BLOCKLIST.has(collection)) {
     notFound()
@@ -358,6 +508,9 @@ export default async function CmsCollectionContentPage({ params }: Props) {
 
   const blocks = Array.isArray(doc.page_blocks) ? doc.page_blocks : []
 
+  const storyTestimonials =
+    definition.key === 'customer_stories' ? await resolveStoryTestimonials(doc) : []
+
   const listingTrail = definition.listingRoute
     ? [{ name: definition.singularLabel, path: definition.listingRoute }]
     : []
@@ -368,7 +521,7 @@ export default async function CmsCollectionContentPage({ params }: Props) {
 
   return (
     <>
-      {renderTemplate(definition.key, doc)}
+      {renderTemplate(definition.key, doc, { storyTestimonials })}
       {blocks.length > 0 ? <PageBlocksRenderer blocks={blocks} /> : null}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(baseSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }} />
