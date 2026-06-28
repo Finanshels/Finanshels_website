@@ -5,6 +5,7 @@ import { PodcastBrowser } from '@/components/cms/PodcastBrowser'
 import { DevCmsBanner } from '@/components/cms/DevCmsBanner'
 import { isCmsConfigured } from '@/lib/cms/config'
 import { listPublishedPodcasts, type PodcastCardData } from '@/lib/cms/collectionRepository'
+import { CollectionHubHeader } from '@/components/cms/CollectionHubHeader'
 
 export const revalidate = 300
 
@@ -95,34 +96,12 @@ export default async function PodcastsPage() {
     <div className="bg-[#faf8f4]">
       <DevCmsBanner />
 
-      <header className="border-b border-slate-200">
-        <div className="mx-auto max-w-6xl px-6 pb-14 pt-32 sm:px-8 sm:pt-36 lg:px-12">
-          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#b3470a]">
-            Podcast · MENA finance
-          </p>
-          <h1 className="mt-5 max-w-3xl text-5xl font-bold leading-[1.02] tracking-tight text-slate-900 sm:text-6xl">
-            The Finanshels Podcast
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg text-slate-600">
-            Candid conversations on startup finance, tax, and building across the Gulf—with the founders and
-            operators living it.
-          </p>
-          <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#f16610] hover:text-[#b3470a]"
-            >
-              Read the blog
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-            {episodes.length > 0 ? (
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                {episodes.length} {episodes.length === 1 ? 'episode' : 'episodes'}
-              </span>
-            ) : null}
-          </div>
-        </div>
-      </header>
+      <CollectionHubHeader
+        eyebrow="Podcast · MENA finance"
+        title="The Finanshels Podcast"
+        subtitle="Candid conversations on startup finance, tax, and building across the Gulf—with the founders and operators living it."
+        cta={{ href: '/blog', label: 'Read the blog' }}
+      />
 
       <div className="mx-auto max-w-6xl px-6 py-16 sm:px-8 lg:px-12">
         {!cmsReady ? (

@@ -5,6 +5,7 @@ import { CustomerStoryCard } from '@/components/cms/CustomerStoryCard'
 import { CustomerReviewCard } from '@/components/cms/CustomerReviewCard'
 import { DevCmsBanner } from '@/components/cms/DevCmsBanner'
 import { IndustryIcon } from '@/components/cms/IndustryIcon'
+import { CollectionHubHeader } from '@/components/cms/CollectionHubHeader'
 import { isCmsConfigured } from '@/lib/cms/config'
 import {
   listPublishedCustomerStories,
@@ -142,43 +143,23 @@ export default async function CustomersPage({
     <div className="bg-[#faf8f4]">
       <DevCmsBanner />
 
-      <header className="border-b border-slate-200">
-        <div className="mx-auto max-w-6xl px-6 pb-14 pt-32 sm:px-8 sm:pt-36 lg:px-12">
-          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#b3470a]">
-            Customer stories · MENA finance
-          </p>
-          <h1 className="mt-5 max-w-3xl text-5xl font-bold leading-[1.02] tracking-tight text-slate-900 sm:text-6xl">
-            Outcomes, not promises
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg text-slate-600">
-            How founders and finance teams across the Gulf cut compliance time, close their books faster, and
-            stay penalty-free—with Finanshels as their embedded finance team.
-          </p>
-          <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Link
-              href="mailto:contact@finanshels.com"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#f16610] hover:text-[#b3470a]"
-            >
-              Become our next story
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-            {allStories.length > 0 ? (
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                {allStories.length} {allStories.length === 1 ? 'story' : 'stories'}
-              </span>
-            ) : null}
-          </div>
+      <CollectionHubHeader
+        eyebrow="Customer stories · MENA finance"
+        title="Outcomes, not promises"
+        subtitle="How founders and finance teams across the Gulf cut compliance time, close their books faster, and stay penalty-free—with Finanshels as their embedded finance team."
+        cta={{ href: 'mailto:contact@finanshels.com', label: 'Become our next story', external: true }}
+      />
 
-          <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4">
-            {PROOF.map((p) => (
-              <div key={p.label}>
-                <dt className="text-3xl font-bold tracking-tight text-slate-900">{p.value}</dt>
-                <dd className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{p.label}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </header>
+      <div className="mx-auto max-w-6xl px-6 pt-12 sm:px-8 lg:px-12">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4">
+          {PROOF.map((p) => (
+            <div key={p.label}>
+              <dt className="text-3xl font-bold tracking-tight text-slate-900">{p.value}</dt>
+              <dd className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{p.label}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
 
       <div className="mx-auto max-w-6xl px-6 py-16 sm:px-8 lg:px-12">
         {!cmsReady ? (

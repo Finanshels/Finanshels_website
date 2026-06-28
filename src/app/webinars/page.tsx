@@ -7,6 +7,7 @@ import { WebinarStatusBadge } from '@/components/cms/webinars/WebinarStatusBadge
 import { isCmsConfigured } from '@/lib/cms/config'
 import { listPublishedWebinars, type WebinarCardData } from '@/lib/cms/webinarsRepository'
 import { formatWebinarDate } from '@/lib/cms/webinarFormat'
+import { CollectionHubHeader } from '@/components/cms/CollectionHubHeader'
 
 export const revalidate = 300
 
@@ -91,17 +92,13 @@ export default async function WebinarsHubPage() {
 
   return (
     <main className="bg-gradient-to-b from-white to-slate-50">
-      <div className="mx-auto max-w-6xl px-4 pb-14 pt-28 sm:px-6 sm:pb-20 sm:pt-32">
-        <header className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-700">Webinars</p>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            Learn from the people who do this every day.
-          </h1>
-          <p className="mt-4 text-lg text-slate-600">
-            Live sessions and on-demand replays on UAE corporate tax, VAT, accounting, and the operating
-            playbook for scaling finance teams.
-          </p>
-        </header>
+      <CollectionHubHeader
+        eyebrow="Webinars"
+        title="Learn from the people who do this every day."
+        subtitle="Live sessions and on-demand replays on UAE corporate tax, VAT, accounting, and the operating playbook for scaling finance teams."
+        cta={{ href: '/blog', label: 'Browse the blog' }}
+      />
+      <div className="mx-auto max-w-6xl px-4 pb-14 pt-12 sm:px-6 sm:pb-20 sm:pt-16">
 
         {!hasAny ? (
           <div className="mt-12 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500">

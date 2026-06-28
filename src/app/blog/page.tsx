@@ -11,6 +11,7 @@ import { INDUSTRY_OPTION_MAP } from '@/lib/cms/industryOptions'
 import { BLOG_CATEGORY_LABELS, blogCategoryLabel } from '@/lib/cms/blogTaxonomy'
 import { estimateReadingMinutes } from '@/lib/cms/readingTime'
 import type { BlogPost } from '@/lib/cms/schemas/blog'
+import { CollectionHubHeader } from '@/components/cms/CollectionHubHeader'
 
 export const revalidate = 300
 
@@ -157,33 +158,12 @@ export default async function BlogIndexPage({
     <div className="bg-[#faf8f4]">
       <DevCmsBanner />
 
-      <header className="border-b border-slate-200">
-        <div className="mx-auto max-w-6xl px-6 pb-14 pt-32 sm:px-8 sm:pt-36 lg:px-12">
-          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#b3470a]">
-            Insights · MENA finance
-          </p>
-          <h1 className="mt-5 max-w-3xl text-5xl font-bold leading-[1.02] tracking-tight text-slate-900 sm:text-6xl">
-            The Finanshels Blog
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg text-slate-600">
-            Sharp takes on startup finance, tax, and operations—built for teams scaling across MENA.
-          </p>
-          <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Link
-              href="/glossary"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#f16610] hover:text-[#b3470a]"
-            >
-              Browse the glossary
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-            {allPosts.length > 0 ? (
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                {allPosts.length} {allPosts.length === 1 ? 'article' : 'articles'}
-              </span>
-            ) : null}
-          </div>
-        </div>
-      </header>
+      <CollectionHubHeader
+        eyebrow="Insights · MENA finance"
+        title="The Finanshels Blog"
+        subtitle="Sharp takes on startup finance, tax, and operations—built for teams scaling across MENA."
+        cta={{ href: '/glossary', label: 'Browse the glossary' }}
+      />
 
       <div className="mx-auto max-w-6xl px-6 py-16 sm:px-8 lg:px-12">
         {!cmsReady ? (
