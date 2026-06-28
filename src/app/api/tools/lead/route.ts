@@ -17,7 +17,7 @@ const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000
 const RATE_LIMIT_MAX = 10
 
 const leadSchema = z.object({
-  tool_slug: z.string().min(1).max(256),
+  tool_slug: z.string().min(1).max(128),
   service_interest: z.string().min(1).max(64),
   name: z.string().min(2).max(120),
   email: z.string().email().max(180),
@@ -29,7 +29,13 @@ const leadSchema = z.object({
       const d = v.replace(/[^0-9]/g, '')
       return d.length >= 7 && d.length <= 15
     }, 'Phone must have 7–15 digits'),
-  result_snapshot: z.record(z.string(), z.unknown()).optional(),
+  // Bounded so an attacker can't stuff large/nested payloads into Firestore via `extra`.
+  result_snapshot: z
+    .record(z.string().max(64), z.union([z.string().max(500), z.number(), z.boolean()]))
+    .refine((o) => Object.keys(o).length <= 30, 'result_snapshot too large')
+    .optional(),
+  // NOTE: Turnstile is bypassed when TURNSTILE_SECRET_KEY is unset (see turnstile.ts).
+  // That key MUST be set in production or bots can reach writeLead. Matches landing-pages route.
   turnstile_token: z.string().optional(),
 })
 
@@ -62,17 +68,18 @@ export async function POST(req: NextRequest) {
   }
   const input = parsed.data
 
-  const tool = await getToolBySlug(input.tool_slug)
-  if (!tool) {
-    return NextResponse.json({ error: 'unknown_tool' }, { status: 404 })
-  }
-
+  // Rate limit first (cheapest) so unmetered requests can't trigger a Firestore read each.
   const ip = ipFromRequest(req)
   const ipHash = hashIp(ip)
 
   const rate = await checkAndIncrementRateLimit(ipHash, RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX)
   if (!rate.allowed) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 })
+  }
+
+  const tool = await getToolBySlug(input.tool_slug)
+  if (!tool) {
+    return NextResponse.json({ error: 'unknown_tool' }, { status: 404 })
   }
 
   const turnstile = await verifyTurnstile(input.turnstile_token, ip)
@@ -90,18 +97,15 @@ export async function POST(req: NextRequest) {
       email: input.email.trim().toLowerCase(),
       landing_page_id: `tool:${tool.slug}`,
       landing_page_slug: tool.slug,
-      service_interest: tool.serviceInterest || input.service_interest,
+      service_interest: tool.serviceInterest,
       attribution: { landing_url: `/tools/${tool.slug}` },
       user_agent: userAgent,
       ip_hash: ipHash,
       source: `tool:${tool.slug}`,
       extra: input.result_snapshot ?? undefined,
     })
-  } catch (err) {
-    return NextResponse.json(
-      { error: 'persist_failed', message: err instanceof Error ? err.message : 'unknown' },
-      { status: 500 }
-    )
+  } catch {
+    return NextResponse.json({ error: 'persist_failed' }, { status: 500 })
   }
 
   try {
