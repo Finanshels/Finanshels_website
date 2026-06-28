@@ -9,6 +9,7 @@ import {
   type CmsCollectionDefinition,
   type CmsCollectionKey,
 } from './collectionDefinitions'
+import { getEffectivePublishedData } from './publishWorkflow/operations'
 import { slugifyForCms } from './slugify'
 import { deleteCmsMediaObject } from './storageUpload'
 
@@ -382,6 +383,37 @@ export async function getCmsDocument(
   const doc = await db.collection(collection).doc(id).get()
   if (!doc.exists) return null
   return normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+}
+
+/**
+ * Public-route variant of getCmsDocument.
+ *
+ * Only returns docs with status === 'published', and renders the published
+ * snapshot (falls back to draft data until the first snapshot is written).
+ * Admin/editor reads must use getCmsDocument so they always see the live draft.
+ */
+export async function getPublicCmsDocument(
+  collection: CmsCollectionKey,
+  id: string,
+  opts?: { preview?: boolean }
+): Promise<Record<string, unknown> | null> {
+  const db = getDb()
+  if (!db) return null
+  const doc = await db.collection(collection).doc(id).get()
+  if (!doc.exists) return null
+
+  const raw = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+
+  // Admin draft preview: return the working draft (raw parent fields), any
+  // status. Skips the published snapshot + the status gate. The page route's
+  // own status check is also bypassed in preview mode.
+  if (opts?.preview) return raw
+
+  if (raw.status !== 'published') return null
+
+  // Two-version: render the published snapshot (falls back to the draft until a
+  // snapshot exists). The editor reads the draft directly via getCmsDocument.
+  return getEffectivePublishedData(collection, doc.id, raw)
 }
 
 async function writeRevision(

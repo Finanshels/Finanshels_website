@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ArticleBody } from '@/components/cms/ArticleBody'
 import { DevCmsBanner } from '@/components/cms/DevCmsBanner'
+import { DraftPreviewBanner } from '@/components/cms/DraftPreviewBanner'
+import { isAdminAuthenticated } from '@/lib/cms/adminAuth'
 import { getSiteUrl } from '@/lib/cms/config'
 import { getGlossaryTermBySlug } from '@/lib/cms/glossaryRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
@@ -31,12 +33,19 @@ function decodeEntities(input: string): string {
     .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
 }
 
-type Props = { params: Promise<{ slug: string }> }
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
+type Props = { params: Promise<{ slug: string }>; searchParams: SearchParams }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params
-  const term = await getGlossaryTermBySlug(slug)
+  // noindex preview pages: gate solely on the searchParam (a non-admin's normal
+  // page never carries ?preview=1, so this can't suppress a real page's index).
+  const isPreviewRequest = (await searchParams).preview === '1'
+  const term = await getGlossaryTermBySlug(slug, { preview: isPreviewRequest })
   if (!term) return { title: 'Glossary' }
+  if (isPreviewRequest) {
+    return { title: term.term, robots: { index: false, follow: false } }
+  }
 
   // FIX-048: also decode common HTML entities so meta description doesn't
   // ship `&amp;` / `&#39;` to crawlers and SERP previews.
@@ -59,9 +68,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function GlossaryTermPage({ params }: Props) {
+export default async function GlossaryTermPage({ params, searchParams }: Props) {
   const { slug } = await params
-  const term = await getGlossaryTermBySlug(slug)
+  const preview = (await searchParams).preview === '1' && (await isAdminAuthenticated())
+  const term = await getGlossaryTermBySlug(slug, { preview })
   if (!term) notFound()
 
   const defHtml = sanitizeCmsHtml(term.definition)
@@ -101,6 +111,7 @@ export default async function GlossaryTermPage({ params }: Props) {
 
   return (
     <>
+      {preview ? <DraftPreviewBanner /> : null}
       <DevCmsBanner />
       <script
         type="application/ld+json"

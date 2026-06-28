@@ -1,20 +1,24 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ArticleBody } from '@/components/cms/ArticleBody'
+import { DraftPreviewBanner } from '@/components/cms/DraftPreviewBanner'
 import { PageBlocksRenderer } from '@/components/cms/PageBlocksRenderer'
+import { isAdminAuthenticated } from '@/lib/cms/adminAuth'
 import { getSiteUrl } from '@/lib/cms/config'
 import {
   CMS_COLLECTION_DEFINITION_MAP,
   getCmsCollectionDefinition,
   type CmsCollectionKey,
 } from '@/lib/cms/collectionDefinitions'
-import { getCmsDocument } from '@/lib/cms/collectionRepository'
+import { getPublicCmsDocument } from '@/lib/cms/collectionRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 type Props = {
   params: Promise<{ collection: string; slug: string }>
+  searchParams: SearchParams
 }
 
 function resolveTitle(doc: Record<string, unknown>, fallback: string): string {
@@ -184,13 +188,23 @@ function renderTemplate(collection: CmsCollectionKey, doc: Record<string, unknow
   )
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { collection, slug } = await params
   const definition = getCmsCollectionDefinition(collection)
   if (!definition) return { title: 'Content' }
 
-  const doc = await getCmsDocument(definition.key, slug)
+  // noindex preview pages: gate solely on the searchParam (a non-admin's normal
+  // page never carries ?preview=1).
+  const isPreviewRequest = (await searchParams).preview === '1'
+  const doc = await getPublicCmsDocument(definition.key, slug, { preview: isPreviewRequest })
   if (!doc) return { title: 'Content' }
+
+  if (isPreviewRequest) {
+    return {
+      title: resolveTitle(doc, `${definition.singularLabel} | Finanshels`),
+      robots: { index: false, follow: false },
+    }
+  }
 
   const title = resolveTitle(doc, `${definition.singularLabel} | Finanshels`)
   const description = resolveDescription(doc)
@@ -257,18 +271,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function CmsCollectionContentPage({ params }: Props) {
+export default async function CmsCollectionContentPage({ params, searchParams }: Props) {
   const { collection, slug } = await params
   const definition = getCmsCollectionDefinition(collection)
   if (!definition) notFound()
 
-  const doc = await getCmsDocument(definition.key, slug)
+  const preview = (await searchParams).preview === '1' && (await isAdminAuthenticated())
+  const doc = await getPublicCmsDocument(definition.key, slug, { preview })
   if (!doc) notFound()
   // FIX-047: collapsed 6-state enum to 3. Only `published` renders publicly.
   // The `scheduled` time-windowed visibility branch is gone — scheduled
   // publishing has been removed from the workflow.
+  // In admin preview mode the status gate is skipped so a draft-status doc is
+  // viewable; the sensitive-collection + consent gates below still apply.
   const status = String(doc.status ?? 'draft')
-  if (status !== 'published') notFound()
+  if (!preview && status !== 'published') notFound()
 
   // FIX-003: customer_reviews require explicit signed consent before going
   // public. Without this gate, status=published alone bypasses approval —
@@ -368,6 +385,7 @@ export default async function CmsCollectionContentPage({ params }: Props) {
 
   return (
     <>
+      {preview ? <DraftPreviewBanner /> : null}
       {renderTemplate(definition.key, doc)}
       {blocks.length > 0 ? <PageBlocksRenderer blocks={blocks} /> : null}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(baseSchema) }} />

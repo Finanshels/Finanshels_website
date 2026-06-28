@@ -55,6 +55,15 @@ export type LandingPageDoc = {
   created_by: string
   updated_by: string
 
+  /**
+   * Two-version publish meta (parent-doc bookkeeping, not editable content).
+   * The published snapshot lives at `landing_pages/<id>/_published/current`;
+   * these flags let the editor render draft↔live separation. Set by
+   * publishWorkflow operations (publishDoc / markDraftDirty), never by the form.
+   */
+  has_unpublished_changes: boolean
+  last_published_at: Date | null
+
   service_interest: string
   google_ads_conversion_id: string
   conversion_labels: LandingPageConversionLabels

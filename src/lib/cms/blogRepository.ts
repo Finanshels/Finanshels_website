@@ -2,6 +2,7 @@ import 'server-only'
 import type { Firestore, QueryDocumentSnapshot } from 'firebase-admin/firestore'
 import { COLLECTIONS, getDb } from './firestore'
 import { normalizeFirestoreTimestamps } from './normalizeDoc'
+import { getEffectivePublishedData } from './publishWorkflow/operations'
 import { parseBlogPost, type BlogPost } from './schemas/blog'
 
 // FIX-048: the `author` field on blog_posts is a reference to a team_members
@@ -47,7 +48,10 @@ export async function listPublishedBlogPosts(): Promise<BlogPost[]> {
   return posts
 }
 
-export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
+export async function getBlogPostBySlug(
+  slug: string,
+  opts?: { preview?: boolean }
+): Promise<BlogPost | null> {
   const db = getDb()
   if (!db) return null
 
@@ -60,7 +64,21 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
     doc = byField.docs[0]!
   }
 
-  const parsed = parseBlogPost(normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>), doc.id)
+  const raw = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+
+  // Admin draft preview: render the working draft (raw parent fields), any
+  // status. Skips the published snapshot + the status gate.
+  if (opts?.preview) {
+    const draft = parseBlogPost(raw, doc.id)
+    return draft ? resolveAuthorDisplayName(db, draft) : null
+  }
+
+  if (raw.status !== 'published') return null
+
+  // Two-version: render the published snapshot (falls back to the draft until a
+  // snapshot exists). The editor reads the draft directly via getCmsDocument.
+  const effective = await getEffectivePublishedData(COLLECTIONS.blogPosts, doc.id, raw)
+  const parsed = parseBlogPost(effective, doc.id)
   if (!parsed || parsed.status !== 'published') return null
   return resolveAuthorDisplayName(db, parsed)
 }

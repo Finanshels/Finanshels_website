@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getDb } from '../cms/firestore'
 import { normalizeFirestoreTimestamps } from '../cms/normalizeDoc'
+import { getEffectivePublishedData } from '../cms/publishWorkflow/operations'
 import { slugifyForCms } from '../cms/slugify'
 import {
   LANDING_PAGE_COLLECTION,
@@ -91,6 +92,8 @@ function deserialise(id: string, raw: Record<string, unknown>): LandingPageDoc {
     internal_name: readStr(n.internal_name),
     status: statusOf(n.status),
     published_at: toDate(n.published_at),
+    last_published_at: toDate(n.last_published_at),
+    has_unpublished_changes: readBool(n.has_unpublished_changes, false),
     created_at: toDate(n.created_at),
     updated_at: toDate(n.updated_at),
     created_by: readStr(n.created_by),
@@ -166,13 +169,23 @@ export function normaliseSlug(input: string): string {
   return slugifyForCms(input)
 }
 
-export async function getLandingPageBySlug(slug: string): Promise<LandingPageDoc | null> {
+export async function getLandingPageBySlug(
+  slug: string,
+  opts?: { preview?: boolean }
+): Promise<LandingPageDoc | null> {
   const db = getDb()
   if (!db) return null
   const snap = await db.collection(LANDING_PAGE_COLLECTION).where('slug', '==', slug).limit(1).get()
   if (snap.empty) return null
   const doc = snap.docs[0]
-  return deserialise(doc.id, doc.data() ?? {})
+  // Admin draft preview: render the working draft (raw parent fields), any
+  // status. Skips the published snapshot.
+  if (opts?.preview) return deserialise(doc.id, doc.data() ?? {})
+  // Two-version: public reads render the published snapshot (falls back to the
+  // draft until a snapshot exists). The editor loads by id (getLandingPageById)
+  // and always sees the draft.
+  const effective = await getEffectivePublishedData(LANDING_PAGE_COLLECTION, doc.id, doc.data() ?? {})
+  return deserialise(doc.id, effective)
 }
 
 export async function getLandingPageById(id: string): Promise<LandingPageDoc | null> {
@@ -224,7 +237,14 @@ export async function listPublishedSlugs(): Promise<string[]> {
 
 export type LandingPageWriteInput = Omit<
   LandingPageDoc,
-  'id' | 'created_at' | 'updated_at' | 'published_at' | 'created_by' | 'updated_by'
+  | 'id'
+  | 'created_at'
+  | 'updated_at'
+  | 'published_at'
+  | 'last_published_at'
+  | 'has_unpublished_changes'
+  | 'created_by'
+  | 'updated_by'
 > & {
   published_at?: Date | null
 }
@@ -318,6 +338,8 @@ export async function duplicateLandingPage(id: string, userId: string): Promise<
     created_at: _c,
     updated_at: _u,
     published_at: _p,
+    last_published_at: _lp,
+    has_unpublished_changes: _huc,
     created_by: _cb,
     updated_by: _ub,
     ...rest
