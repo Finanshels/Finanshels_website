@@ -3,6 +3,7 @@ import { getSiteUrl } from '@/lib/cms/config'
 import { listPublishedTools } from '@/lib/cms/toolsRepository'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 import { ToolsHubGrid, type HubTool } from '@/components/tools/ToolsHubGrid'
+import { CollectionHubHeader } from '@/components/cms/CollectionHubHeader'
 
 export const revalidate = 600
 
@@ -50,15 +51,15 @@ export default async function ToolsHubPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-16 pt-28 sm:pt-32">
+    <main>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
-      <header>
-        <h1 className="text-3xl font-bold text-slate-900 md:text-4xl">Free finance & tax tools</h1>
-        <p className="mt-2 max-w-2xl text-lg text-slate-600">
-          Run the numbers in seconds. Built for UAE businesses by Finanshels.
-        </p>
-      </header>
-      <div className="mt-8">
+      <CollectionHubHeader
+        eyebrow="Free tools"
+        title="Free finance & tax tools"
+        subtitle="Run the numbers in seconds. Built for UAE businesses by Finanshels."
+        cta={{ href: '/blog', label: 'Browse the blog' }}
+      />
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-12 sm:pt-16">
         {hubTools.length > 0 ? (
           <ToolsHubGrid tools={hubTools} />
         ) : (
