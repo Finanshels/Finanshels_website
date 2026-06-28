@@ -3,7 +3,6 @@ import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import CardPreview from '@/components/cms/admin/CardPreview'
 import { AdminSidebar } from '@/components/cms/admin/AdminSidebar'
-import { AutosaveShell } from '@/components/cms/admin/AutosaveShell'
 import { AiFieldButton } from '@/components/cms/admin/ai/AiFieldButton'
 import { resolveAiField, type AiContext } from '@/lib/cms/ai/fieldMap'
 import { getFieldHelperText } from '@/lib/cms/fieldHelperText'
@@ -53,6 +52,12 @@ import {
 } from '@/lib/cms/collectionRepository'
 import { isCmsConfigured } from '@/lib/cms/config'
 import { decodeFieldValue, encodeFieldValue, InvalidFieldValueError } from '@/lib/cms/fieldCodec'
+// Two-version publish workflow (Phase 4): Publish/Republish writes a published
+// snapshot via publishDoc; Unpublish flips status via unpublishDoc; saves recompute
+// has_unpublished_changes via markDraftDirty. Operations never revalidate — the
+// caller (these actions) owns revalidation, matching the repo's existing pattern.
+import { publishDoc, unpublishDoc, markDraftDirty } from '@/lib/cms/publishWorkflow/operations'
+import { EditorPublishBar } from '@/components/cms/admin/EditorPublishBar'
 
 type SearchParams = Promise<{
   saved?: string
@@ -430,6 +435,12 @@ async function saveCmsDocumentAction(formData: FormData) {
     if (isRename) {
       await deleteCmsDocument(definition.key, cmsOriginalSlug)
     }
+    // Two-version workflow: a draft save NEVER touches the published snapshot —
+    // it only recomputes has_unpublished_changes (draft vs snapshot). For a
+    // published doc this flags the diverged draft so the header shows Republish;
+    // for a draft it compares against any prior snapshot. Editing a published doc
+    // therefore no longer changes the live page until Publish/Republish.
+    await markDraftDirty(definition.key, slug, payload)
   } catch {
     redirect(`${isCreate ? editorBaseCreate : editorBaseEdit(slug)}&error=save-failed`)
   }
@@ -437,6 +448,59 @@ async function saveCmsDocumentAction(formData: FormData) {
   invalidateCmsCaches(definition.key, slug)
   // Revalidate the old route too so the renamed-away URL stops serving stale content.
   if (isRename) invalidateCmsCaches(definition.key, cmsOriginalSlug)
+  redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(slug)}&saved=1`)
+}
+
+/** "Published 12 Jun 2026" label for the publish bar (null when never published). */
+function formatPublishedAtLabel(value: unknown): string | null {
+  if (!value) return null
+  const date = value instanceof Date ? value : new Date(String(value))
+  if (Number.isNaN(date.getTime())) return null
+  return `Published ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+}
+
+/**
+ * Publish / Republish (admin/owner only). Serves BOTH: the publishWorkflow op
+ * copies the current draft → `<id>/_published/current`, denormalises the card,
+ * and sets publish meta. THEN we revalidate (the op intentionally does not).
+ * `collection`/`slug` are bound by the editor so the form carries no fields.
+ */
+async function publishCmsDocumentAction(collection: string, slug: string, _formData: FormData) {
+  'use server'
+  const session = await requireAdminAuth('admin')
+  const definition = getCmsCollectionDefinition(collection)
+  if (!definition || !slug.trim()) redirect('/admin/cms?error=invalid-input')
+
+  try {
+    await publishDoc(definition.key, slug, sessionDisplayName(session))
+  } catch {
+    redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(slug)}&error=publish-failed`)
+  }
+
+  // Caller-owned revalidation: doc route + listing + sitemap + llms now reflect
+  // the freshly written snapshot.
+  invalidateCmsCaches(definition.key, slug)
+  redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(slug)}&saved=1`)
+}
+
+/**
+ * Unpublish (admin/owner only): flip status to draft so the live URL 404s. The
+ * published snapshot is retained (cheap re-publish). Revalidate so the now-
+ * unpublished route stops serving.
+ */
+async function unpublishCmsDocumentAction(collection: string, slug: string, _formData: FormData) {
+  'use server'
+  await requireAdminAuth('admin')
+  const definition = getCmsCollectionDefinition(collection)
+  if (!definition || !slug.trim()) redirect('/admin/cms?error=invalid-input')
+
+  try {
+    await unpublishDoc(definition.key, slug, 'draft')
+  } catch {
+    redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(slug)}&error=unpublish-failed`)
+  }
+
+  invalidateCmsCaches(definition.key, slug)
   redirect(`/admin/cms?collection=${definition.key}&slug=${encodeURIComponent(slug)}&saved=1`)
 }
 
@@ -1284,23 +1348,28 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                       Saved · cache refreshed
                     </span>
                   ) : null}
-                  {params.slug ? (
-                    <AutosaveShell
+                  {/* Two-version publish bar: autosave + Publish/Republish/Unpublish
+                      (via publishDoc) + Preview/View. Supersedes the old AutosaveShell
+                      and View link; the segmented control below keeps only the
+                      draft-side Draft / In Review status changes. */}
+                  {definition.routePattern && publicSlug ? (
+                    <EditorPublishBar
                       formId="cms-editor-form"
                       collection={definition.key}
                       slug={params.slug}
-                      currentStatus={currentStatus}
+                      status={currentStatus as 'draft' | 'in_review' | 'published' | 'archived'}
+                      hasUnpublishedChanges={Boolean(formValues.has_unpublished_changes)}
+                      canPublish={ROLE_RANK[role] >= ROLE_RANK['admin']}
+                      publishedAtLabel={formatPublishedAtLabel(formValues.published_at)}
+                      previewUrl={`${definition.routePattern.replace('[slug]', publicSlug)}?preview=1`}
+                      liveUrl={
+                        currentStatus === 'published'
+                          ? definition.routePattern.replace('[slug]', publicSlug)
+                          : null
+                      }
+                      publishAction={publishCmsDocumentAction.bind(null, definition.key, publicSlug)}
+                      unpublishAction={unpublishCmsDocumentAction.bind(null, definition.key, publicSlug)}
                     />
-                  ) : null}
-                  {definition.routePattern && publicSlug ? (
-                    <a
-                      href={definition.routePattern.replace('[slug]', publicSlug)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-cms-rule bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-cms-hover"
-                    >
-                      <span aria-hidden>↗</span> View
-                    </a>
                   ) : null}
                   {/*
                     FIX-047: status workflow collapsed to 3 states. The segmented
@@ -1338,24 +1407,11 @@ export default async function CmsAdminPage({ searchParams }: { searchParams: Sea
                     >
                       In Review
                     </button>
-                    <button
-                      type="submit"
-                      name="requestedStatus"
-                      value="published"
-                      disabled={ROLE_RANK[role] < ROLE_RANK['admin']}
-                      title={
-                        ROLE_RANK[role] < ROLE_RANK['admin']
-                          ? 'Owner / admin only'
-                          : 'Publish now'
-                      }
-                      className={`border-l border-cms-rule px-2.5 py-2 transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                        currentStatus === 'published'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'text-slate-600 hover:bg-cms-soft'
-                      }`}
-                    >
-                      Published
-                    </button>
+                    {/* "Published" removed from the form-save segmented control:
+                        publishing now goes through the EditorPublishBar's Publish/
+                        Republish action (publishDoc → snapshot), which is the only
+                        path that writes the live snapshot. Draft / In Review remain
+                        here as draft-side status changes. */}
                   </div>
                   <button
                     type="submit"
