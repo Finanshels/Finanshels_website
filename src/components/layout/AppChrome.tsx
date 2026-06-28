@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { ChatWidget } from '../chat/ChatWidget'
 import Footer from './Footer'
 import Navbar from './Navbar'
+import type { NavTool } from '@/lib/tools/types'
 
 /**
  * Admin routes render without the marketing shell (nav + footer), which was
@@ -19,7 +20,13 @@ import Navbar from './Navbar'
  * `h-dvh overflow-hidden` shell (see src/app/admin/cms/page.tsx), so it stays
  * pinned to the viewport while listings/settings scroll the page.
  */
-export default function AppChrome({ children }: { children: React.ReactNode }) {
+export default function AppChrome({
+  children,
+  navTools = [],
+}: {
+  children: React.ReactNode
+  navTools?: NavTool[]
+}) {
   const pathname = usePathname()
   const isAdmin = pathname.startsWith('/admin')
   const isLandingPage = pathname.startsWith('/landing-pages')
@@ -39,8 +46,16 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar />
-      <main className="flex-1">{children}</main>
+      <Navbar navTools={navTools} />
+      {/*
+        Global breathing room under the fixed 80px (h-20) navbar so the first
+        section never butts against it. Kept WELL under the navbar height: on
+        full-bleed hero pages (e.g. the dark homepage hero) the shifted top strip
+        stays hidden behind the ~90%-opaque blurred navbar, while heading-first
+        content pages (guides, listings) gain a consistent gap. Per-page heroes
+        keep their own pt on top of this.
+      */}
+      <main className="flex-1 pt-6 sm:pt-8">{children}</main>
       <Footer />
       <ChatWidget />
     </div>

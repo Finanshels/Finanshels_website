@@ -65,6 +65,12 @@ export interface ServicePage {
   /** Optional eyebrow + heading overrides for the challenges section. */
   challengesEyebrow?: string
   challengesHeading?: string
+  /** Headline fixed/one-time price, e.g. "AED 499". When set, renders the Pricing section. */
+  price?: string
+  /** Unit shown after the price, e.g. "one-time", "per filing", "per quarter". */
+  priceUnit?: string
+  /** When true, also surfaces "included in monthly plans" with a /pricing link. */
+  priceInPlans?: boolean
   /** Tiered pricing. When present, replaces the default "$219/mo" snapshot. */
   pricingTiers?: ServicePricingTier[]
   /** One-time services listed under the pricing tiers. */
@@ -76,13 +82,14 @@ export interface ServicePage {
 export const SERVICE_PAGES: Record<string, ServicePage> = {
   'corporate-tax-registration-uae': {
     title: 'Corporate Tax Registration UAE',
-    subtitle: 'UAE Corporate Tax registration — done correctly, in 48 hours.',
+    price: 'AED 499',
+    priceUnit: 'one-time',
+    subtitle: 'UAE Corporate Tax registration — done correctly, the first time.',
     description:
-      'Every UAE business must register for Corporate Tax. The penalty for non-registration is a flat AED 10,000 — regardless of whether you owe any tax. We confirm your entity classification, conduct a QFZP assessment for free zone entities, and complete EmaraTax portal submission within 48 hours.',
+      'Every UAE business must register for Corporate Tax. The penalty for non-registration is a flat AED 10,000 — regardless of whether you owe any tax. We confirm your entity classification, conduct a QFZP assessment for free zone entities, and complete your EmaraTax portal submission end to end.',
     stats: [
       { label: 'Entities registered', value: '900+' },
       { label: 'Non-registration penalty', value: 'AED 10k' },
-      { label: 'Registration turnaround', value: '48 hrs' },
     ],
     problems: [
       'Your UAE business is not yet registered for Corporate Tax — the AED 10,000 penalty applies now, not when you eventually file.',
@@ -97,7 +104,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     valueProps: [
       'Entity classification confirmed — Resident Person, Non-Resident, or Qualifying Free Zone Person — so exemptions and rates are applied correctly from day one.',
       'QFZP assessment for free zone entities: we document the basis for the 0% rate so it stands up under FTA scrutiny.',
-      'EmaraTax portal submission completed within 48 hours of receiving documents. CT TRN typically arrives within 3–5 business days.',
+      'EmaraTax portal submission handled end to end once we have your documents, with your CT TRN tracked through to issuance.',
       'CT deadlines added to your compliance calendar immediately after registration.',
       'Tax Group eligibility assessed for multi-entity businesses.',
     ],
@@ -123,8 +130,8 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     ],
     caseStudy: {
       logo: 'Global Holding',
-      headline: 'Registered 14 subsidiaries in three weeks, avoided AED 140,000 in penalties',
-      result: 'Finanshels coordinated shareholder documents, conducted QFZP assessments for 6 free zone entities, and hit every FTA deadline ahead of schedule.',
+      headline: 'Registered 14 subsidiaries, avoided AED 140,000 in penalties',
+      result: 'Finanshels coordinated shareholder documents, conducted QFZP assessments for 6 free zone entities, and hit every FTA deadline.',
     },
     faqs: [
       {
@@ -156,13 +163,15 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
 
   'corporate-tax-filing-uae': {
     title: 'Corporate Tax Filing UAE',
+    price: 'AED 1,500',
+    priceUnit: 'per filing',
+    priceInPlans: true,
     subtitle: 'Clean returns, documented positions, no nasty surprises — or we pay.',
     description:
       'Your CT return touches your chart of accounts, related-party transactions, taxable income calculation, and EmaraTax submission. One misstep creates a position you carry into every return that follows. We review your books, prepare the full computation with working papers, and file before your deadline — or we cover the penalty.',
     stats: [
       { label: 'CT returns filed', value: '800+' },
       { label: 'Penalties avoided', value: 'AED 6M+' },
-      { label: 'Average turnaround', value: '10 days' },
     ],
     problems: [
       'Your books have not been reconciled against your VAT history — the FTA cross-matches both, and discrepancies trigger scrutiny.',
@@ -236,13 +245,14 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
 
   'vat-registration-uae': {
     title: 'VAT Registration UAE',
+    price: 'AED 499',
+    priceUnit: 'one-time',
     subtitle: 'UAE VAT registration — threshold checked, TRN issued, compliance set up from day one.',
     description:
-      'Miss the AED 375,000 threshold and the FTA penalty is AED 20,000 — plus retrospective liability. Register on time and you start recovering input VAT on your own costs. We handle everything from threshold assessment to TRN issuance. Most clients are registered within a week.',
+      'Miss the AED 375,000 threshold and the FTA penalty is AED 20,000 — plus retrospective liability. Register on time and you start recovering input VAT on your own costs. We handle everything from threshold assessment to TRN issuance.',
     stats: [
       { label: 'Registrations completed', value: '650+' },
       { label: 'Rejected filings', value: '0' },
-      { label: 'Typical turnaround', value: '1 week' },
     ],
     problems: [
       'Your taxable supplies have crossed AED 375,000 but you have not yet registered — the AED 20,000 late registration penalty and retrospective VAT liability are accumulating.',
@@ -256,7 +266,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     ],
     valueProps: [
       'Threshold position checked before anything else — we assess your taxable supplies, confirm your obligation, and flag any retrospective exposure.',
-      'Full process end-to-end: threshold assessment, VAT scheme selection, EmaraTax application, TRN issuance — most clients registered within a week.',
+      'Full process end to end: threshold assessment, VAT scheme selection, EmaraTax application, and TRN issuance — managed start to finish.',
       'Late registration handled regularly — including calculating retrospective liability and offsetting against recoverable input VAT where possible.',
       'VAT scheme selected for your business type, not by default — standard, cash basis, or mixed supply from day one.',
       'One team handles VAT registration, filing, and everything after — nothing gets handed off.',
@@ -266,7 +276,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
       'Assess standard-rated, zero-rated, and exempt income sources for your business.',
       'Select the right VAT accounting basis and scheme for your business type.',
       'Complete and submit EmaraTax VAT registration application.',
-      'TRN issuance — typically within 3–5 business days — then invoice template review and compliance calendar setup.',
+      'TRN issuance, then invoice template review and compliance calendar setup.',
     ],
     solutions: [
       'Mandatory VAT registration — threshold assessment, documentation, EmaraTax submission, TRN.',
@@ -316,9 +326,12 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
 
   'vat-filing-uae': {
     title: 'VAT Filing UAE',
+    price: 'AED 500',
+    priceUnit: 'per quarter',
+    priceInPlans: true,
     subtitle: 'UAE VAT filing — right rate, right time, every quarter — or we pay.',
     description:
-      'Most VAT errors are not about complexity — they are about consistency. Correct transaction coding, timely reconciliation, and portal submission every quarter without fail. We prepare your return within 48 hours of period-end and file before the 28th. If we miss the deadline or get it wrong, we cover the penalty.',
+      'Most VAT errors are not about complexity — they are about consistency. Correct transaction coding, timely reconciliation, and portal submission every quarter without fail. We prepare your return and file before the 28th. If we miss the deadline or get it wrong, we cover the penalty.',
     stats: [
       { label: 'VAT returns filed', value: '7,500+' },
       { label: 'Input VAT adjustments caught', value: 'AED 12M' },
@@ -417,7 +430,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     valueProps: [
       'Deep UAE knowledge — UAE Commercial Companies Law, FTA regulations, and free zone requirements across JAFZA, DMCC, DIFC, ADGM, and more, inside out.',
       'Certified professionals with UAE Ministry of Economy audit approval — CPA, CA, ACCA, CMA.',
-      'Advanced audit software and automated testing — faster turnaround without cutting corners.',
+      'Advanced audit software and automated testing — thorough coverage without cutting corners.',
       'We do not disappear after the report — post-audit advisory support, recommendations implementation, and year-round guidance.',
       'Trusted by 7,000+ UAE businesses with a consistent delivery record.',
     ],
@@ -472,12 +485,14 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
 
   'company-liquidation-dubai': {
     title: 'Company Liquidation Dubai',
+    price: 'AED 5,000',
+    priceUnit: 'one-time',
+    priceInPlans: true,
     subtitle: 'Closing your UAE company — done cleanly, done right.',
     description:
       'Winding up a UAE company is not just notifying the licensing authority and walking away. You need final accounts, FTA clearance for VAT and Corporate Tax, settled employee entitlements, and a liquidation report — each with its own deadlines, paperwork, and penalties. We handle every financial and compliance step so you close without surprises.',
     stats: [
       { label: 'Liquidations executed', value: '80+' },
-      { label: 'Average completion', value: '45–90 days' },
       { label: 'Countries supported', value: '9' },
     ],
     problems: [
@@ -521,7 +536,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     ],
     caseStudy: {
       logo: 'Stealth SaaS',
-      headline: 'Closed UAE entity remotely in 45 days while founders focused on relaunch',
+      headline: 'Closed a UAE entity remotely while founders focused on relaunch',
       result: 'Finanshels handled all authority communications, employee settlements, and FTA clearances — zero admin burden for the founding team throughout.',
     },
     faqs: [
@@ -556,7 +571,6 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     stats: [
       { label: 'Entities filed', value: '800+' },
       { label: 'Penalties avoided', value: 'AED 6M+' },
-      { label: 'Average turnaround', value: '10 days' },
     ],
     valueProps: [
       'Data gathering and audit-ready workpapers from ERPs, banks, and spend tools.',
@@ -581,7 +595,6 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     description:
       'Dedicated controllers close books, reconcile banks/PSPs, and deliver board-grade packs so you never enter a fundraising meeting blind.',
     stats: [
-      { label: 'Avg. close time', value: '5 days' },
       { label: 'Accounts automated', value: '150+' },
       { label: 'Dashboards shipped', value: '60+' },
     ],
@@ -597,7 +610,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     ],
     caseStudy: {
       logo: 'Sarwa',
-      headline: 'Reduced month-end from 20 days to 4 days',
+      headline: 'Cut month-end close from weeks to days',
       result: 'Multi-entity consolidation with PSP feeds allowed the leadership team to run weekly profitability reviews.',
     },
   },
@@ -661,7 +674,6 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
       'Teams maintain registers, filings, policies, and evidence so audits are straightforward and founders sleep better.',
     stats: [
       { label: 'Compliance rituals automated', value: '500+' },
-      { label: 'Average SLA', value: '24 hrs' },
     ],
     valueProps: [
       'AML/CFT policy creation, training, and ongoing monitoring.',
@@ -726,7 +738,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     ],
     caseStudy: {
       logo: 'Global Holding',
-      headline: 'Registered 14 subsidiaries in three weeks',
+      headline: 'Registered 14 subsidiaries across the group',
       result: 'Avoided AED 50k+ in penalties by hitting every deadline early.',
     },
   },
@@ -751,7 +763,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     ],
     caseStudy: {
       logo: 'Stealth SaaS',
-      headline: 'Closed UAE entity remotely in 45 days',
+      headline: 'Closed a UAE entity remotely, end to end',
       result: 'Founders focused on relaunch while we handled authorities and employees.',
     },
   },
@@ -763,7 +775,6 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
       'Our bench plugs into your org chart full-time or part-time, backed by Finanshels IP and tooling.',
     stats: [
       { label: 'Experts deployed', value: '60+' },
-      { label: 'Average onboarding', value: '72 hrs' },
     ],
     valueProps: [
       'Pre-vetted finance talent with sector specialisation.',
@@ -773,7 +784,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     workflow: [
       'Define role outcomes + KPIs.',
       'Match with the right expert and run joint onboarding.',
-      'Review impact every 30 days with our talent partners.',
+      'Review impact regularly with our talent partners.',
     ],
     caseStudy: {
       logo: 'VC-backed Fintech',
@@ -880,7 +891,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     caseStudy: {
       logo: 'DesertCart',
       headline: 'Recovered AED 450k in marketplace deductions',
-      result: 'Automated reconciliation flagged disputes within 24 hours.',
+      result: 'Automated reconciliation flagged disputes as they surfaced.',
     },
   },
 
@@ -904,7 +915,7 @@ export const SERVICE_PAGES: Record<string, ServicePage> = {
     ],
     caseStudy: {
       logo: 'SME Collective',
-      headline: 'Transformed finance in 60 days',
+      headline: 'Transformed their finance function end to end',
       result: 'Owners finally had clarity on margins, cash, and compliance risk.',
     },
   },

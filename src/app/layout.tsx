@@ -4,6 +4,8 @@ import '../styles/globals.css'
 import AppChrome from '../components/layout/AppChrome'
 import CookieConsent from '../components/layout/CookieConsent'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
+import { getNavTools } from '@/lib/cms/toolsRepository'
+import type { NavTool } from '@/lib/tools/types'
 
 // Inter is the single brand typeface — used for both body and headings. The
 // Tailwind `display` family also points at --font-sans, so `font-display`
@@ -69,8 +71,9 @@ const organizationSchema = {
   description: SITE_DESCRIPTION,
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'in5 Tech, Dubai Internet City',
+    streetAddress: 'Office 406, Publishing Pavilion, Dubai Production City',
     addressLocality: 'Dubai',
+    addressRegion: 'Dubai',
     addressCountry: 'AE',
   },
   contactPoint: {
@@ -89,7 +92,17 @@ const organizationSchema = {
   ],
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // The navbar's Tools menu is CMS-driven. Fetch featured tools here (the only
+  // server boundary above the client navbar) and pass them down. Degrade to an
+  // empty list on failure — nav chrome must never 500 the entire site.
+  let navTools: NavTool[] = []
+  try {
+    navTools = await getNavTools()
+  } catch {
+    navTools = []
+  }
+
   return (
     <html lang="en" className={`${fontSans.variable}`}>
       <body className="font-sans antialiased bg-white text-slate-900">
@@ -97,7 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationSchema) }}
         />
-        <AppChrome>{children}</AppChrome>
+        <AppChrome navTools={navTools}>{children}</AppChrome>
         <CookieConsent />
       </body>
     </html>

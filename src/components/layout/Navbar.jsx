@@ -29,9 +29,6 @@ import {
   Scale,
   Wallet,
   HeartPulse,
-  CalendarClock,
-  Coins,
-  Percent,
   Receipt,
   Heart,
   HeartHandshake,
@@ -91,7 +88,10 @@ const SERVICES_SECTIONS = [
   }
 ]
 
-const RESOURCES_SECTIONS = [
+// Knowledge + Quick Reference are static. The third column ("Tools") is built at
+// render time from CMS-featured tools passed in via the `navTools` prop, so the
+// menu always mirrors what's live under /tools/[slug].
+const RESOURCES_STATIC_SECTIONS = [
   {
     title: 'Knowledge',
     items: [
@@ -107,45 +107,44 @@ const RESOURCES_SECTIONS = [
       { name: 'Cheat Sheets', href: '/guides', icon: ListChecks },
       { name: 'Templates', href: '/guides', icon: LayoutTemplate }
     ]
-  },
-  {
-    title: 'Calculators',
-    items: [
-      { name: 'Cash Flow', href: '/tools', icon: Wallet },
-      { name: 'Gratuity', href: '/tools', icon: Coins },
-      { name: 'VAT', href: '/tools', icon: Percent },
-      { name: 'E-Invoicing', href: '/tools', icon: Receipt }
-    ]
-  },
-  {
-    title: 'Benchmarks & Checks',
-    items: [
-      { name: 'Salary Benchmark', href: '/tools', icon: Scale },
-      { name: 'Finance Health Check', href: '/tools', icon: HeartPulse },
-      { name: 'CT Deadline Check', href: '/tools', icon: CalendarClock }
-    ]
   }
 ]
+
+const HTTP_RE = /^https?:\/\//
+
+/** Map CMS-featured tools to a navbar "Tools" section. Falls back to a single hub
+ *  link when nothing is featured, so the column is never empty. */
+function buildToolsSection(navTools) {
+  const items = (navTools || []).map((tool) => {
+    const icon = typeof tool.icon === 'string' ? tool.icon.trim() : ''
+    return {
+      name: tool.toolName,
+      href: `/tools/${tool.slug}`,
+      icon: Calculator,
+      iconImage: HTTP_RE.test(icon) ? icon : undefined,
+      iconEmoji: icon && !HTTP_RE.test(icon) && icon.length <= 4 ? icon : undefined
+    }
+  })
+  return {
+    title: 'Tools',
+    items: items.length > 0 ? items : [{ name: 'Browse all tools', href: '/tools', icon: Calculator }]
+  }
+}
 
 const COMPANY_SECTIONS = [
   {
     title: 'About',
     items: [
       { name: 'About Us', href: '/about', icon: Building2 },
-      { name: 'Customers', href: '/customers', icon: Heart }
-    ]
-  },
-  {
-    title: 'Connect',
-    items: [
-      { name: 'Partners', href: 'https://partner.finanshels.com', icon: HeartHandshake },
+      { name: 'Customers', href: '/customers', icon: Heart },
       { name: 'Contact', href: '/contact', icon: MessageSquare }
     ]
   },
   {
-    title: 'Careers',
+    title: 'Collaborate',
     items: [
-      { name: 'Careers', badge: "We're hiring!", href: '/careers', icon: Briefcase }
+      { name: 'Careers', badge: "We're hiring!", href: '/careers', icon: Briefcase },
+      { name: 'Partners', href: 'https://partner.finanshels.com', icon: HeartHandshake }
     ]
   },
   {
@@ -159,7 +158,10 @@ const COMPANY_SECTIONS = [
   }
 ]
 
-export default function Navbar() {
+/**
+ * @param {{ navTools?: import('@/lib/tools/types').NavTool[] }} props
+ */
+export default function Navbar({ navTools = [] }) {
   const pathname = usePathname()
   if (pathname?.startsWith('/admin')) {
     return null
@@ -184,6 +186,11 @@ export default function Navbar() {
     ? { name: 'Home', path: '/' }
     : { name: 'Why?', path: '/home2' }
 
+  const resourcesSections = useMemo(
+    () => [...RESOURCES_STATIC_SECTIONS, buildToolsSection(navTools)],
+    [navTools]
+  )
+
   const navItems = useMemo(
     () => [
       homeToggleItem,
@@ -203,8 +210,8 @@ export default function Navbar() {
       { name: 'Packages', path: '/pricing' },
       {
         name: 'Resources',
-        dropdown: RESOURCES_SECTIONS,
-        dropdownOptions: { cols: 4, compact: true },
+        dropdown: resourcesSections,
+        dropdownOptions: { cols: 3, compact: true },
         cta: {
           text: 'Free guides, calculators, and tools for ambitious operators.',
           primary: { href: '/blog', label: 'View blog' },
@@ -217,7 +224,7 @@ export default function Navbar() {
       {
         name: 'Company',
         dropdown: COMPANY_SECTIONS,
-        dropdownOptions: { cols: 4, compact: true },
+        dropdownOptions: { cols: 3, compact: true },
         cta: {
           text: 'Learn about Finanshels, join the team, or grow with us as a partner.',
           primary: { href: '/contact', label: 'Contact us' },
@@ -228,7 +235,7 @@ export default function Navbar() {
         }
       }
     ],
-    [homeToggleItem]
+    [homeToggleItem, resourcesSections]
   )
 
   const renderDropdown = (sections, cta, options = {}) => {
@@ -268,8 +275,15 @@ export default function Navbar() {
                       {...componentProps}
                       className="group flex items-center gap-2 rounded-2xl border border-transparent bg-white/60 px-2.5 py-2 transition-all hover:border-[#ffd7c0] hover:bg-white min-w-0"
                     >
-                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl bg-[#fff1e3] text-[#f16610]">
-                        <Icon size={14} />
+                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#fff1e3] text-[#f16610]">
+                        {item.iconImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.iconImage} alt="" className="h-4 w-4 object-contain" />
+                        ) : item.iconEmoji ? (
+                          <span className="text-sm leading-none">{item.iconEmoji}</span>
+                        ) : (
+                          <Icon size={14} />
+                        )}
                       </div>
                       <p className="font-semibold text-slate-800 text-xs leading-tight">{item.name}</p>
                     </ItemComponent>
@@ -420,8 +434,12 @@ export default function Navbar() {
       </div>
 
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white/98 backdrop-blur-xl">
-          <div className="px-6 py-4 space-y-3">
+        // Fixed nav + tall dropdowns overflowed off-screen with no way to reach
+        // lower items. Cap the panel to the viewport below the 80px (h-20) header
+        // and scroll internally; overscroll-contain stops scroll-chaining to the
+        // body, and the extra bottom padding clears the floating chat widget.
+        <div className="md:hidden max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain border-t border-slate-200 bg-white/98 backdrop-blur-xl">
+          <div className="px-6 pt-4 pb-24 space-y-3">
             {navItems.map((item) =>
               item.dropdown ? (
                 <div key={item.name} className="rounded-2xl border border-slate-200 bg-white">

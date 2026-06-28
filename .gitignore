@@ -35,3 +35,6 @@ tmp/
 # Playwright MCP debug output (page snapshots, console logs)
 .playwright-mcp/
 
+
+# Superpowers brainstorm visual companion
+.superpowers/

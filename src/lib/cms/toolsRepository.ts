@@ -1,10 +1,15 @@
 import 'server-only'
+import { unstable_cache } from 'next/cache'
 import { COLLECTIONS, getDb } from './firestore'
 import { normalizeFirestoreTimestamps } from './normalizeDoc'
 import { parseTool, type Tool } from './schemas/tools'
+import type { NavTool } from '@/lib/tools/types'
 
 /** Tools are few; one page is plenty. Add pagination only past ~150. */
 const LIST_LIMIT = 150
+
+/** How many featured tools the navbar surfaces. Keeps the dropdown column tidy. */
+const NAV_TOOLS_LIMIT = 8
 
 export async function getToolBySlug(slug: string): Promise<Tool | null> {
   const db = getDb()
@@ -49,6 +54,26 @@ export async function listPublishedTools(): Promise<Tool[]> {
     return a.toolName.localeCompare(b.toolName)
   })
 }
+
+/**
+ * Featured published tools the navbar's Resources → Tools menu renders, mapped to
+ * the minimal serializable {@link NavTool} shape. Wrapped in `unstable_cache` because
+ * the root layout calls this on every route: caching keeps it to ~one Firestore read
+ * per `revalidate` window and lets pages stay statically rendered. The cache is
+ * time-based (not tag-busted) — a freshly published/featured tool appears in the nav
+ * within the window, which is fine for chrome.
+ */
+export const getNavTools = unstable_cache(
+  async (): Promise<NavTool[]> => {
+    const tools = await listPublishedTools()
+    return tools
+      .filter((tool) => tool.featured)
+      .slice(0, NAV_TOOLS_LIMIT)
+      .map((tool) => ({ slug: tool.slug, toolName: tool.toolName, icon: tool.icon }))
+  },
+  ['nav-tools-v1'],
+  { revalidate: 600, tags: ['nav-tools'] }
+)
 
 export interface ToolFaq {
   question: string

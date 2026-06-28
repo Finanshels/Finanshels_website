@@ -14,18 +14,6 @@ import {
   Users,
   Layers,
   MapPin,
-  HeartPulse,
-  Scissors,
-  ShoppingCart,
-  Dumbbell,
-  Briefcase,
-  UtensilsCrossed,
-  Building2,
-  ShoppingBag,
-  Cpu,
-  Truck,
-  Gem,
-  TrendingUp,
 } from 'lucide-react'
 import AnimatedSection from '../../components/marketing/AnimatedSection'
 import TestimonialsCarousel from '@/components/marketing/TestimonialsCarousel'
@@ -46,29 +34,8 @@ const DEFAULT_TRIGGERS = [
 // Brand-level trust facts surfaced under the hero (reused site-wide — confirm numbers).
 const HERO_TRUST = [
   { value: '7,000+', label: 'businesses served' },
-  { value: '180+', label: 'finance experts' },
+  { value: '135+', label: 'finance experts' },
 ]
-
-// Per-segment icon for the "Who this is for" accordion — keyword match, Building2 fallback.
-const SEGMENT_ICONS = [
-  { re: /clinic|health|medical|dental|dha|doh|wellness/i, icon: HeartPulse },
-  { re: /salon|spa|beauty/i, icon: Scissors },
-  { re: /supermarket|grocery|food retail|retail/i, icon: ShoppingCart },
-  { re: /gym|fitness/i, icon: Dumbbell },
-  { re: /consult|agenc|professional/i, icon: Briefcase },
-  { re: /restaurant|cafe|caf|f&b|hospitality|dining/i, icon: UtensilsCrossed },
-  { re: /real estate|property|broker|developer/i, icon: Building2 },
-  { re: /ecommerce|e-commerce|online|shop|store/i, icon: ShoppingBag },
-  { re: /tech|saas|software|startup|app/i, icon: Cpu },
-  { re: /trad|import|export|logistic|distribut/i, icon: Truck },
-  { re: /jewel|gold|diamond|luxury/i, icon: Gem },
-  { re: /fund|vc|invest|portfolio/i, icon: TrendingUp },
-]
-
-function segmentIcon(segment) {
-  const match = SEGMENT_ICONS.find((s) => s.re.test(segment || ''))
-  return match ? match.icon : Building2
-}
 
 // UAE coverage shown in the "Where we operate" band.
 const UAE_COVERAGE = ['Dubai Mainland', 'JAFZA', 'DMCC', 'DIFC', 'ADGM', 'IFZA', 'SHAMS', 'RAKEZ', 'Meydan']
@@ -249,74 +216,44 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
       {/* WHO THIS IS FOR */}
       {page.whoFor?.length > 0 && (
         <section className="px-6 sm:px-10 lg:px-16 py-16 bg-white">
-          <div className="max-w-6xl mx-auto grid items-start gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
-            {/* LEFT — intro */}
-            <AnimatedSection animation="fade-right">
-              <div className="lg:sticky lg:top-28">
+          <div className="max-w-6xl mx-auto">
+            <AnimatedSection animation="fade-up">
+              <div className="flex flex-col items-center text-center gap-3 mb-10">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#f16610]/30 bg-[#fff4ec] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#f16610]">
                   <Users size={12} /> Who this is for
                 </span>
-                <h2 className="mt-4 text-3xl sm:text-4xl font-semibold leading-tight tracking-tight">
-                  Built for your situation, not a{' '}
-                  <span className="bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">generic template</span>.
-                </h2>
-                <p className="mt-4 leading-relaxed text-slate-600">
-                  Every business books revenue differently. Open your model to see exactly how we handle your VAT, reporting, and compliance — no guesswork.
-                </p>
-                <div className="mt-6 flex items-center gap-3">
-                  <span className="inline-flex h-10 min-w-[2.5rem] items-center justify-center rounded-2xl bg-slate-900 px-3 text-lg font-semibold text-white">
-                    {page.whoFor.length}
-                  </span>
-                  <p className="text-sm leading-snug text-slate-500">industries we know inside out</p>
-                </div>
-                <a
-                  href="/contact"
-                  className="mt-7 inline-flex items-center gap-2 rounded-2xl border-2 border-slate-200 px-5 py-3 text-sm font-semibold text-slate-800 transition-all hover:-translate-y-0.5 hover:border-[#f16610]/40 hover:text-[#f16610]"
-                >
-                  Not sure which fits? Book a Finance Health Check <ArrowRight size={15} />
-                </a>
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Built for your situation</h2>
               </div>
             </AnimatedSection>
-
-            {/* RIGHT — accordion */}
-            <AnimatedSection animation="fade-left">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 lg:hidden">Tap your model to expand</p>
-              <div className="space-y-2.5">
-                {page.whoFor.map((audience, index) => {
-                  const Icon = segmentIcon(audience.segment)
-                  return (
-                    <details
-                      key={audience.segment}
-                      open={index === 0}
-                      className="group rounded-2xl border border-slate-100 bg-white transition-all open:border-[#f16610]/30 open:bg-gradient-to-br open:from-[#fff8f0] open:to-white open:shadow-[0_20px_45px_-28px_rgba(241,102,16,0.35)] hover:border-[#f16610]/20"
-                    >
-                      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
-                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[#fff1e1] text-[#f16610] transition-colors group-open:bg-[#f16610] group-open:text-white">
-                          <Icon size={17} />
-                        </span>
-                        <h3 className="flex-1 text-[15px] sm:text-base font-semibold leading-snug tracking-tight text-slate-900">
-                          {audience.segment}
-                        </h3>
-                        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-[#f16610]/30 bg-white text-lg font-light text-[#f16610] transition-transform group-open:rotate-45">
-                          +
-                        </span>
-                      </summary>
-                      <div className="px-4 pb-5 sm:px-5 sm:pl-[4.25rem]">
-                        <p className="text-sm leading-relaxed text-slate-600">{audience.description}</p>
-                        {audience.points?.length > 0 && (
-                          <ul className="mt-4 grid gap-x-5 gap-y-2 sm:grid-cols-2">
-                            {audience.points.map((point) => (
-                              <li key={point} className="flex items-start gap-2 text-xs leading-relaxed text-slate-600">
-                                <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0 text-[#f16610]" />
-                                <span>{point}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    </details>
-                  )
-                })}
+            <AnimatedSection animation="fade-up">
+              <div className="max-w-3xl mx-auto space-y-3">
+                {page.whoFor.map((audience, index) => (
+                  <details
+                    key={audience.segment}
+                    open={index === 0}
+                    className="group rounded-2xl border border-slate-100 bg-gradient-to-br from-[#fff8f0] to-white transition-all open:shadow-[0_20px_45px_-28px_rgba(241,102,16,0.3)]"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6">
+                      <h3 className="text-base font-semibold tracking-tight text-slate-900">{audience.segment}</h3>
+                      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-[#f16610]/30 bg-white text-lg font-light text-[#f16610] transition-transform group-open:rotate-45">
+                        +
+                      </span>
+                    </summary>
+                    <div className="px-5 pb-5 sm:px-6">
+                      <p className="text-sm leading-relaxed text-slate-600">{audience.description}</p>
+                      {audience.points?.length > 0 && (
+                        <ul className="mt-4 grid gap-x-5 gap-y-2 sm:grid-cols-2">
+                          {audience.points.map((point) => (
+                            <li key={point} className="flex items-start gap-2 text-xs leading-relaxed text-slate-600">
+                              <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0 text-[#f16610]" />
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </details>
+                ))}
               </div>
             </AnimatedSection>
           </div>
