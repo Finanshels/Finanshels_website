@@ -21,9 +21,20 @@ export function isTurnstileConfigured(): boolean {
 export async function verifyTurnstile(token: string | undefined, remoteIp?: string): Promise<TurnstileVerifyResult> {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim()
   if (!secret) {
+    // FIX-059: fail CLOSED in production. Previously a missing secret bypassed
+    // bot protection on EVERY public lead/registration endpoint at once — one
+    // unset env var silently opened the entire funnel to bots. In production we
+    // now reject; dev/preview still bypasses with a one-time warning.
+    if (process.env.NODE_ENV === 'production') {
+      if (!warnedOnce) {
+        warnedOnce = true
+        console.error('[turnstile] TURNSTILE_SECRET_KEY not set in production — rejecting submissions.')
+      }
+      return { ok: false, reason: 'turnstile_unconfigured' }
+    }
     if (!warnedOnce) {
       warnedOnce = true
-      console.warn('[turnstile] TURNSTILE_SECRET_KEY not set — verification bypassed.')
+      console.warn('[turnstile] TURNSTILE_SECRET_KEY not set — verification bypassed (non-production only).')
     }
     return { ok: true }
   }

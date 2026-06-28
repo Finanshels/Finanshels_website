@@ -1,3 +1,4 @@
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import {
   createAdminSession,
@@ -6,7 +7,15 @@ import {
   isLegacyEnvAuthEnabled,
 } from '@/lib/cms/adminAuth'
 import { getUserCount } from '@/lib/cms/usersRepository'
+import { extractClientIp, hashIp } from '@/lib/chat/guards'
+import { checkAndIncrementRateLimit } from '@/lib/landing-pages/repository'
 import { Alert, Button, Input } from '@/components/cms/admin/ui'
+
+// FIX-060: brute-force guard for the admin login Server Action. 10 attempts per
+// source IP per 10-minute window, enforced via the durable Firestore-backed
+// limiter (in-memory limits are per-instance and bypassable on serverless).
+const LOGIN_RATE_WINDOW_MS = 10 * 60 * 1000
+const LOGIN_RATE_MAX = 10
 
 type SearchParams = Promise<{ error?: string; email?: string; ok?: string; next?: string }>
 
@@ -27,6 +36,19 @@ async function loginAction(formData: FormData) {
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
   const next = safeNextPath(String(formData.get('next') ?? ''))
+
+  // FIX-060: throttle per source IP before touching the credential check so an
+  // attacker can't brute-force the admin password. Namespaced doc id keeps these
+  // buckets separate from the public lead-form rate-limit buckets.
+  const ipHash = hashIp(extractClientIp(await headers()))
+  const limit = await checkAndIncrementRateLimit(
+    `admin-login:${ipHash}`,
+    LOGIN_RATE_WINDOW_MS,
+    LOGIN_RATE_MAX
+  )
+  if (!limit.allowed) {
+    redirect('/admin/login?error=rate_limited')
+  }
 
   const result = await createAdminSession(email, password)
   if (!result.ok) {
@@ -109,6 +131,7 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: S
   const errorReason = params.error ?? ''
   const showError = errorReason === 'invalid' || errorReason === '1'
   const showDisabled = errorReason === 'disabled'
+  const showRateLimited = errorReason === 'rate_limited'
   const showInvitePending = errorReason === 'invite_pending'
   const showInviteAccepted = (params.ok ?? '') === 'invite-accepted'
   const prefillEmail = params.email ?? ''
@@ -142,6 +165,11 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: S
         {showDisabled ? (
           <Alert variant="error" className="mt-5">
             This account is disabled. Contact an owner.
+          </Alert>
+        ) : null}
+        {showRateLimited ? (
+          <Alert variant="error" className="mt-5">
+            Too many sign-in attempts. Please wait a few minutes and try again.
           </Alert>
         ) : null}
         {showInvitePending ? (

@@ -63,10 +63,10 @@ const SERVICES_SECTIONS = [
   {
     title: 'Finance Back Office',
     items: [
-      { name: 'Accounting Services UAE', href: '/accounting-services-uae', icon: BookOpen },
+      { name: 'Accounting Services UAE', href: '/accounting-services-dubai', icon: BookOpen },
       { name: 'Bookkeeping Services', href: '/bookkeeping-services-uae', icon: Calculator },
-      { name: 'Financial Controller (FCaaS)', href: '/financial-controller-uae', icon: TrendingUp },
-      { name: 'CFO Services Dubai', href: '/cfo-services-dubai', icon: Briefcase }
+      { name: 'Financial Controller (FCaaS)', href: '/cfo-services-uae', icon: TrendingUp },
+      { name: 'CFO Services Dubai', href: '/cfo-services-uae', icon: Briefcase }
     ]
   },
   {
@@ -104,16 +104,16 @@ const RESOURCES_SECTIONS = [
     title: 'Quick Reference',
     items: [
       { name: 'FAQs', href: '/faq', icon: HelpCircle },
-      { name: 'Cheat Sheets', href: '/cheat-sheet', icon: ListChecks },
-      { name: 'Templates', href: '/template', icon: LayoutTemplate }
+      { name: 'Cheat Sheets', href: '/guides', icon: ListChecks },
+      { name: 'Templates', href: '/guides', icon: LayoutTemplate }
     ]
   },
   {
     title: 'Calculators',
     items: [
       { name: 'Cash Flow', href: '/tools', icon: Wallet },
-      { name: 'Gratuity', href: '/tools/gratuity-calculator', icon: Coins },
-      { name: 'VAT', href: '/tools/vat-calculator', icon: Percent },
+      { name: 'Gratuity', href: '/tools', icon: Coins },
+      { name: 'VAT', href: '/tools', icon: Percent },
       { name: 'E-Invoicing', href: '/tools', icon: Receipt }
     ]
   },
@@ -121,8 +121,8 @@ const RESOURCES_SECTIONS = [
     title: 'Benchmarks & Checks',
     items: [
       { name: 'Salary Benchmark', href: '/tools', icon: Scale },
-      { name: 'Finance Health Check', href: '/tools/business-finance-health-check', icon: HeartPulse },
-      { name: 'CT Deadline Check', href: '/tools/corporate-tax-deadline-checker', icon: CalendarClock }
+      { name: 'Finance Health Check', href: '/tools', icon: HeartPulse },
+      { name: 'CT Deadline Check', href: '/tools', icon: CalendarClock }
     ]
   }
 ]
@@ -131,29 +131,28 @@ const COMPANY_SECTIONS = [
   {
     title: 'About',
     items: [
-      { name: 'About Us', href: '/about-us', icon: Building2 },
+      { name: 'About Us', href: '/about', icon: Building2 },
       { name: 'Customers', href: '/customers', icon: Heart }
     ]
   },
   {
     title: 'Connect',
     items: [
-      { name: 'Partners', href: '/partners', icon: HeartHandshake },
+      { name: 'Partners', href: 'https://partner.finanshels.com', icon: HeartHandshake },
       { name: 'Contact', href: '/contact', icon: MessageSquare }
     ]
   },
   {
     title: 'Careers',
     items: [
-      { name: 'Careers', badge: "We're hiring!", href: '/careers', icon: Briefcase },
-      { name: 'Jobs', href: '/jobs', icon: Briefcase }
+      { name: 'Careers', badge: "We're hiring!", href: '/careers', icon: Briefcase }
     ]
   },
   {
     title: 'Media',
     items: [
       { name: 'Community', href: '/community', icon: Users },
-      { name: 'Events', href: '/events', icon: CalendarDays },
+      { name: 'Events', href: '/events-by-finanshels', icon: CalendarDays },
       { name: 'Podcasts', href: '/podcasts', icon: Mic },
       { name: 'Webinars', href: '/webinars', icon: Video }
     ]
@@ -211,7 +210,7 @@ export default function Navbar() {
           primary: { href: '/blog', label: 'View blog' },
           actions: [
             { href: '/guides', label: 'Browse guides' },
-            { href: '/vat-calculator', label: 'Try a calculator' }
+            { href: '/tools', label: 'Try a calculator' }
           ]
         }
       },
@@ -224,7 +223,7 @@ export default function Navbar() {
           primary: { href: '/contact', label: 'Contact us' },
           actions: [
             { href: '/careers', label: 'Careers' },
-            { href: '/partners', label: 'Become a partner' }
+            { href: 'https://partner.finanshels.com', label: 'Become a partner' }
           ]
         }
       }

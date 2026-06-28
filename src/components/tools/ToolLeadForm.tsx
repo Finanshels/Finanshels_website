@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTurnstile } from '@/lib/landing-pages/useTurnstile'
 
 type FormState = 'idle' | 'submitting' | 'success' | 'error'
 
@@ -33,6 +34,9 @@ export function ToolLeadForm({
   const [phone, setPhone] = useState('')
   const [state, setState] = useState<FormState>('idle')
   const [error, setError] = useState<string | null>(null)
+  // FIX-059 companion: /api/tools/lead enforces Turnstile, so the form must
+  // send a token. Bypassed automatically when the site key is unset (dev).
+  const turnstile = useTurnstile()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -42,6 +46,9 @@ export function ToolLeadForm({
     if (!EMAIL_RE.test(email)) return setError('Please enter a valid work email.')
     const digits = phone.replace(/[^0-9]/g, '')
     if (digits.length < 7 || digits.length > 15) return setError('Please enter a valid phone number.')
+    if (turnstile.siteKey && !turnstile.token) {
+      return setError('Please complete the verification challenge and try again.')
+    }
 
     setState('submitting')
     try {
@@ -55,11 +62,13 @@ export function ToolLeadForm({
           email: email.trim().toLowerCase(),
           phone: phone.trim(),
           result_snapshot: resultSnapshot,
+          turnstile_token: turnstile.siteKey ? turnstile.token : undefined,
         }),
       })
       if (!res.ok) {
         setState('error')
         setError('Something went wrong. Please try again in a moment.')
+        turnstile.reset()
         return
       }
       setState('success')
@@ -67,6 +76,7 @@ export function ToolLeadForm({
     } catch {
       setState('error')
       setError('Network error. Please try again.')
+      turnstile.reset()
     }
   }
 
@@ -105,6 +115,7 @@ export function ToolLeadForm({
         className="rounded-lg border border-slate-300 px-3 py-2"
         autoComplete="tel"
       />
+      {turnstile.siteKey ? <div ref={turnstile.mountRef} className="mt-1" /> : null}
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <button
         type="submit"
