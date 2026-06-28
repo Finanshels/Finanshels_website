@@ -116,6 +116,26 @@ export async function publishDoc(collection: string, id: string, userId: string)
 }
 
 /**
+ * Resolve the data a PUBLIC route should render for a doc: the published
+ * snapshot if it exists, otherwise the draft fields (fallback). The fallback
+ * keeps every page rendering correctly before the backfill runs and during
+ * rollout — a published doc with no snapshot yet simply renders its draft, i.e.
+ * the pre-feature behaviour. Snapshot content overrides draft content; parent
+ * meta (slug/status/etc.) is preserved.
+ *
+ * Caller is responsible for the status gate (only `published` docs are public).
+ */
+export async function getEffectivePublishedData(
+  collection: string,
+  id: string,
+  draftData: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const snapshot = await getPublishedSnapshot(collection, id)
+  if (!snapshot) return draftData
+  return { ...draftData, ...snapshot }
+}
+
+/**
  * Unpublish: flip status so the live URL 404s. The snapshot is retained so a
  * later re-publish is cheap and revision history is preserved. Caller revalidates.
  */
@@ -127,4 +147,40 @@ export async function unpublishDoc(
   const db = getDb()
   if (!db) throw new Error('unpublishDoc: Firestore unavailable')
   await db.collection(collection).doc(id).update({ status: nextStatus })
+}
+
+/**
+ * One-time backfill: for a published doc with no snapshot yet, treat its current
+ * fields as the published state and create the snapshot + card. Idempotent —
+ * skips when a snapshot already exists (never clobbers a real publish) or the
+ * doc is not published. Used by `scripts/backfill-published-snapshots.mts`.
+ */
+export async function backfillSnapshotIfMissing(
+  collection: string,
+  id: string
+): Promise<'created' | 'skipped'> {
+  const db = getDb()
+  if (!db) throw new Error('backfillSnapshotIfMissing: Firestore unavailable')
+
+  const existing = await getPublishedSnapshot(collection, id)
+  if (existing) return 'skipped'
+
+  const ref = db.collection(collection).doc(id)
+  const parent = await ref.get()
+  if (!parent.exists) return 'skipped'
+  const data = parent.data() as Record<string, unknown>
+  if (data.status !== 'published') return 'skipped'
+
+  const fields = contentFields(data)
+  await publishedDocRef(db, collection, id).set({
+    ...fields,
+    _snapshot_at: FieldValue.serverTimestamp(),
+  })
+  const update: Record<string, unknown> = {
+    published_card: extractPublishedCard(fields),
+    has_unpublished_changes: false,
+  }
+  if (!data.published_at) update.published_at = FieldValue.serverTimestamp()
+  await ref.update(update)
+  return 'created'
 }

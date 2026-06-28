@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getDb } from '../cms/firestore'
 import { normalizeFirestoreTimestamps } from '../cms/normalizeDoc'
+import { getEffectivePublishedData } from '../cms/publishWorkflow/operations'
 import { slugifyForCms } from '../cms/slugify'
 import {
   LANDING_PAGE_COLLECTION,
@@ -172,7 +173,11 @@ export async function getLandingPageBySlug(slug: string): Promise<LandingPageDoc
   const snap = await db.collection(LANDING_PAGE_COLLECTION).where('slug', '==', slug).limit(1).get()
   if (snap.empty) return null
   const doc = snap.docs[0]
-  return deserialise(doc.id, doc.data() ?? {})
+  // Two-version: public reads render the published snapshot (falls back to the
+  // draft until a snapshot exists). The editor loads by id (getLandingPageById)
+  // and always sees the draft.
+  const effective = await getEffectivePublishedData(LANDING_PAGE_COLLECTION, doc.id, doc.data() ?? {})
+  return deserialise(doc.id, effective)
 }
 
 export async function getLandingPageById(id: string): Promise<LandingPageDoc | null> {
