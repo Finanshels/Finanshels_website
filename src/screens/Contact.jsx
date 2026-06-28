@@ -9,73 +9,84 @@ import {
   Clock,
   MessageCircle,
   Building2,
-  Sparkles,
   CheckCircle2,
   Send,
   Calendar,
-  Globe2,
-  Zap,
+  ChevronDown,
 } from 'lucide-react'
+import { Linkedin, Twitter, Instagram, Youtube } from '@/components/icons/BrandIcons'
 import AnimatedSection from '../components/marketing/AnimatedSection'
 
-const OFFICES = [
-  {
-    city: 'Dubai, UAE',
-    flag: '🇦🇪',
-    role: 'Global HQ',
-    address: 'in5 Tech, Dubai Internet City',
-    phone: '+971 50 717 8156',
-    email: 'contact@finanshels.com',
-    accent: 'from-[#fff4ec] to-white',
-    glow: 'rgba(241,102,16,0.3)',
-  },
-  {
-    city: 'Kerala, India',
-    flag: '🇮🇳',
-    role: 'Delivery centre',
-    address: 'Finanshels House, Calicut',
-    phone: '+91 6282 600 106',
-    email: 'india@finanshels.com',
-    accent: 'from-[#eef2ff] to-white',
-    glow: 'rgba(79,70,229,0.25)',
-  },
-  {
-    city: 'Ahmedabad, India',
-    flag: '🇮🇳',
-    role: 'Coming soon',
-    address: 'Finanshels Innovation Hub',
-    phone: '+91 9879 500 222',
-    email: 'india@finanshels.com',
-    accent: 'from-[#ecfdf5] to-white',
-    glow: 'rgba(5,150,105,0.25)',
-  },
-]
+// Single source of truth for the contact channels used across this page.
+const BOOKING_URL = 'https://contact-finanshels.zohobookings.com/#/inquiry-call'
+const WHATSAPP_URL = 'https://wa.me/971507178156'
+const EMAIL = 'contact@finanshels.com'
+const PHONE_DISPLAY = '+971 50 717 8156'
+const PHONE_HREF = 'tel:+971507178156'
 
-const REASONS = [
-  { value: 'sales', label: 'Pricing & plans', icon: Sparkles },
-  { value: 'support', label: 'Existing client support', icon: MessageCircle },
-  { value: 'partnership', label: 'Partnership / referral', icon: Globe2 },
-  { value: 'careers', label: 'Careers & talent', icon: Building2 },
-]
+// Single Dubai HQ — used by the "Visit us" band's map link.
+const HQ = {
+  city: 'Dubai, UAE',
+  address: '406, Publishing Pavilion, Dubai Production City',
+}
 
-const HELP_TOPICS = [
-  { icon: Calendar, title: 'Book a 30-min scoping call', desc: 'Walk us through your books, tooling, and headcount. Get a roadmap.', cta: 'Schedule', href: 'mailto:contact@finanshels.com?subject=Scoping%20call' },
-  { icon: MessageCircle, title: 'WhatsApp our team', desc: 'Senior operators answer in minutes during UAE working hours.', cta: 'Message', href: 'https://wa.me/971507178156' },
-  { icon: Send, title: 'Async Loom or deck', desc: 'Drop a Loom at contact@finanshels.com — annotated reply within 48h.', cta: 'Email', href: 'mailto:contact@finanshels.com' },
+const COMPANY_SIZES = ['Just me', '2–10', '11–50', '51–200', '200+']
+
+const SOCIALS = [
+  { label: 'LinkedIn', handle: 'Finanshels', href: 'https://linkedin.com/company/finanshels', icon: Linkedin, accent: '#0A66C2' },
+  { label: 'Instagram', handle: '@finanshels', href: 'https://www.instagram.com/finanshels', icon: Instagram, accent: '#E1306C' },
+  { label: 'X', handle: '@finanshels', href: 'https://twitter.com/finanshels', icon: Twitter, accent: '#0f172a' },
+  { label: 'YouTube', handle: '@finanshelshq', href: 'https://www.youtube.com/@finanshelshq', icon: Youtube, accent: '#FF0000' },
 ]
 
 const TRUST_BADGES = [
   '7,000+ UAE clients',
-  '135+ finance experts',
+  '180+ finance experts',
   '99.4% on-time filings',
   '4.9★ on Google',
 ]
 
+const FAQS = [
+  {
+    q: 'How fast will I hear back?',
+    a: 'Within 24 hours by email — usually much faster on WhatsApp during UAE business hours (Mon–Fri, 9:30 AM–6:30 PM GST). A senior operator replies, never a bot or SDR script.',
+  },
+  {
+    q: 'What happens after I reach out?',
+    a: 'We review your note, reply with clear next steps, and book a short scoping call. You walk away with a defined scope and a fixed quote — no pressure, no obligation.',
+  },
+  {
+    q: 'Can I keep my current accountant or tools?',
+    a: 'Yes. We work alongside your existing setup or take it over fully — QuickBooks, Zoho Books, Xero, Tally, whatever you run. We only suggest changes when they genuinely help.',
+  },
+  {
+    q: 'Do you work with my free zone or mainland entity?',
+    a: 'We support mainland DED companies and every major free zone — DMCC, JAFZA, DIFC, ADGM, IFZA and more — right across the UAE.',
+  },
+  {
+    q: 'Is the first conversation free?',
+    a: 'Completely. The scoping call and proposal cost nothing. You only pay once you choose a plan that fits.',
+  },
+]
+
+function mapsHref(office) {
+  return `https://maps.google.com/?q=${encodeURIComponent(`${office.address}, ${office.city}`)}`
+}
+
 export default function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', company: '', message: '', reason: 'sales' })
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    company: '',
+    phone: '',
+    companySize: '',
+    message: '',
+    reason: 'sales',
+  })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [openFaq, setOpenFaq] = useState(0)
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -94,6 +105,8 @@ export default function Contact() {
           name: form.name,
           email: form.email,
           company: form.company,
+          phone: form.phone || undefined,
+          companySize: form.companySize || undefined,
           message: form.message,
           reason: form.reason,
           pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
@@ -118,12 +131,10 @@ export default function Contact() {
     }
   }
 
-  const selectReason = (value) => setForm((prev) => ({ ...prev, reason: value }))
-
   return (
     <div className="bg-[#fffdfb] text-slate-900 overflow-hidden">
       {/* HERO */}
-      <section className="relative pt-32 pb-20 px-6 sm:px-10 lg:px-16">
+      <section className="relative pt-32 pb-16 px-6 sm:px-10 lg:px-16">
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute inset-x-0 top-0 h-[480px] bg-gradient-to-b from-[#fef3eb] via-[#fffaf3] to-transparent" />
           <div className="absolute -top-20 -left-32 w-[420px] h-[420px] rounded-full bg-[#f16610]/15 blur-[120px]" />
@@ -145,7 +156,7 @@ export default function Contact() {
               .
             </h1>
             <p className="mt-6 text-lg text-slate-600 max-w-2xl mx-auto">
-              Share your stack, expansion plans, and finance headaches. We respond in &lt; 24 hours with next steps — no bots, no boilerplate.
+              Tell us your stack, expansion plans, and finance headaches. A senior operator replies in &lt; 24 hours with real next steps — no bots, no boilerplate.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500">
               {TRUST_BADGES.map((b, i) => (
@@ -160,9 +171,10 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* FORM + DIRECT LINES */}
+      {/* FORM + FAST LANES */}
       <section className="px-6 sm:px-10 lg:px-16 pb-20">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
+          {/* FORM */}
           <AnimatedSection animation="fade-right">
             <div className="relative rounded-[36px] border border-slate-100 bg-white shadow-[0_30px_70px_-30px_rgba(15,23,42,0.2)] overflow-hidden">
               <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-[#f16610]/15 blur-3xl" />
@@ -170,9 +182,7 @@ export default function Contact() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="text-3xl font-semibold tracking-tight">Send us a note</h2>
-                    <p className="text-slate-600 mt-1 text-sm">
-                      Senior operators reply. No bots, no SDR scripts.
-                    </p>
+                    <p className="text-slate-600 mt-1 text-sm">Senior operators reply. No bots, no SDR scripts.</p>
                   </div>
                   <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -188,41 +198,29 @@ export default function Contact() {
                     <h3 className="text-xl font-semibold">Message received.</h3>
                     <p className="mt-2 text-slate-600">
                       Our team will reply within 24 hours from{' '}
-                      <span className="font-semibold text-slate-900">contact@finanshels.com</span>. Keep an eye on your inbox (and spam, just in case).
+                      <span className="font-semibold text-slate-900">{EMAIL}</span>. Keep an eye on your inbox (and spam, just in case).
                     </p>
-                    <a
-                      href="https://wa.me/971507178156"
-                      className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-600 transition"
-                    >
-                      Or WhatsApp us now <ArrowRight size={16} />
-                    </a>
+                    <div className="mt-5 flex flex-col sm:flex-row justify-center gap-3">
+                      <a
+                        href={BOOKING_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#f16610] transition"
+                      >
+                        <Calendar size={16} /> Book a call now
+                      </a>
+                      <a
+                        href={WHATSAPP_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-600 transition"
+                      >
+                        Or WhatsApp us <ArrowRight size={16} />
+                      </a>
+                    </div>
                   </div>
                 ) : (
                   <form className="space-y-5" onSubmit={handleSubmit}>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-semibold mb-3">What&apos;s on your mind?</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {REASONS.map((r) => {
-                          const active = form.reason === r.value
-                          return (
-                            <button
-                              type="button"
-                              key={r.value}
-                              onClick={() => selectReason(r.value)}
-                              className={`flex items-center gap-2 rounded-2xl border-2 px-3 py-2.5 text-left text-xs font-semibold transition-all ${
-                                active
-                                  ? 'border-[#f16610] bg-[#fff4ec] text-[#f16610]'
-                                  : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                              }`}
-                            >
-                              <r.icon size={14} className="flex-shrink-0" />
-                              <span className="leading-tight">{r.label}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label htmlFor="name" className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
@@ -256,20 +254,63 @@ export default function Contact() {
                       </div>
                     </div>
 
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label htmlFor="company" className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+                          Company
+                        </label>
+                        <input
+                          id="company"
+                          name="company"
+                          type="text"
+                          required
+                          value={form.company}
+                          onChange={handleChange}
+                          placeholder="Your startup or business"
+                          className="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm placeholder:text-slate-300 focus:outline-none focus:border-[#f16610] focus:ring-4 focus:ring-[#f16610]/10 transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label htmlFor="phone" className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+                          Phone <span className="text-slate-300 normal-case tracking-normal">(optional)</span>
+                        </label>
+                        <input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          value={form.phone}
+                          onChange={handleChange}
+                          placeholder="+971 50 000 0000"
+                          className="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm placeholder:text-slate-300 focus:outline-none focus:border-[#f16610] focus:ring-4 focus:ring-[#f16610]/10 transition-all"
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-1.5">
-                      <label htmlFor="company" className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-                        Company
+                      <label htmlFor="companySize" className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
+                        Team size <span className="text-slate-300 normal-case tracking-normal">(optional)</span>
                       </label>
-                      <input
-                        id="company"
-                        name="company"
-                        type="text"
-                        required
-                        value={form.company}
-                        onChange={handleChange}
-                        placeholder="Your startup or business"
-                        className="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm placeholder:text-slate-300 focus:outline-none focus:border-[#f16610] focus:ring-4 focus:ring-[#f16610]/10 transition-all"
-                      />
+                      <div className="flex flex-wrap gap-2">
+                        {COMPANY_SIZES.map((size) => {
+                          const active = form.companySize === size
+                          return (
+                            <button
+                              type="button"
+                              key={size}
+                              onClick={() =>
+                                setForm((prev) => ({ ...prev, companySize: active ? '' : size }))
+                              }
+                              className={`rounded-2xl border-2 px-4 py-2 text-sm font-semibold transition-all ${
+                                active
+                                  ? 'border-[#f16610] bg-[#fff4ec] text-[#f16610]'
+                                  : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
 
                     <div className="space-y-1.5">
@@ -289,9 +330,7 @@ export default function Contact() {
                     </div>
 
                     {error && (
-                      <p className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                        {error}
-                      </p>
+                      <p className="rounded-2xl border-2 border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
                     )}
 
                     <button
@@ -320,45 +359,46 @@ export default function Contact() {
             </div>
           </AnimatedSection>
 
+          {/* FAST LANES — consolidated aside */}
           <AnimatedSection animation="fade-left" delay={100}>
             <div className="space-y-5">
-              <div className="relative rounded-[32px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-6 text-white overflow-hidden">
-                <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[#f16610]/30 blur-3xl" />
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:48px_48px]" />
-                <div className="relative z-10 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Live
-                    </span>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-white/50 font-semibold">Response time</p>
-                  </div>
-                  <p className="text-5xl font-semibold tracking-tight bg-gradient-to-r from-white to-[#ff8a3c] bg-clip-text text-transparent">
-                    {'< 24h'}
-                  </p>
-                  <p className="text-sm text-white/70">
-                    Median reply time across email and WhatsApp during UAE business hours.
-                  </p>
-                  <div className="pt-2 grid grid-cols-3 gap-2 text-center">
-                    {[
-                      { v: '8m', l: 'WhatsApp' },
-                      { v: '2h', l: 'Email' },
-                      { v: '24h', l: 'Async' },
-                    ].map((s) => (
-                      <div key={s.l} className="rounded-xl bg-white/5 border border-white/10 py-2">
-                        <p className="text-base font-bold text-[#ff8a3c]">{s.v}</p>
-                        <p className="text-[9px] uppercase tracking-widest text-white/50">{s.l}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
+              {/* Fast lanes */}
               <div className="rounded-[28px] border border-slate-100 bg-white p-6">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-[#f16610] font-semibold">Direct lines</p>
-                <div className="mt-4 space-y-3">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-[#f16610] font-semibold">Skip the form</p>
+                <a
+                  href={BOOKING_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group mt-4 flex items-center gap-3 rounded-2xl bg-[#f16610] px-4 py-3.5 text-white shadow-lg shadow-[#f16610]/30 hover:-translate-y-0.5 hover:shadow-xl transition-all"
+                >
+                  <div className="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Calendar size={16} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] uppercase tracking-widest text-white/70 font-semibold">Fastest</p>
+                    <p className="font-semibold text-sm">Book a 30-min call</p>
+                  </div>
+                  <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+                </a>
+
+                <div className="mt-3 space-y-3">
                   <a
-                    href="mailto:contact@finanshels.com"
+                    href={WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center gap-3 rounded-2xl border border-slate-100 px-4 py-3 hover:border-[#f16610]/40 hover:bg-[#fff8f0] transition"
+                  >
+                    <div className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <MessageCircle size={16} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">WhatsApp</p>
+                      <p className="font-semibold text-sm">{PHONE_DISPLAY}</p>
+                    </div>
+                    <ArrowRight size={14} className="text-slate-300 group-hover:text-[#f16610] group-hover:translate-x-1 transition" />
+                  </a>
+                  <a
+                    href={`mailto:${EMAIL}`}
                     className="group flex items-center gap-3 rounded-2xl border border-slate-100 px-4 py-3 hover:border-[#f16610]/40 hover:bg-[#fff8f0] transition"
                   >
                     <div className="h-9 w-9 rounded-xl bg-[#fff4ec] text-[#f16610] flex items-center justify-center">
@@ -366,32 +406,61 @@ export default function Contact() {
                     </div>
                     <div className="flex-1">
                       <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Email</p>
-                      <p className="font-semibold text-sm">contact@finanshels.com</p>
+                      <p className="font-semibold text-sm">{EMAIL}</p>
                     </div>
                     <ArrowRight size={14} className="text-slate-300 group-hover:text-[#f16610] group-hover:translate-x-1 transition" />
                   </a>
                   <a
-                    href="tel:+971507178156"
+                    href={PHONE_HREF}
                     className="group flex items-center gap-3 rounded-2xl border border-slate-100 px-4 py-3 hover:border-[#f16610]/40 hover:bg-[#fff8f0] transition"
                   >
                     <div className="h-9 w-9 rounded-xl bg-[#fff4ec] text-[#f16610] flex items-center justify-center">
                       <Phone size={16} />
                     </div>
                     <div className="flex-1">
-                      <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Phone / WhatsApp</p>
-                      <p className="font-semibold text-sm">+971 50 717 8156</p>
+                      <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Call us</p>
+                      <p className="font-semibold text-sm">{PHONE_DISPLAY}</p>
                     </div>
                     <ArrowRight size={14} className="text-slate-300 group-hover:text-[#f16610] group-hover:translate-x-1 transition" />
                   </a>
-                  <div className="flex items-center gap-3 rounded-2xl border border-slate-100 px-4 py-3">
-                    <div className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                    <div className="h-9 w-9 rounded-xl bg-white text-slate-500 flex items-center justify-center">
                       <Clock size={16} />
                     </div>
                     <div className="flex-1">
                       <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Hours</p>
-                      <p className="font-semibold text-sm">Sun – Thu · 9am – 7pm GST</p>
+                      <p className="font-semibold text-sm">Mon – Fri · 9:30 AM – 6:30 PM GST</p>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Follow us */}
+              <div className="rounded-[28px] border border-slate-100 bg-white p-6">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-[#f16610] font-semibold">Follow us</p>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {SOCIALS.map((s) => (
+                    <a
+                      key={s.label}
+                      href={s.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Follow Finanshels on ${s.label}`}
+                      style={{ '--accent': s.accent }}
+                      className="group flex items-center gap-3 rounded-2xl border-2 border-slate-200 p-3 transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[0_16px_30px_-18px_var(--accent)]"
+                    >
+                      <span
+                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-white transition-transform group-hover:scale-110"
+                        style={{ background: s.accent }}
+                      >
+                        <s.icon size={18} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold leading-tight tracking-tight text-slate-900">{s.label}</span>
+                        <span className="block truncate text-xs text-slate-400">{s.handle}</span>
+                      </span>
+                    </a>
+                  ))}
                 </div>
               </div>
             </div>
@@ -399,111 +468,62 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* HELP TOPICS */}
+      {/* FAQ */}
       <section className="px-6 sm:px-10 lg:px-16 py-20 bg-white">
-        <div className="max-w-6xl mx-auto space-y-12">
+        <div className="max-w-3xl mx-auto">
           <AnimatedSection animation="fade-up">
-            <div className="flex flex-col items-center text-center gap-3">
+            <div className="flex flex-col items-center text-center gap-3 mb-10">
               <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-600">
-                Three ways to reach us
+                Before you ask
               </span>
-              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight max-w-3xl">
-                Pick the channel that{' '}
-                <span className="bg-gradient-to-r from-[#f16610] to-[#ff8a3c] bg-clip-text text-transparent">fits how you work</span>.
-              </h2>
-            </div>
-          </AnimatedSection>
-          <div className="grid md:grid-cols-3 gap-5">
-            {HELP_TOPICS.map((t, i) => (
-              <AnimatedSection key={t.title} animation="fade-up" delay={i * 100}>
-                <a
-                  href={t.href}
-                  className="group h-full flex flex-col rounded-[28px] border border-slate-100 bg-gradient-to-br from-white to-[#fffaf3] p-7 hover:border-[#f16610]/40 hover:shadow-[0_30px_60px_-25px_rgba(241,102,16,0.25)] hover:-translate-y-1 transition-all"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#fff1e1] to-[#ffd19b]/40 text-[#f16610] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                    <t.icon size={26} />
-                  </div>
-                  <h3 className="text-xl font-semibold tracking-tight">{t.title}</h3>
-                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">{t.desc}</p>
-                  <span className="mt-auto pt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#f16610]">
-                    {t.cta}
-                    <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </a>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* OFFICES */}
-      <section className="px-6 sm:px-10 lg:px-16 py-20">
-        <div className="max-w-6xl mx-auto space-y-12">
-          <AnimatedSection animation="fade-up">
-            <div className="flex flex-col items-center text-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-600">
-                <Globe2 size={12} /> Where we&apos;re based
-              </span>
-              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">Three offices. One team.</h2>
-              <p className="text-slate-600 max-w-xl text-lg">
-                Operators in the UAE for client-facing work, India for delivery scale. Same standards everywhere.
+              <h2 className="text-4xl sm:text-5xl font-semibold tracking-tight">Quick answers</h2>
+              <p className="text-slate-600 max-w-lg text-lg">
+                The things founders ask us most — answered before you even hit send.
               </p>
             </div>
           </AnimatedSection>
 
-          <div className="grid md:grid-cols-3 gap-5">
-            {OFFICES.map((office, i) => (
-              <AnimatedSection key={office.city} animation="fade-up" delay={i * 100}>
-                <div className={`group relative h-full overflow-hidden rounded-[32px] border border-slate-100 bg-gradient-to-br ${office.accent} p-7 hover:-translate-y-1.5 hover:shadow-[0_30px_60px_-25px_rgba(15,23,42,0.15)] transition-all`}>
+          <AnimatedSection animation="fade-up" delay={80}>
+            <div className="space-y-3">
+              {FAQS.map((f, i) => {
+                const open = openFaq === i
+                return (
                   <div
-                    className="absolute -top-20 -right-20 h-52 w-52 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity"
-                    style={{ background: office.glow }}
-                  />
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-4xl leading-none">{office.flag}</span>
-                      <span className="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-semibold">{office.role}</span>
-                    </div>
-                    <h3 className="mt-4 text-2xl font-semibold tracking-tight">{office.city}</h3>
-                    <div className="mt-5 space-y-2.5 text-sm">
-                      <div className="flex items-start gap-2.5 text-slate-700">
-                        <MapPin size={15} className="text-[#f16610] mt-0.5 flex-shrink-0" />
-                        <span>{office.address}</span>
-                      </div>
-                      <div className="flex items-center gap-2.5 text-slate-700">
-                        <Phone size={15} className="text-[#f16610] flex-shrink-0" />
-                        <span>{office.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-2.5 text-slate-700">
-                        <Mail size={15} className="text-[#f16610] flex-shrink-0" />
-                        <span>{office.email}</span>
-                      </div>
-                    </div>
+                    key={f.q}
+                    className={`rounded-[24px] border bg-white transition-all ${
+                      open ? 'border-[#f16610]/40 shadow-[0_20px_40px_-28px_rgba(241,102,16,0.3)]' : 'border-slate-100'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(open ? -1 : i)}
+                      aria-expanded={open}
+                      className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
+                    >
+                      <span className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">{f.q}</span>
+                      <ChevronDown
+                        size={20}
+                        className={`flex-shrink-0 text-[#f16610] transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                    {open && (
+                      <p className="px-6 pb-5 -mt-1 text-[15px] leading-relaxed text-slate-600">{f.a}</p>
+                    )}
                   </div>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
+                )
+              })}
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 
-      {/* VISIT US — DUBAI */}
-      <section className="px-6 sm:px-10 lg:px-16 py-20 bg-white">
+      {/* VISIT US — DUBAI HQ */}
+      <section className="px-6 sm:px-10 lg:px-16 pb-24">
         <div className="max-w-6xl mx-auto">
           <AnimatedSection animation="fade-up">
             <div className="relative overflow-hidden rounded-[44px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-10 sm:p-14 text-white">
               <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[#f16610]/30 blur-[120px]" />
               <div className="absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-[#7e8bff]/30 blur-[140px]" />
-              <div className="absolute inset-0 opacity-30">
-                <div className="absolute top-[20%] left-[15%] h-1.5 w-1.5 rounded-full bg-white" />
-                <div className="absolute top-[35%] left-[30%] h-1 w-1 rounded-full bg-white" />
-                <div className="absolute top-[55%] left-[25%] h-1.5 w-1.5 rounded-full bg-white" />
-                <div className="absolute top-[40%] left-[60%] h-1 w-1 rounded-full bg-white" />
-                <div className="absolute top-[70%] left-[55%] h-2 w-2 rounded-full bg-[#ff8a3c] animate-pulse" />
-                <div className="absolute top-[70%] left-[55%] h-8 w-8 rounded-full border border-[#ff8a3c]/40 animate-ping" />
-                <div className="absolute top-[25%] left-[75%] h-1 w-1 rounded-full bg-white" />
-                <div className="absolute top-[60%] left-[85%] h-1.5 w-1.5 rounded-full bg-white" />
-              </div>
               <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:60px_60px]" />
 
               <div className="relative z-10 grid md:grid-cols-[1.3fr_1fr] gap-10 items-center">
@@ -512,15 +532,15 @@ export default function Contact() {
                     <Building2 size={12} /> Visit us
                   </span>
                   <h2 className="mt-4 text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
-                    Drop by{' '}
-                    <span className="bg-gradient-to-r from-white to-[#ff8a3c] bg-clip-text text-transparent">in5 Tech, Dubai</span>.
+                    Drop by our{' '}
+                    <span className="bg-gradient-to-r from-white to-[#ff8a3c] bg-clip-text text-transparent">Dubai HQ</span>.
                   </h2>
                   <p className="mt-4 text-white/80 text-lg max-w-lg">
-                    Dubai Internet City, Building 1. Coffee&apos;s on us — bring your finance challenges and we&apos;ll whiteboard solutions in real time.
+                    Coffee&apos;s on us — bring your finance challenges and we&apos;ll whiteboard solutions in real time. Book ahead so the right operator is in the room.
                   </p>
                   <div className="mt-7 flex flex-wrap gap-3">
                     <a
-                      href="https://maps.google.com/?q=in5+Tech+Dubai+Internet+City"
+                      href={mapsHref(HQ)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3 font-semibold text-slate-900 hover:bg-[#ff8a3c] hover:text-white transition"
@@ -528,66 +548,32 @@ export default function Contact() {
                       <MapPin size={16} /> Open in Maps
                     </a>
                     <a
-                      href="mailto:contact@finanshels.com?subject=Office%20visit"
+                      href={BOOKING_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 rounded-2xl border-2 border-white/40 bg-white/10 backdrop-blur px-5 py-3 font-semibold text-white hover:bg-white/20 transition"
                     >
-                      <Calendar size={16} /> Schedule a visit
+                      <Calendar size={16} /> Book a call
                     </a>
                   </div>
                 </div>
                 <div className="rounded-[28px] border border-white/15 bg-white/5 backdrop-blur p-6">
                   <p className="text-[10px] uppercase tracking-[0.3em] text-white/50 font-semibold">Finanshels HQ</p>
-                  <p className="mt-2 text-2xl font-semibold">in5 Tech</p>
-                  <p className="text-white/70 text-sm">Dubai Internet City, Bldg 1</p>
+                  <p className="mt-2 text-2xl font-semibold">Publishing Pavilion</p>
+                  <p className="text-white/70 text-sm">Office 406, Dubai Production City, Dubai, UAE</p>
                   <div className="mt-5 pt-5 border-t border-white/10 space-y-2 text-sm">
                     <div className="flex items-center gap-2 text-white/80">
-                      <Clock size={14} className="text-[#ff8a3c]" /> Sun – Thu · 9am – 7pm GST
+                      <Clock size={14} className="text-[#ff8a3c]" /> Mon – Fri · 9:30 AM – 6:30 PM GST
                     </div>
-                    <div className="flex items-center gap-2 text-white/80">
-                      <Zap size={14} className="text-[#ff8a3c]" /> Walk-ins welcome with prior call
-                    </div>
+                    <a href={PHONE_HREF} className="flex items-center gap-2 text-white/80 hover:text-white transition">
+                      <Phone size={14} className="text-[#ff8a3c]" /> {PHONE_DISPLAY}
+                    </a>
                   </div>
                 </div>
               </div>
             </div>
           </AnimatedSection>
         </div>
-      </section>
-
-      {/* FINAL CTA */}
-      <section className="px-6 sm:px-10 lg:px-16 pb-24">
-        <AnimatedSection animation="fade-up">
-          <div className="max-w-6xl mx-auto relative overflow-hidden rounded-[44px] bg-gradient-to-br from-[#f16610] via-[#ff7a23] to-[#ff8a3c] p-10 sm:p-16 text-white">
-            <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/15 blur-3xl" />
-            <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-amber-200/30 blur-3xl" />
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:48px_48px]" />
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 text-center md:text-left">
-              <div className="max-w-xl">
-                <p className="text-xs uppercase tracking-[0.4em] text-white/80 font-semibold">Async preferred?</p>
-                <h2 className="mt-3 text-4xl sm:text-5xl font-semibold tracking-tight leading-tight">
-                  Drop a Loom, get a roadmap.
-                </h2>
-                <p className="mt-4 text-white/85 text-lg">
-                  Record a 5-minute Loom about your finance setup. Our CFO office sends back annotated feedback within 48 hours.
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 w-full md:w-auto">
-                <a
-                  href="mailto:contact@finanshels.com?subject=Loom%20review"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 font-semibold text-[#f16610] shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
-                >
-                  Email a Loom <ArrowRight size={18} />
-                </a>
-                <a
-                  href="https://wa.me/971507178156"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-white/60 bg-white/10 backdrop-blur px-6 py-3.5 font-semibold text-white hover:bg-white/20 transition"
-                >
-                  <MessageCircle size={18} /> WhatsApp us
-                </a>
-              </div>
-            </div>
-          </div>
-        </AnimatedSection>
       </section>
     </div>
   )

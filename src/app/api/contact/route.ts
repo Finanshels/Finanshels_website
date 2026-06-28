@@ -37,6 +37,8 @@ const contactSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.string().trim().min(5).max(200),
   company: z.string().trim().max(200).optional(),
+  phone: z.string().trim().max(40).optional(),
+  companySize: z.string().trim().max(40).optional(),
   message: z.string().trim().min(10).max(5000),
   reason: z.enum(['sales', 'support', 'partnership', 'careers']),
   pageUrl: z.string().trim().max(2000).optional(),
@@ -100,6 +102,8 @@ export async function POST(request: Request) {
     name: data.name,
     email: data.email.toLowerCase(),
     company: data.company || undefined,
+    phone: data.phone || undefined,
+    companySize: data.companySize || undefined,
     message: data.message,
     reason: data.reason,
     pageUrl: data.pageUrl,
@@ -122,7 +126,9 @@ export async function POST(request: Request) {
       firstName,
       lastName,
       email: data.email.toLowerCase(),
+      phone: data.phone,
       companyName: data.company,
+      companySize: data.companySize,
       intent: REASON_LABELS[data.reason],
       conversationSummary: data.message,
       pageUrl: data.pageUrl,
@@ -162,7 +168,9 @@ export async function POST(request: Request) {
         <table style="border-collapse:collapse;background:#f8fafc;border-radius:8px;width:100%;">
           ${row('Name', data.name)}
           ${row('Email', data.email)}
+          ${row('Phone', data.phone)}
           ${row('Company', data.company)}
+          ${row('Team size', data.companySize)}
           ${row('Reason', reasonLabel)}
           ${row('Page', data.pageUrl)}
         </table>
@@ -179,7 +187,9 @@ export async function POST(request: Request) {
       '',
       `Name: ${data.name}`,
       `Email: ${data.email}`,
+      data.phone ? `Phone: ${data.phone}` : '',
       data.company ? `Company: ${data.company}` : '',
+      data.companySize ? `Team size: ${data.companySize}` : '',
       data.pageUrl ? `Page: ${data.pageUrl}` : '',
       '',
       'Message:',

@@ -13,6 +13,8 @@ export interface ContactSubmissionInput {
   name: string
   email: string
   company?: string
+  phone?: string
+  companySize?: string
   message: string
   reason: ContactReason
   pageUrl?: string
@@ -41,6 +43,8 @@ function fromDoc(id: string, raw: DocumentData): ContactSubmission {
     name: raw.name ?? '',
     email: raw.email ?? '',
     company: raw.company ?? undefined,
+    phone: raw.phone ?? undefined,
+    companySize: raw.companySize ?? undefined,
     message: raw.message ?? '',
     reason: (raw.reason ?? 'sales') as ContactReason,
     pageUrl: raw.pageUrl ?? undefined,
@@ -67,6 +71,8 @@ export async function writeContactSubmission(
     name: input.name,
     email: input.email,
     company: input.company ?? null,
+    phone: input.phone ?? null,
+    companySize: input.companySize ?? null,
     message: input.message,
     reason: input.reason,
     pageUrl: input.pageUrl ?? null,
