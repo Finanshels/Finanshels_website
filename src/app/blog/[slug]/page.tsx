@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ArticleBody } from '@/components/cms/ArticleBody'
 import { DevCmsBanner } from '@/components/cms/DevCmsBanner'
+import { DraftPreviewBanner } from '@/components/cms/DraftPreviewBanner'
 import { PageBlocksRenderer } from '@/components/cms/PageBlocksRenderer'
+import { isAdminAuthenticated } from '@/lib/cms/adminAuth'
 import { getSiteUrl } from '@/lib/cms/config'
 import { getBlogPostBySlug } from '@/lib/cms/blogRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
@@ -12,16 +14,24 @@ import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 
 export const revalidate = 300
 
-type Props = { params: Promise<{ slug: string }> }
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
+type Props = { params: Promise<{ slug: string }>; searchParams: SearchParams }
 
 function pickOgImage(post: { og_image?: string; card_image?: string; featured_image?: string; heroImageUrl?: string }): string | null {
   return post.og_image || post.card_image || post.featured_image || post.heroImageUrl || null
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params
-  const post = await getBlogPostBySlug(slug)
+  // noindex preview pages: gate solely on the searchParam (a non-admin's normal
+  // page never carries ?preview=1).
+  const isPreviewRequest = (await searchParams).preview === '1'
+  const post = await getBlogPostBySlug(slug, { preview: isPreviewRequest })
   if (!post) return { title: 'Article' }
+  if (isPreviewRequest) {
+    const previewTitle = post.seo_title ?? post.seoTitle ?? post.title
+    return { title: previewTitle, robots: { index: false, follow: false } }
+  }
 
   // FIX-034: honour noindex/indexable + use og_image fallback chain.
   const title = post.seo_title ?? post.seoTitle ?? post.title
@@ -61,9 +71,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function BlogArticlePage({ params }: Props) {
+export default async function BlogArticlePage({ params, searchParams }: Props) {
   const { slug } = await params
-  const post = await getBlogPostBySlug(slug)
+  const preview = (await searchParams).preview === '1' && (await isAdminAuthenticated())
+  const post = await getBlogPostBySlug(slug, { preview })
   if (!post) notFound()
 
   const body = sanitizeCmsHtml(post.body ?? post.bodyHtml ?? '')
@@ -95,6 +106,7 @@ export default async function BlogArticlePage({ params }: Props) {
 
   return (
     <>
+      {preview ? <DraftPreviewBanner /> : null}
       <DevCmsBanner />
       <script
         type="application/ld+json"

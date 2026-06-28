@@ -394,7 +394,8 @@ export async function getCmsDocument(
  */
 export async function getPublicCmsDocument(
   collection: CmsCollectionKey,
-  id: string
+  id: string,
+  opts?: { preview?: boolean }
 ): Promise<Record<string, unknown> | null> {
   const db = getDb()
   if (!db) return null
@@ -402,6 +403,12 @@ export async function getPublicCmsDocument(
   if (!doc.exists) return null
 
   const raw = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+
+  // Admin draft preview: return the working draft (raw parent fields), any
+  // status. Skips the published snapshot + the status gate. The page route's
+  // own status check is also bypassed in preview mode.
+  if (opts?.preview) return raw
+
   if (raw.status !== 'published') return null
 
   // Two-version: render the published snapshot (falls back to the draft until a

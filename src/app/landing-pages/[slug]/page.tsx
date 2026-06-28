@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { DraftPreviewBanner } from '@/components/cms/DraftPreviewBanner'
 import LandingPageRenderer from '@/components/landing-pages/LandingPageRenderer'
-import { getCurrentSession } from '@/lib/cms/adminAuth'
+import { getCurrentSession, isAdminAuthenticated } from '@/lib/cms/adminAuth'
 import { getLandingPageBySlug, listPublishedSlugs } from '@/lib/landing-pages/repository'
 
 export const revalidate = 60
@@ -16,9 +17,16 @@ export async function generateStaticParams() {
   }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
+
+export async function generateMetadata(
+  { params, searchParams }: { params: Promise<{ slug: string }>; searchParams: SearchParams }
+): Promise<Metadata> {
   const { slug } = await params
-  const page = await getLandingPageBySlug(slug)
+  // noindex preview pages: gate solely on the searchParam (a non-admin's normal
+  // page never carries ?preview=1).
+  const isPreviewRequest = (await searchParams).preview === '1'
+  const page = await getLandingPageBySlug(slug, { preview: isPreviewRequest })
   if (!page) {
     return {
       title: 'Not found',
@@ -26,7 +34,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
   }
 
-  const allowIndexing = page.status === 'published' && page.seo.allow_indexing
+  // Landing pages already default to noindex unless explicitly opted in, but be
+  // explicit in preview mode for parity with the other routes.
+  const allowIndexing = !isPreviewRequest && page.status === 'published' && page.seo.allow_indexing
 
   return {
     title: page.seo.title || page.internal_name,
@@ -63,10 +73,24 @@ function buildJsonLd(page: { seo: { title: string; description: string; allow_in
   return JSON.stringify(json)
 }
 
-export default async function LandingPagePublic({ params }: { params: Promise<{ slug: string }> }) {
+export default async function LandingPagePublic(
+  { params, searchParams }: { params: Promise<{ slug: string }>; searchParams: SearchParams }
+) {
   const { slug } = await params
-  const page = await getLandingPageBySlug(slug)
+  const preview = (await searchParams).preview === '1' && (await isAdminAuthenticated())
+  const page = await getLandingPageBySlug(slug, { preview })
   if (!page) notFound()
+
+  // Admin draft preview (?preview=1): render the working draft of any status
+  // with the not-live banner. noindex is set in generateMetadata.
+  if (preview) {
+    return (
+      <>
+        <DraftPreviewBanner />
+        <LandingPageRenderer page={page} isPreview />
+      </>
+    )
+  }
 
   if (page.status !== 'published') {
     const session = await getCurrentSession()

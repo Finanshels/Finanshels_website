@@ -28,7 +28,10 @@ export async function listPublishedGlossaryTerms(): Promise<GlossaryTerm[]> {
   return terms
 }
 
-export async function getGlossaryTermBySlug(slug: string): Promise<GlossaryTerm | null> {
+export async function getGlossaryTermBySlug(
+  slug: string,
+  opts?: { preview?: boolean }
+): Promise<GlossaryTerm | null> {
   const db = getDb()
   if (!db) return null
 
@@ -36,6 +39,11 @@ export async function getGlossaryTermBySlug(slug: string): Promise<GlossaryTerm 
   if (!doc.exists) return null
 
   const raw = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+
+  // Admin draft preview: render the working draft (raw parent fields), any
+  // status. Skips the published snapshot + the status gate.
+  if (opts?.preview) return parseGlossaryTerm(raw, doc.id)
+
   if (raw.status !== 'published') return null
 
   // Two-version: render the published snapshot (falls back to the draft until a

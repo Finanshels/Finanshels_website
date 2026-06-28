@@ -48,7 +48,10 @@ export async function listPublishedBlogPosts(): Promise<BlogPost[]> {
   return posts
 }
 
-export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
+export async function getBlogPostBySlug(
+  slug: string,
+  opts?: { preview?: boolean }
+): Promise<BlogPost | null> {
   const db = getDb()
   if (!db) return null
 
@@ -62,6 +65,14 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
   }
 
   const raw = normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>)
+
+  // Admin draft preview: render the working draft (raw parent fields), any
+  // status. Skips the published snapshot + the status gate.
+  if (opts?.preview) {
+    const draft = parseBlogPost(raw, doc.id)
+    return draft ? resolveAuthorDisplayName(db, draft) : null
+  }
+
   if (raw.status !== 'published') return null
 
   // Two-version: render the published snapshot (falls back to the draft until a

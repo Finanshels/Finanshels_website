@@ -167,12 +167,18 @@ export function normaliseSlug(input: string): string {
   return slugifyForCms(input)
 }
 
-export async function getLandingPageBySlug(slug: string): Promise<LandingPageDoc | null> {
+export async function getLandingPageBySlug(
+  slug: string,
+  opts?: { preview?: boolean }
+): Promise<LandingPageDoc | null> {
   const db = getDb()
   if (!db) return null
   const snap = await db.collection(LANDING_PAGE_COLLECTION).where('slug', '==', slug).limit(1).get()
   if (snap.empty) return null
   const doc = snap.docs[0]
+  // Admin draft preview: render the working draft (raw parent fields), any
+  // status. Skips the published snapshot.
+  if (opts?.preview) return deserialise(doc.id, doc.data() ?? {})
   // Two-version: public reads render the published snapshot (falls back to the
   // draft until a snapshot exists). The editor loads by id (getLandingPageById)
   // and always sees the draft.
