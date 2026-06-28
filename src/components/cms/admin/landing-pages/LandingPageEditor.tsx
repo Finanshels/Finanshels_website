@@ -6,6 +6,7 @@ import { SECTION_CATALOG, getSectionCatalogEntry, type SectionCatalogEntry } fro
 import { SERVICE_INTERESTS } from '@/lib/landing-pages/serviceInterests'
 import { MediaLibraryProvider } from '@/components/cms/admin/MediaLibraryProvider'
 import type { MediaPickerItem } from '@/components/cms/admin/MediaPickerModal'
+import { PublishControls, type PublishStatus, type SavingState } from '@/components/cms/admin/PublishControls'
 import { FieldEditor } from './fields/FieldEditor'
 import { LucideIcon } from './fields/lucideClient'
 import { useLivePreview } from './useLivePreview'
@@ -24,6 +25,19 @@ function slugify(input: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80)
+}
+
+/** "Published 2h ago" style label for the publish toolbar; null when never published. */
+function formatPublishedAtLabel(at: Date | null): string | null {
+  if (!at) return null
+  const diffMs = Date.now() - at.getTime()
+  const mins = Math.round(diffMs / 60_000)
+  if (mins < 1) return 'Published just now'
+  if (mins < 60) return `Published ${mins}m ago`
+  const hours = Math.round(mins / 60)
+  if (hours < 24) return `Published ${hours}h ago`
+  const days = Math.round(hours / 24)
+  return `Published ${days}d ago`
 }
 
 type Tab = 'content' | 'settings' | 'seo'
@@ -134,11 +148,15 @@ function genId(): string {
 export default function LandingPageEditor({
   page,
   saveAction,
+  publishAction,
+  unpublishAction,
   mediaItems,
   bucketConfigured,
 }: {
   page: LandingPageDoc
   saveAction: (formData: FormData) => void | Promise<void>
+  publishAction: (formData: FormData) => void | Promise<void>
+  unpublishAction: (formData: FormData) => void | Promise<void>
   mediaItems: MediaPickerItem[]
   bucketConfigured: boolean
 }) {
@@ -149,6 +167,52 @@ export default function LandingPageEditor({
   const initialPayloadRef = useRef<string>(payload)
   const formRef = useRef<HTMLFormElement | null>(null)
   const isDirty = payload !== initialPayloadRef.current
+
+  // ----- Autosave (Phase 5) -----
+  // The form save is a "save draft": status stays put, the live snapshot is
+  // untouched, and `has_unpublished_changes` is recomputed server-side. We add a
+  // focused 3s debounce that submits this same form, so edits persist without a
+  // full AutosaveManager port (the landing form posts one JSON `payload` blob to
+  // a Server Action, not the CMS field-by-field autosave route).
+  const [savingState, setSavingState] = useState<SavingState>('idle')
+  const lastSavedPayloadRef = useRef<string>(payload)
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const AUTOSAVE_DELAY_MS = 3000
+
+  // Live draft↔published separation: `has_unpublished_changes` is the persisted
+  // diff from the published snapshot (set by markDraftDirty); `isDirty` covers
+  // in-session edits not yet saved. Either means the draft is ahead of live, so
+  // PublishControls offers "Republish".
+  const hasUnpublishedChanges = page.has_unpublished_changes || isDirty
+
+  // PublishControls' status union includes 'in_review' (CMS-only); landing has no
+  // review state, so its narrower status maps straight through.
+  const publishStatus: PublishStatus = page.status
+
+  const publishedAtLabel = formatPublishedAtLabel(page.last_published_at ?? page.published_at)
+
+  // Mark the form "saving" optimistically on submit (manual, autosave, or Cmd+S);
+  // the action redirects on success so this primarily covers the in-flight window.
+  const markSaving = useCallback(() => {
+    setSavingState('saving')
+    lastSavedPayloadRef.current = payload
+  }, [payload])
+
+  // PublishControls renders its own field-less <form action={...}>, so bind the
+  // doc id + current draft payload into the actions here (publish persists the
+  // draft first, then snapshots it).
+  const runPublish = useCallback(async () => {
+    const fd = new FormData()
+    fd.set('id', page.id)
+    fd.set('payload', payload)
+    await publishAction(fd)
+  }, [page.id, payload, publishAction])
+
+  const runUnpublish = useCallback(async () => {
+    const fd = new FormData()
+    fd.set('id', page.id)
+    await unpublishAction(fd)
+  }, [page.id, unpublishAction])
 
   // Slug auto-suggest: when internal_name changes and slug hasn't been manually edited yet,
   // recompute slug from internal_name.
@@ -171,6 +235,23 @@ export default function LandingPageEditor({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [isDirty])
+
+  // Debounced autosave of the draft. Submits the same save-draft form 3s after
+  // edits settle, so work persists without a click. The save-draft action
+  // redirects on success (re-rendering with fresh `page` data), which is what
+  // resets dirty state — autosave just automates the submit, it never goes live.
+  useEffect(() => {
+    if (!isDirty) return
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    autosaveTimerRef.current = setTimeout(() => {
+      if (formRef.current && payload !== lastSavedPayloadRef.current) {
+        formRef.current.requestSubmit()
+      }
+    }, AUTOSAVE_DELAY_MS)
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    }
+  }, [payload, isDirty])
 
   // Warn on unload if dirty
   useEffect(() => {
@@ -258,44 +339,37 @@ export default function LandingPageEditor({
             ))}
           </div>
 
-          <form ref={formRef} action={saveAction} className="flex flex-wrap items-center gap-2">
-            <input type="hidden" name="id" value={page.id} />
-            <input type="hidden" name="payload" value={payload} />
-            {isDirty ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
-                <span className="size-1.5 rounded-full bg-amber-500" /> Unsaved
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
-                <span className="size-1.5 rounded-full bg-emerald-500" /> Saved
-              </span>
-            )}
-            <select
-              value={state.status}
-              onChange={(e) => setState((s) => ({ ...s, status: e.target.value as LandingPageStatus }))}
-              className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm"
-              aria-label="Status"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-              <option value="archived">Archived</option>
-            </select>
-            <a
-              href={`/landing-pages/${state.slug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Open ↗
-            </a>
-            <button
-              disabled={!isDirty}
-              className="rounded-lg bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-              title="Cmd/Ctrl+S"
-            >
-              {isDirty ? 'Save' : 'Saved'}
-            </button>
-          </form>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Save-draft form. Cmd/Ctrl+S, the manual "Save draft" button, and
+                the debounced autosave all submit this. status is carried unchanged
+                in the payload — going live is the Publish button's job. */}
+            <form ref={formRef} action={saveAction} onSubmit={markSaving} className="flex items-center gap-2">
+              <input type="hidden" name="id" value={page.id} />
+              <input type="hidden" name="payload" value={payload} />
+              <button
+                disabled={!isDirty}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Save draft (Cmd/Ctrl+S)"
+              >
+                {isDirty ? 'Save draft' : 'Saved'}
+              </button>
+            </form>
+
+            {/* Two-version publish toolbar: Publish / Republish / Unpublish +
+                Preview / View live + autosave indicator. Replaces the old status
+                dropdown + go-live-on-save button. */}
+            <PublishControls
+              status={publishStatus}
+              hasUnpublishedChanges={hasUnpublishedChanges}
+              savingState={savingState}
+              publishedAtLabel={publishedAtLabel}
+              previewUrl={`/landing-pages/${state.slug}?preview=1`}
+              liveUrl={page.status === 'published' ? `/landing-pages/${state.slug}` : null}
+              canPublish
+              publishAction={runPublish}
+              unpublishAction={runUnpublish}
+            />
+          </div>
         </div>
 
         {/* Two-pane: live preview + inspector */}

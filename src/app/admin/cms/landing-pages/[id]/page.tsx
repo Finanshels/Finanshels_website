@@ -8,9 +8,37 @@ import { requireAdminAuth, sessionDisplayName } from '@/lib/cms/adminAuth'
 import { listCmsMediaLibraryItems } from '@/lib/cms/collectionRepository'
 import { deleteLandingPage, getLandingPageById, updateLandingPage } from '@/lib/landing-pages/repository'
 import type { LandingPageWriteInput } from '@/lib/landing-pages/repository'
+import { markDraftDirty, publishDoc, unpublishDoc } from '@/lib/cms/publishWorkflow/operations'
+import { LANDING_PAGE_COLLECTION } from '@/lib/landing-pages/types'
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Persist the working draft. Two-version model: this NEVER flips status to
+ * published and NEVER revalidates the public route — a save to a published page
+ * stays invisible to visitors until Publish/Republish writes the snapshot.
+ * After persisting, recompute `has_unpublished_changes` via `markDraftDirty`.
+ * Returns the parsed payload so the publish path can reuse it.
+ */
+async function persistDraft(
+  id: string,
+  payloadJson: string,
+  actorName: string,
+): Promise<LandingPageWriteInput> {
+  let parsed: LandingPageWriteInput
+  try {
+    parsed = JSON.parse(payloadJson) as LandingPageWriteInput
+  } catch {
+    redirect(`/admin/cms/landing-pages/${id}?error=invalid_payload`)
+  }
+  await updateLandingPage(id, parsed, actorName)
+  // Recompute the draft-vs-published diff so the toolbar can show "Republish".
+  // No public revalidation here — the live snapshot is untouched.
+  await markDraftDirty(LANDING_PAGE_COLLECTION, id, parsed as unknown as Record<string, unknown>)
+  return parsed
+}
+
+/** Save the working draft (status unchanged). Replaces the old go-live-on-save. */
 async function saveAction(formData: FormData) {
   'use server'
   const session = await requireAdminAuth('editor')
@@ -18,26 +46,73 @@ async function saveAction(formData: FormData) {
   const payloadJson = String(formData.get('payload') ?? '')
   if (!id || !payloadJson) redirect(`/admin/cms/landing-pages/${id}?error=missing_payload`)
 
-  let parsed: LandingPageWriteInput
   try {
-    parsed = JSON.parse(payloadJson) as LandingPageWriteInput
-  } catch {
-    redirect(`/admin/cms/landing-pages/${id}?error=invalid_payload`)
-    return
-  }
-
-  try {
-    await updateLandingPage(id, parsed, sessionDisplayName(session))
+    await persistDraft(id, payloadJson, sessionDisplayName(session))
   } catch (err) {
     const msg = encodeURIComponent(err instanceof Error ? err.message : 'unknown')
     redirect(`/admin/cms/landing-pages/${id}?error=${msg}`)
-    return
   }
 
   revalidatePath('/admin/cms/landing-pages')
   revalidatePath(`/admin/cms/landing-pages/${id}`)
-  if (parsed.slug) revalidatePath(`/landing-pages/${parsed.slug}`)
   redirect(`/admin/cms/landing-pages/${id}?saved=1`)
+}
+
+/**
+ * Publish or Republish. Persist the current draft (if the editor sent one),
+ * snapshot it via `publishDoc`, then revalidate the live route. Serves both the
+ * first publish and every republish of draft changes.
+ */
+async function publishAction(formData: FormData) {
+  'use server'
+  const session = await requireAdminAuth('editor')
+  const id = String(formData.get('id') ?? '')
+  if (!id) redirect(`/admin/cms/landing-pages?error=missing_id`)
+  const payloadJson = String(formData.get('payload') ?? '')
+
+  let slug = ''
+  try {
+    if (payloadJson) {
+      const parsed = await persistDraft(id, payloadJson, sessionDisplayName(session))
+      slug = parsed.slug ?? ''
+    }
+    await publishDoc(LANDING_PAGE_COLLECTION, id, sessionDisplayName(session))
+    if (!slug) {
+      const page = await getLandingPageById(id)
+      slug = page?.slug ?? ''
+    }
+  } catch (err) {
+    const msg = encodeURIComponent(err instanceof Error ? err.message : 'unknown')
+    redirect(`/admin/cms/landing-pages/${id}?error=${msg}`)
+  }
+
+  revalidatePath('/admin/cms/landing-pages')
+  revalidatePath(`/admin/cms/landing-pages/${id}`)
+  if (slug) revalidatePath(`/landing-pages/${slug}`)
+  redirect(`/admin/cms/landing-pages/${id}?published=1`)
+}
+
+/** Unpublish: flip status to draft so the live URL 404s; snapshot is retained. */
+async function unpublishAction(formData: FormData) {
+  'use server'
+  await requireAdminAuth('editor')
+  const id = String(formData.get('id') ?? '')
+  if (!id) redirect(`/admin/cms/landing-pages?error=missing_id`)
+
+  let slug = ''
+  try {
+    await unpublishDoc(LANDING_PAGE_COLLECTION, id, 'draft')
+    const page = await getLandingPageById(id)
+    slug = page?.slug ?? ''
+  } catch (err) {
+    const msg = encodeURIComponent(err instanceof Error ? err.message : 'unknown')
+    redirect(`/admin/cms/landing-pages/${id}?error=${msg}`)
+  }
+
+  revalidatePath('/admin/cms/landing-pages')
+  revalidatePath(`/admin/cms/landing-pages/${id}`)
+  if (slug) revalidatePath(`/landing-pages/${slug}`)
+  redirect(`/admin/cms/landing-pages/${id}?unpublished=1`)
 }
 
 async function deleteAction(formData: FormData) {
@@ -55,7 +130,7 @@ export default async function EditLandingPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ saved?: string; error?: string }>
+  searchParams: Promise<{ saved?: string; error?: string; published?: string; unpublished?: string }>
 }) {
   await requireAdminAuth('editor')
   const { id } = await params
@@ -101,7 +176,17 @@ export default async function EditLandingPage({
 
       {sp.saved ? (
         <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 text-sm">
-          Saved.
+          Draft saved.
+        </div>
+      ) : null}
+      {sp.published ? (
+        <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 text-sm">
+          Published — your changes are now live.
+        </div>
+      ) : null}
+      {sp.unpublished ? (
+        <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 text-sm">
+          Unpublished — this page is no longer live.
         </div>
       ) : null}
       {sp.error ? (
@@ -113,6 +198,8 @@ export default async function EditLandingPage({
       <LandingPageEditor
         page={page}
         saveAction={saveAction}
+        publishAction={publishAction}
+        unpublishAction={unpublishAction}
         mediaItems={mediaItems}
         bucketConfigured={bucketConfigured}
       />

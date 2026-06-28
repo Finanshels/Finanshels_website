@@ -92,6 +92,8 @@ function deserialise(id: string, raw: Record<string, unknown>): LandingPageDoc {
     internal_name: readStr(n.internal_name),
     status: statusOf(n.status),
     published_at: toDate(n.published_at),
+    last_published_at: toDate(n.last_published_at),
+    has_unpublished_changes: readBool(n.has_unpublished_changes, false),
     created_at: toDate(n.created_at),
     updated_at: toDate(n.updated_at),
     created_by: readStr(n.created_by),
@@ -235,7 +237,14 @@ export async function listPublishedSlugs(): Promise<string[]> {
 
 export type LandingPageWriteInput = Omit<
   LandingPageDoc,
-  'id' | 'created_at' | 'updated_at' | 'published_at' | 'created_by' | 'updated_by'
+  | 'id'
+  | 'created_at'
+  | 'updated_at'
+  | 'published_at'
+  | 'last_published_at'
+  | 'has_unpublished_changes'
+  | 'created_by'
+  | 'updated_by'
 > & {
   published_at?: Date | null
 }
@@ -329,6 +338,8 @@ export async function duplicateLandingPage(id: string, userId: string): Promise<
     created_at: _c,
     updated_at: _u,
     published_at: _p,
+    last_published_at: _lp,
+    has_unpublished_changes: _huc,
     created_by: _cb,
     updated_by: _ub,
     ...rest
