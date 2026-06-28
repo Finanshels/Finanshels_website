@@ -22,7 +22,7 @@ const NAV_LINKS = [
       { label: 'Products', to: '/products' },
       { label: 'Glossary', to: '/glossary' },
       { label: 'Blog', to: '/blog' },
-      { label: 'Careers', to: '/careers' }
+      { label: 'Careers', href: 'https://careers.finanshels.com/' }
     ]
   },
   {

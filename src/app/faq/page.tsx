@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
 import { HOME_FAQS } from '@/content/home-faqs'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 import HomeFaqSection from '@/components/marketing/HomeFaqSection'
 import { FaqAccordion } from '@/components/cms/FaqAccordion'
 import { isCmsConfigured } from '@/lib/cms/config'
 import { listPublishedFaqs } from '@/lib/cms/faqsRepository'
+import { CollectionHubHeader } from '@/components/cms/CollectionHubHeader'
 import type { CmsFaq } from '@/lib/cms/schemas/faqs'
 import { CONTENT_CATEGORY_OPTIONS, CONTENT_CATEGORY_LABELS } from '@/lib/cms/contentCategoryOptions'
 
@@ -85,13 +85,11 @@ export default async function FaqPage({
         dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
       />
 
-      <div className="bg-gradient-to-b from-slate-950 to-slate-900 text-white">
-        <div className="mx-auto max-w-6xl px-6 pb-16 pt-36 sm:px-10 lg:px-16">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/50">Quick Reference</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
-            Frequently asked questions.
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg text-white/75">
+      <CollectionHubHeader
+        eyebrow="Quick Reference"
+        title="Frequently asked questions."
+        subtitle={
+          <>
             Everything founders ask before they start.{' '}
             <a
               href="https://wa.me/971521549572?text=Hi%20Team%20Finanshels%2C%20I%20have%20a%20question."
@@ -102,16 +100,10 @@ export default async function FaqPage({
               Chat with our team
             </a>{' '}
             if you need a straight answer.
-          </p>
-          <Link
-            href="/blog"
-            className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-[#ffb088] hover:text-white"
-          >
-            Browse the blog
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-        </div>
-      </div>
+          </>
+        }
+        cta={{ href: '/blog', label: 'Browse the blog' }}
+      />
 
       {hasCmsFaqs ? (
         <div className="mx-auto max-w-4xl px-6 py-16 sm:px-10 lg:px-16">
