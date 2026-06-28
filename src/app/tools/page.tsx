@@ -6,11 +6,25 @@ import { ToolsHubGrid, type HubTool } from '@/components/tools/ToolsHubGrid'
 
 export const revalidate = 600
 
+const HUB_TITLE = 'Free Finance & Tax Tools | Finanshels'
+const HUB_DESCRIPTION =
+  'Free UAE finance and tax tools — VAT calculator, gratuity calculator, corporate tax deadline checker, and more.'
+
 export const metadata: Metadata = {
-  title: 'Free Finance & Tax Tools | Finanshels',
-  description:
-    'Free UAE finance and tax tools — VAT calculator, gratuity calculator, corporate tax deadline checker, and more.',
+  title: HUB_TITLE,
+  description: HUB_DESCRIPTION,
   alternates: { canonical: `${getSiteUrl()}/tools` },
+  openGraph: {
+    title: HUB_TITLE,
+    description: HUB_DESCRIPTION,
+    url: `${getSiteUrl()}/tools`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: HUB_TITLE,
+    description: HUB_DESCRIPTION,
+  },
 }
 
 export default async function ToolsHubPage() {

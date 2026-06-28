@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import {
-  checkRateLimit,
   extractClientIp,
   hashIp,
   isValidEmail,
 } from '@/lib/chat/guards'
+import { checkAndIncrementRateLimit } from '@/lib/landing-pages/repository'
 import {
   writeContactSubmission,
   updateContactSyncState,
@@ -26,6 +26,12 @@ const REASON_LABELS: Record<ContactReason, string> = {
 }
 
 const DEFAULT_INBOX = 'contact@finanshels.com'
+
+// FIX-061: durable per-IP rate limit (Firestore-backed), matching the lead
+// routes. The previous in-memory limiter was per-serverless-instance and
+// bypassable across concurrent Vercel instances.
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000
+const RATE_LIMIT_MAX = 10
 
 const contactSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -62,12 +68,9 @@ export async function POST(request: Request) {
   const ip = extractClientIp(request.headers)
   const ipHash = hashIp(ip)
 
-  const limit = checkRateLimit(ipHash)
+  const limit = await checkAndIncrementRateLimit(ipHash, RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX)
   if (!limit.allowed) {
-    return NextResponse.json(
-      { ok: false, error: 'rate_limited', retryAfter: limit.retryAfterSeconds },
-      { status: 429 }
-    )
+    return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 })
   }
 
   let payload: unknown
