@@ -8,7 +8,7 @@ import {
   getCmsCollectionDefinition,
   type CmsCollectionKey,
 } from '@/lib/cms/collectionDefinitions'
-import { getCmsDocument } from '@/lib/cms/collectionRepository'
+import { getPublicCmsDocument } from '@/lib/cms/collectionRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
@@ -189,7 +189,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const definition = getCmsCollectionDefinition(collection)
   if (!definition) return { title: 'Content' }
 
-  const doc = await getCmsDocument(definition.key, slug)
+  const doc = await getPublicCmsDocument(definition.key, slug)
   if (!doc) return { title: 'Content' }
 
   const title = resolveTitle(doc, `${definition.singularLabel} | Finanshels`)
@@ -262,7 +262,7 @@ export default async function CmsCollectionContentPage({ params }: Props) {
   const definition = getCmsCollectionDefinition(collection)
   if (!definition) notFound()
 
-  const doc = await getCmsDocument(definition.key, slug)
+  const doc = await getPublicCmsDocument(definition.key, slug)
   if (!doc) notFound()
   // FIX-047: collapsed 6-state enum to 3. Only `published` renders publicly.
   // The `scheduled` time-windowed visibility branch is gone — scheduled
