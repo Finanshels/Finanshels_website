@@ -31,7 +31,7 @@ const leadSchema = z.object({
     }, 'Phone must have 7–15 digits'),
   // Bounded so an attacker can't stuff large/nested payloads into Firestore via `extra`.
   result_snapshot: z
-    .record(z.string().max(64), z.union([z.string().max(500), z.number(), z.boolean()]))
+    .record(z.string().max(64), z.union([z.string().max(500), z.number().finite(), z.boolean()]))
     .refine((o) => Object.keys(o).length <= 30, 'result_snapshot too large')
     .optional(),
   // NOTE: Turnstile is bypassed when TURNSTILE_SECRET_KEY is unset (see turnstile.ts).

@@ -25,10 +25,13 @@ export async function listPublishedTools(): Promise<Tool[]> {
   const db = getDb()
   if (!db) return []
 
+  // No Firestore orderBy: `sort_order` is stripped from the tools editor, so docs
+  // don't carry the field and `orderBy('sort_order')` would exclude every one of
+  // them (Firestore omits docs missing the ordered field). Load published tools
+  // and sort in memory below.
   const snap = await db
     .collection(COLLECTIONS.tools)
     .where('status', '==', 'published')
-    .orderBy('sort_order')
     .limit(LIST_LIMIT)
     .get()
 
