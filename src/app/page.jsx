@@ -52,21 +52,22 @@ const localBusinessSchema = {
   description: PAGE_DESCRIPTION,
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'in5 Tech, Dubai Internet City',
+    streetAddress: 'Office 406, Publishing Pavilion, Dubai Production City',
     addressLocality: 'Dubai',
     addressRegion: 'Dubai',
     addressCountry: 'AE',
   },
+  // NOTE: approximate Dubai Production City coords — verify exact lat/long for Publishing Pavilion.
   geo: {
     '@type': 'GeoCoordinates',
-    latitude: 25.0948,
-    longitude: 55.1562,
+    latitude: 25.029,
+    longitude: 55.192,
   },
   openingHoursSpecification: {
     '@type': 'OpeningHoursSpecification',
     dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-    opens: '09:00',
-    closes: '18:00',
+    opens: '09:30',
+    closes: '18:30',
   },
   areaServed: { '@type': 'Country', name: 'United Arab Emirates' },
   sameAs: [
