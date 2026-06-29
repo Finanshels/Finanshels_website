@@ -5,13 +5,17 @@ import { BlogCard } from '@/components/cms/BlogCard'
 import { DevCmsBanner } from '@/components/cms/DevCmsBanner'
 import { IndustryIcon } from '@/components/cms/IndustryIcon'
 import { AuthorAvatar } from '@/components/cms/blog/AuthorAvatar'
-import { isCmsConfigured } from '@/lib/cms/config'
+import { isCmsConfigured, getSiteUrl } from '@/lib/cms/config'
 import { listPublishedBlogPosts } from '@/lib/cms/blogRepository'
 import { INDUSTRY_OPTION_MAP } from '@/lib/cms/industryOptions'
 import { BLOG_CATEGORY_LABELS, blogCategoryLabel } from '@/lib/cms/blogTaxonomy'
 import { estimateReadingMinutes } from '@/lib/cms/readingTime'
 import type { BlogPost } from '@/lib/cms/schemas/blog'
 import { CollectionHubHeader } from '@/components/cms/CollectionHubHeader'
+import { safeJsonLd } from '@/lib/seo/safeJsonLd'
+import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
+
+const ITEMLIST_LIMIT = 50
 
 export const revalidate = 300
 
@@ -154,8 +158,30 @@ export default async function BlogIndexPage({
 
   const [lead, ...rest] = posts
 
+  const site = getSiteUrl()
+  const collectionLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'The Finanshels Blog',
+    description:
+      'Sharp takes on startup finance, tax, and operations — built for teams scaling across MENA.',
+    url: `${site}/blog`,
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: allPosts.slice(0, ITEMLIST_LIMIT).map((p, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: p.title,
+        url: `${site}/blog/${p.slug}`,
+      })),
+    },
+  }
+  const breadcrumbLd = buildBreadcrumbList([{ name: 'Blog', path: '/blog' }])
+
   return (
     <div className="bg-[#faf8f4]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }} />
       <DevCmsBanner />
 
       <CollectionHubHeader

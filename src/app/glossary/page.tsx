@@ -1,8 +1,12 @@
 import { DevCmsBanner } from '@/components/cms/DevCmsBanner'
 import { GlossarySearch } from '@/components/cms/GlossarySearch'
-import { isCmsConfigured } from '@/lib/cms/config'
+import { isCmsConfigured, getSiteUrl } from '@/lib/cms/config'
 import { listPublishedGlossaryTerms } from '@/lib/cms/glossaryRepository'
 import { CollectionHubHeader } from '@/components/cms/CollectionHubHeader'
+import { safeJsonLd } from '@/lib/seo/safeJsonLd'
+import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
+
+const ITEMLIST_LIMIT = 100
 
 export const revalidate = 600
 
@@ -26,9 +30,33 @@ export default async function GlossaryIndexPage() {
     return []
   })
   const cmsReady = isCmsConfigured()
+  const site = getSiteUrl()
+
+  const collectionLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Finance & Tax Glossary',
+    description:
+      'Clear definitions of UAE finance, tax, accounting, and compliance terms.',
+    url: `${site}/glossary`,
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: terms
+        .slice(0, ITEMLIST_LIMIT)
+        .map((t, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: t.term,
+          url: `${site}/glossary/${t.slug}`,
+        })),
+    },
+  }
+  const breadcrumbLd = buildBreadcrumbList([{ name: 'Glossary', path: '/glossary' }])
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }} />
       <DevCmsBanner />
       <CollectionHubHeader
         eyebrow="Reference"

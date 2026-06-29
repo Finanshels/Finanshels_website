@@ -243,8 +243,17 @@ function renderTemplate(
         {eyebrow ? <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">{eyebrow}</p> : null}
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
         {heroImage ? (
+          // Reserve a 16:9 box so the hero doesn't shift layout as it loads
+          // (CLS). Kept as a raw <img>, not next/image — heroImage is an
+          // arbitrary CMS URL and next/image 500s on non-allowlisted hosts.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={heroImage} alt={title} className="mt-8 w-full rounded-2xl border border-slate-200 object-cover" />
+          <img
+            src={heroImage}
+            alt={title}
+            width={1200}
+            height={675}
+            className="mt-8 aspect-[16/9] w-full rounded-2xl border border-slate-200 object-cover"
+          />
         ) : null}
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {summaryCards.map(([label, value]) =>

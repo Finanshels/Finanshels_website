@@ -92,6 +92,9 @@ async function legacyRedirects() {
 const nextConfig = {
   reactStrictMode: true,
   images: {
+    // Serve modern formats; the optimizer negotiates AVIF→WebP→original by
+    // Accept header, cutting image bytes ~20-40% on supporting browsers.
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       // Firebase Storage (CMS media uploads).
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
@@ -99,6 +102,9 @@ const nextConfig = {
     ],
   },
   experimental: {
+    // Rewrites barrel imports to per-module paths so only the icons actually
+    // used ship to the client — keeps the marketing bundle lean.
+    optimizePackageImports: ['lucide-react'],
     serverActions: {
       /**
        * Default is 1MB — oversized forms / actions would 413.

@@ -26,6 +26,15 @@ const NAV_LINKS = [
     ]
   },
   {
+    heading: 'Resources',
+    items: [
+      { label: 'Free Tools', to: '/tools' },
+      { label: 'Guides & Ebooks', to: '/guides' },
+      { label: 'Webinars', to: '/webinars' },
+      { label: 'Podcast', to: '/podcasts' }
+    ]
+  },
+  {
     heading: 'Need help?',
     items: [
       { label: 'Contact Us', to: '/contact' },

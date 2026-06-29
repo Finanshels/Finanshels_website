@@ -27,7 +27,11 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   metadataBase: new URL(SITE_URL),
-  alternates: { canonical: '/' },
+  // FIX-062: do NOT set `alternates.canonical` here. App Router merges metadata
+  // down the segment tree, so a root canonical is inherited by every page that
+  // doesn't override it — which made ~17 commercial pages emit the homepage
+  // canonical and de-indexed them. Each page sets its own canonical instead;
+  // the homepage's lives in src/app/page.jsx.
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
