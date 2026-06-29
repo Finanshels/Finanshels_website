@@ -2,7 +2,7 @@ import Image from 'next/image'
 import { ArticleBody } from '@/components/cms/ArticleBody'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { getCmsDocument, listCmsDocuments } from '@/lib/cms/collectionRepository'
-import { listPublishedFaqsByService } from '@/lib/cms/faqsRepository'
+import { resolveFaqAccordionItems } from '@/lib/cms/faqsRepository'
 import {
   CMS_COLLECTION_DEFINITION_MAP,
   type CmsCollectionKey,
@@ -175,22 +175,11 @@ function CtaBlock({ block }: { block: Block }) {
 async function FaqAccordionBlock({ block }: { block: Block }) {
   const heading = readString(block.heading)
   const subheading = readString(block.subheading)
-  const service = readString(block.service)
 
-  // Collection-backed when a service is chosen: pull published FAQs tagged with
-  // it. Otherwise fall back to the manually authored Items JSON.
-  const items = service
-    ? (await listPublishedFaqsByService(service)).map((f) => ({
-        question: f.question,
-        answer: f.answer,
-      }))
-    : readArray(block.items).filter(
-        (item): item is { question: string; answer: string } =>
-          Boolean(item) &&
-          typeof item === 'object' &&
-          typeof (item as Record<string, unknown>).question === 'string' &&
-          typeof (item as Record<string, unknown>).answer === 'string'
-      )
+  // FIX-068: resolution (service auto-pull vs manual items) lives in
+  // faqsRepository so the blog page can derive FAQPage JSON-LD from the SAME
+  // visible items.
+  const items = await resolveFaqAccordionItems(block)
 
   if (items.length === 0) return null
 

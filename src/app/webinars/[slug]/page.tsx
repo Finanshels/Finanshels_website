@@ -2,10 +2,12 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, ArrowRight, CalendarDays, Clock, ExternalLink, MonitorPlay, Tag } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CalendarDays, ExternalLink, MonitorPlay, Tag } from 'lucide-react'
 import { PageBlocksRenderer } from '@/components/cms/PageBlocksRenderer'
+import { CoHostList } from '@/components/cms/webinars/CoHostList'
 import { CountdownTimer } from '@/components/cms/webinars/CountdownTimer'
 import { DownloadsSection } from '@/components/cms/webinars/DownloadsSection'
+import { GatedReplay } from '@/components/cms/webinars/GatedReplay'
 import { ReplayEmbed } from '@/components/cms/webinars/ReplayEmbed'
 import { SpeakerList } from '@/components/cms/webinars/SpeakerList'
 import { WebinarAgenda } from '@/components/cms/webinars/WebinarAgenda'
@@ -99,18 +101,8 @@ function MetaRow({ webinar }: { webinar: WebinarDetail }) {
         <MonitorPlay className="mt-0.5 size-4 shrink-0 text-slate-400" />
         <span>{platformLabel(webinar.platform)}</span>
       </div>
-      {webinar.hostPartnerName ? (
-        <div className="flex items-center gap-2.5 text-slate-700">
-          {webinar.hostPartnerLogo ? (
-            <span className="relative size-5 shrink-0 overflow-hidden rounded">
-              <Image src={webinar.hostPartnerLogo} alt={webinar.hostPartnerName} fill sizes="20px" className="object-contain" />
-            </span>
-          ) : (
-            <Clock className="size-4 shrink-0 text-slate-400" />
-          )}
-          <span>In partnership with {webinar.hostPartnerName}</span>
-        </div>
-      ) : null}
+      {/* FIX-068: one or many co-hosts/partners (was a single partner line). */}
+      <CoHostList coHosts={webinar.coHosts} />
     </dl>
   )
 }
@@ -205,6 +197,8 @@ export default async function WebinarDetailPage({ params }: Props) {
 
   const isOnDemand = webinar.status === 'completed'
   const descriptionHtml = sanitizeCmsHtml(webinar.description)
+  // FIX-068: written recap, shown on the replay page only.
+  const recapHtml = isOnDemand && webinar.postEventSummary ? sanitizeCmsHtml(webinar.postEventSummary) : ''
   const jsonLd = buildJsonLd(webinar)
 
   return (
@@ -226,10 +220,20 @@ export default async function WebinarDetailPage({ params }: Props) {
           {webinar.summary ? <p className="max-w-3xl text-lg text-slate-600">{webinar.summary}</p> : null}
         </div>
 
-        {/* On-demand: lead with the open replay. */}
+        {/* On-demand: lead with the replay — gated behind registration when
+            replay_gated is set (FIX-068), otherwise open. */}
         {isOnDemand && webinar.recordingUrl ? (
           <div className="mt-8">
-            <ReplayEmbed url={webinar.recordingUrl} title={webinar.title} />
+            {webinar.replayGated ? (
+              <GatedReplay
+                url={webinar.recordingUrl}
+                title={webinar.title}
+                webinarSlug={webinar.slug}
+                teaserUrl={webinar.teaserVideoUrl}
+              />
+            ) : (
+              <ReplayEmbed url={webinar.recordingUrl} title={webinar.title} />
+            )}
           </div>
         ) : null}
 
@@ -246,10 +250,13 @@ export default async function WebinarDetailPage({ params }: Props) {
         <div className="mt-10 grid gap-10 lg:grid-cols-[1.6fr_1fr] lg:gap-14">
           {/* Main column */}
           <div className="space-y-12">
-            {/* Upcoming hero visual + countdown */}
+            {/* Upcoming hero visual + countdown. FIX-068: a teaser clip takes
+                precedence over the static banner when supplied. */}
             {!isOnDemand ? (
               <div className="space-y-6">
-                {webinar.bannerImage ? (
+                {webinar.teaserVideoUrl ? (
+                  <ReplayEmbed url={webinar.teaserVideoUrl} title={`${webinar.title} — preview`} />
+                ) : webinar.bannerImage ? (
                   <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
                     <Image
                       src={webinar.bannerImage}
@@ -278,6 +285,16 @@ export default async function WebinarDetailPage({ params }: Props) {
                 <div
                   className="prose prose-slate mt-4 max-w-none prose-headings:font-semibold prose-a:text-blue-700"
                   dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                />
+              </section>
+            ) : null}
+
+            {recapHtml ? (
+              <section>
+                <SectionHeading>Session recap</SectionHeading>
+                <div
+                  className="prose prose-slate mt-4 max-w-none prose-headings:font-semibold prose-a:text-blue-700"
+                  dangerouslySetInnerHTML={{ __html: recapHtml }}
                 />
               </section>
             ) : null}

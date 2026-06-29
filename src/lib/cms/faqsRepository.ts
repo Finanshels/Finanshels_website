@@ -38,3 +38,31 @@ export async function listPublishedFaqsByService(service: string): Promise<CmsFa
   const all = await listPublishedFaqs()
   return all.filter((faq) => (faq.service_category ?? []).includes(target))
 }
+
+export type FaqAccordionItem = { question: string; answer: string }
+
+/**
+ * FIX-068: resolve the Q&A items a `faq_accordion` block will render — either
+ * auto-pulled from published FAQs tagged with `block.service`, or the manually
+ * authored `block.items` JSON fallback. Single source of truth shared by the
+ * renderer (`PageBlocksRenderer`) and the blog page's `FAQPage` JSON-LD, so the
+ * structured data is derived strictly from FAQs VISIBLE on the page (never a
+ * hidden field).
+ */
+export async function resolveFaqAccordionItems(
+  block: Record<string, unknown>
+): Promise<FaqAccordionItem[]> {
+  const service = typeof block.service === 'string' ? block.service.trim() : ''
+  if (service) {
+    const faqs = await listPublishedFaqsByService(service)
+    return faqs.map((f) => ({ question: f.question, answer: f.answer }))
+  }
+  const items = Array.isArray(block.items) ? block.items : []
+  return items.filter(
+    (item): item is FaqAccordionItem =>
+      Boolean(item) &&
+      typeof item === 'object' &&
+      typeof (item as Record<string, unknown>).question === 'string' &&
+      typeof (item as Record<string, unknown>).answer === 'string'
+  )
+}
