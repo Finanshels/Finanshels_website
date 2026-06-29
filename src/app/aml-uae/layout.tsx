@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'AML Compliance UAE | DNFBP goAML Registration & FIU Reporting | Finanshels',
+  title: { absolute: 'AML Compliance UAE | DNFBP goAML Registration & FIU Reporting | Finanshels' },
   description:
     'End-to-end AML compliance for UAE Designated Non-Financial Businesses — goAML registration, Business Risk Assessment, CDD procedures, and FIU reporting. Compliant in 7 days.',
   alternates: { canonical: '/aml-uae' },

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Healthcare Accounting UAE | Clinic Finance, Zero-Rated VAT | Finanshels',
+  title: { absolute: 'Healthcare Accounting UAE | Clinic Finance, Zero-Rated VAT | Finanshels' },
   description:
     'Specialist accounting services for UAE clinics and healthcare businesses. DHA/DOH VAT treatment, insurance receivables management, clinic-level P&L, Corporate Tax, and audit-ready records. From AED 799/month. Trusted by 7,000+ UAE businesses.',
   alternates: { canonical: '/healthcare-accounting' },

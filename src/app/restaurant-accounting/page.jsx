@@ -1,12 +1,11 @@
 import ServiceDetailPage from '../../screens/services/ServiceDetailPage'
 import { SECTOR_PAGES } from '@/content/sectors'
-import { buildServiceMetadata } from '@/lib/seo/serviceMetadata'
 import { ServiceJsonLd } from '@/components/seo/StructuredData'
 
 const PATH = '/restaurant-accounting'
 const page = SECTOR_PAGES['restaurant-accounting']
 
-export const metadata = buildServiceMetadata(page, PATH)
+// SEO metadata comes from the colocated layout.tsx; this page adds JSON-LD only.
 
 export default function Page() {
   return (

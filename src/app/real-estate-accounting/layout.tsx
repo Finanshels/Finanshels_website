@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Real Estate Agency Accounting UAE | RERA Trust Accounts | Finanshels',
+  title: { absolute: 'Real Estate Agency Accounting UAE | RERA Trust Accounts | Finanshels' },
   description:
     'Specialist accounting services for UAE real estate agencies, developers, and property managers. RERA trust account reconciliation, property VAT treatment, AML compliance, commission income management, and Corporate Tax. Trusted by 7,000+ UAE businesses.',
   alternates: { canonical: '/real-estate-accounting' },

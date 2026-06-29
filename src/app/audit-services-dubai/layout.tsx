@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Audit Services Dubai | Statutory & FTA Audit Support | Finanshels',
+  title: { absolute: 'Audit Services Dubai | Statutory & FTA Audit Support | Finanshels' },
   description:
     'Finanshels prepares UAE businesses for statutory and FTA audits — clean accrual-basis accounts, working paper packs, and auditor liaison support.',
   alternates: { canonical: '/audit-services-dubai' },

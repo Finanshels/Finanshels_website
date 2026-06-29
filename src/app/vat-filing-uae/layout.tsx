@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'UAE VAT Filing | Quarterly Returns Filed in 48 Hours | Finanshels',
+  title: { absolute: 'UAE VAT Filing | Quarterly Returns Filed in 48 Hours | Finanshels' },
   description:
     'Finanshels prepares and files your UAE VAT return with the FTA — every transaction correctly coded, quarterly submission within 48 hours of period close, penalty-free.',
   alternates: { canonical: '/vat-filing-uae' },

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'UAE Corporate Tax Filing | Accurate CT Returns | Finanshels',
+  title: { absolute: 'UAE Corporate Tax Filing | Accurate CT Returns | Finanshels' },
   description:
     'Finanshels files your UAE Corporate Tax return — books review, taxable income calculation, related-party disclosures, and EmaraTax submission before your deadline.',
   alternates: { canonical: '/corporate-tax-filing-uae' },

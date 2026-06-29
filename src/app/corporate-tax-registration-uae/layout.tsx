@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'UAE Corporate Tax Registration | FTA Registration in 48 Hours | Finanshels',
+  title: { absolute: 'UAE Corporate Tax Registration | FTA Registration in 48 Hours | Finanshels' },
   description:
     'Register your UAE business for Corporate Tax with the FTA. Entity classification, free zone QFZP assessment, and EmaraTax submission handled in 48 hours. From AED 1,500.',
   alternates: { canonical: '/corporate-tax-registration-uae' },

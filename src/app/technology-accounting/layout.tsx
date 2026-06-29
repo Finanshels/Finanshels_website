@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Technology & Startup Accounting UAE | Board Reports, Burn Rate | Finanshels',
+  title: { absolute: 'Technology & Startup Accounting UAE | Board Reports, Burn Rate | Finanshels' },
   description:
     'Specialist accounting services for UAE tech startups, SaaS businesses, fintech, and AI companies. MRR revenue recognition, burn rate reporting, investor-grade board packs, R&D CT treatment, and ESOP accounting. From AED 499/month. Trusted by 7,000+ UAE businesses.',
   alternates: { canonical: '/technology-accounting' },

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Company Liquidation Dubai | UAE Company Wind-Up | Finanshels',
+  title: { absolute: 'Company Liquidation Dubai | UAE Company Wind-Up | Finanshels' },
   description:
     'Finanshels handles the financial side of UAE company liquidation — final accounts, VAT deregistration, CT deregistration, and employee settlement calculations.',
   alternates: { canonical: '/company-liquidation-dubai' },
