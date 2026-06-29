@@ -30,10 +30,17 @@ export default async function ProductRoute({ params }) {
   const { slug } = await params
   const product = PRODUCT_PAGES[slug]
   if (!product) notFound()
+  // FIX-069: PRODUCT_PAGES stores a lucide component in `icon`. Passing that
+  // function across the server→client boundary to ProductDetailPage ('use
+  // client') throws "Functions cannot be passed directly to Client Components"
+  // at prerender (regression from FIX-062, which made this a Server Component).
+  // ProductDetailPage never renders the icon, so drop it before passing.
+  // ProductJsonLd is a Server Component, so it can keep the full product.
+  const productForClient = { ...product, icon: undefined }
   return (
     <>
       <ProductJsonLd product={product} path={`/products/${slug}`} />
-      <ProductDetailPage product={product} />
+      <ProductDetailPage product={productForClient} />
     </>
   )
 }
