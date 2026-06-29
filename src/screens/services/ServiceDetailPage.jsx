@@ -90,6 +90,10 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
     setLead((prev) => ({ ...prev, [name]: value }))
   }
 
+  // FIX-063: this form previously faked success with a setTimeout and never sent
+  // the lead anywhere — every enquiry on sector/solution/service pages was
+  // silently dropped. Wire it to the same /api/contact pipeline the main contact
+  // form uses (Firestore + Zoho + email notification).
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (submitting) return
@@ -772,6 +776,9 @@ export default function ServiceDetailPage({ page, cmsTestimonials }) {
                         </>
                       )}
                     </button>
+                    {error && (
+                      <p className="text-sm text-rose-600 text-center" role="alert">{error}</p>
+                    )}
                   </form>
                 )}
                 <p className="mt-4 text-xs text-slate-500 text-center">

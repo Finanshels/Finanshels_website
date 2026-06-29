@@ -5,6 +5,22 @@ import { captureAttribution, readAttribution, sha256Hex } from '@/lib/landing-pa
 import { fireConversion, fireEvent } from '@/lib/landing-pages/gtag'
 import type { LeadAttribution } from '@/lib/landing-pages/types'
 
+// FIX-059: thank_you_redirect_url is editor-controlled free text. Only follow a
+// same-origin path or an http(s) URL — never javascript:/data: (which would run
+// in the visitor's browser after a successful conversion).
+function safeRedirectTarget(raw?: string): string | null {
+  const value = (raw ?? '').trim()
+  if (!value) return null
+  if (value.startsWith('/') && !value.startsWith('//')) return value
+  try {
+    const url = new URL(value, window.location.origin)
+    if (url.protocol === 'http:' || url.protocol === 'https:') return url.href
+  } catch {
+    return null
+  }
+  return null
+}
+
 declare global {
   interface Window {
     turnstile?: {
@@ -226,7 +242,8 @@ export default function LeadForm(props: LeadFormProps) {
         }
 
         if (thankYouRedirectUrl) {
-          window.location.href = thankYouRedirectUrl
+          const dest = safeRedirectTarget(thankYouRedirectUrl)
+          if (dest) window.location.href = dest
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')

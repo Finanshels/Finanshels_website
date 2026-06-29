@@ -1,3 +1,7 @@
+// FIX-062: defense-in-depth — this module imports firebase-admin, so mark it
+// server-only so a stray client import fails loudly at build (precedent c5d6155)
+// instead of leaking the admin SDK into the browser bundle.
+import 'server-only'
 import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { getDb } from '../cms/firestore'
 import { normalizeFirestoreTimestamps } from '../cms/normalizeDoc'
@@ -354,7 +358,9 @@ export type LeadWriteInput = {
   ip_hash: string
   /** Capture surface, e.g. "tool:vat-calculator". Defaults to "landing_page". */
   source?: string
-  /** Arbitrary serialisable context (e.g. a tool result snapshot). */
+  // Arbitrary serialisable context — a tool result snapshot, or FIX-067
+  // campaign-configured hidden form fields. Persisted so they aren't silently
+  // dropped after a 200 OK.
   extra?: Record<string, unknown>
 }
 

@@ -14,6 +14,7 @@ import {
 } from '@/lib/contact/contactRepository'
 import { upsertZohoLead } from '@/lib/chat/zoho'
 import { sendEmail } from '@/lib/email/resend'
+import { enforceBodyLimit } from '@/lib/http/bodyLimit'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -74,6 +75,9 @@ export async function POST(request: Request) {
   if (!limit.allowed) {
     return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 })
   }
+
+  const tooLarge = enforceBodyLimit(request, 64_000)
+  if (tooLarge) return tooLarge
 
   let payload: unknown
   try {

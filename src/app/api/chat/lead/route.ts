@@ -10,6 +10,7 @@ import {
   isValidEmail,
   isValidPhone,
 } from '@/lib/chat/guards'
+import { enforceBodyLimit } from '@/lib/http/bodyLimit'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -53,6 +54,9 @@ export async function POST(request: Request) {
       { status: 429 }
     )
   }
+
+  const tooLarge = enforceBodyLimit(request, 64_000)
+  if (tooLarge) return tooLarge
 
   let payload: unknown
   try {

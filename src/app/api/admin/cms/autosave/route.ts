@@ -4,6 +4,7 @@ import { requireAdminAuth, sessionRole } from '@/lib/cms/adminAuth'
 import { getCmsCollectionDefinition, getAllFields } from '@/lib/cms/collectionDefinitions'
 import { upsertCmsDocument } from '@/lib/cms/collectionRepository'
 import { decodeFieldValue, InvalidFieldValueError } from '@/lib/cms/fieldCodec'
+import { enforceBodyLimit } from '@/lib/http/bodyLimit'
 import type { CmsCollectionKey } from '@/lib/cms/collectionDefinitions'
 
 export async function POST(request: Request) {
@@ -13,6 +14,9 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const tooLarge = enforceBodyLimit(request, 4_000_000)
+  if (tooLarge) return tooLarge
 
   let body: Record<string, unknown>
   try {
@@ -47,7 +51,12 @@ export async function POST(request: Request) {
         parsed[field.name] = [...new Set(parts.filter(Boolean))]
         continue
       }
-      parsed[field.name] = decodeFieldValue(field, String(raw))
+      // FIX-057: empty pass-through fields decode to `undefined`; the Firestore
+      // admin SDK rejects undefined values (no ignoreUndefinedProperties is set),
+      // so an editor clearing any optional field would 500 every autosave tick.
+      // Skip undefined — mirrors the explicit-save filter in admin/cms/page.tsx.
+      const decoded = decodeFieldValue(field, String(raw))
+      if (decoded !== undefined) parsed[field.name] = decoded
     }
   } catch (err) {
     if (err instanceof InvalidFieldValueError) {

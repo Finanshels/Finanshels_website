@@ -460,6 +460,8 @@ export default function Navbar({ navTools = [] }) {
                               const EntryComponent = entry.href?.startsWith('http') ? 'a' : Link
                               const entryProps = entry.href?.startsWith('http')
                                 ? { href: entry.href, target: '_blank', rel: 'noreferrer', onClick: () => setMobileMenuOpen(false) }
+                                // FIX-055: next/link uses `href`, not `to` — the mobile
+                                // submenu links were rendering with no href (dead links).
                                 : { href: entry.href || '#', onClick: () => setMobileMenuOpen(false) }
                               return (
                                 <EntryComponent

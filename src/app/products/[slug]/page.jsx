@@ -2,11 +2,13 @@ import { notFound } from 'next/navigation'
 import { PRODUCT_PAGES } from '@/content/products'
 import ProductDetailPage from '../../../screens/products/ProductDetailPage'
 import { serviceRouteMetadata } from '@/lib/seo/servicePageMetadata'
+import { ProductJsonLd } from '@/components/seo/StructuredData'
 
 // Server component so each product gets a unique title + self-referential
-// canonical. (Previously 'use client', which inherited the root layout's
-// `canonical: '/'` and the homepage <title>.) These six are linked from the
-// homepage, so they're statically generated and unknown slugs 404.
+// canonical (FIX-062) plus SoftwareApplication JSON-LD (FIX-064). (Previously
+// 'use client', which inherited the root layout's `canonical: '/'` and the
+// homepage <title>.) These six are linked from the homepage, so they're
+// statically generated and unknown slugs 404.
 
 export function generateStaticParams() {
   return Object.keys(PRODUCT_PAGES).map((slug) => ({ slug }))
@@ -28,5 +30,10 @@ export default async function ProductRoute({ params }) {
   const { slug } = await params
   const product = PRODUCT_PAGES[slug]
   if (!product) notFound()
-  return <ProductDetailPage product={product} />
+  return (
+    <>
+      <ProductJsonLd product={product} path={`/products/${slug}`} />
+      <ProductDetailPage product={product} />
+    </>
+  )
 }

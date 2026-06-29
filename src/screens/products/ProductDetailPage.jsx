@@ -1,3 +1,5 @@
+'use client'
+
 import AnimatedSection from '../../components/marketing/AnimatedSection'
 import { Card } from '../../components/ui/Card'
 import { ArrowRight, CheckCircle2, Sparkles } from 'lucide-react'
