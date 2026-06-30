@@ -195,3 +195,31 @@ html {
 .animate-bounce {
   animation: bounce 1s infinite;
 }
+
+/* FIX-075: inline CTA shortcode buttons rendered from `[cta …]` in rich text. */
+.fin-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.fin-cta--primary {
+  background-color: #f16610;
+  color: #ffffff;
+}
+.fin-cta--primary:hover {
+  background-color: #c14e0d;
+}
+.fin-cta--secondary {
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+.fin-cta--secondary:hover {
+  background-color: #f1f5f9;
+}

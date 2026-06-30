@@ -13,7 +13,7 @@ export type CmsBlockType = {
   fields: CmsBlockField[]
 }
 
-export const CMS_BLOCK_TYPES: CmsBlockType[] = [
+const RAW_CMS_BLOCK_TYPES: CmsBlockType[] = [
   {
     type: 'hero',
     label: 'Hero',
@@ -24,6 +24,13 @@ export const CMS_BLOCK_TYPES: CmsBlockType[] = [
       { name: 'heading', label: 'Heading', type: 'text', required: true },
       { name: 'subheading', label: 'Subheading', type: 'textarea' },
       { name: 'imageUrl', label: 'Image URL', type: 'url' },
+      // FIX-074: optional art-directed mobile crop. Falls back to imageUrl.
+      {
+        name: 'imageMobileUrl',
+        label: 'Mobile image URL (optional)',
+        type: 'url',
+        description: 'Phone-optimised crop shown ≤640px. Leave blank to reuse the main image.',
+      },
       { name: 'imageAlt', label: 'Image alt text', type: 'text' },
       { name: 'ctaLabel', label: 'CTA label', type: 'text' },
       { name: 'ctaUrl', label: 'CTA URL', type: 'url' },
@@ -261,6 +268,39 @@ export const CMS_BLOCK_TYPES: CmsBlockType[] = [
     ],
   },
 ]
+
+// FIX-072: editor-controllable heading level (SEO). Appended once to every
+// block that renders a real heading tag (via <BlockHeading> in
+// PageBlocksRenderer), so the field surfaces in the block editor automatically.
+// `logo_wall` renders its heading as a label <p>, so it is excluded.
+const HEADING_LEVEL_BLOCK_FIELD: CmsBlockField = {
+  name: 'heading_level',
+  label: 'Heading level (SEO)',
+  type: 'select',
+  options: ['h2', 'h3', 'h4'],
+  defaultValue: 'h2',
+  description: 'Semantic tag for this block heading. The page owns the H1 — keep blocks at H2 and nest with H3/H4.',
+}
+
+const HEADING_LEVEL_BLOCKS = new Set<string>([
+  'hero',
+  'cta',
+  'faq_accordion',
+  'stats',
+  'tool_embed',
+  'form',
+  'download',
+  'speaker',
+  'related_content',
+  'table',
+  'timeline',
+])
+
+export const CMS_BLOCK_TYPES: CmsBlockType[] = RAW_CMS_BLOCK_TYPES.map((block) =>
+  HEADING_LEVEL_BLOCKS.has(block.type)
+    ? { ...block, fields: [...block.fields, HEADING_LEVEL_BLOCK_FIELD] }
+    : block
+)
 
 export const CMS_BLOCK_TYPE_MAP: Record<string, CmsBlockType> = Object.fromEntries(
   CMS_BLOCK_TYPES.map((b) => [b.type, b])

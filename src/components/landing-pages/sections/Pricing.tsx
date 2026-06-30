@@ -4,7 +4,7 @@ import * as Lucide from 'lucide-react'
 import { b, jsonArray, s } from '@/lib/landing-pages/safeProps'
 import { FormScrollButton } from '../CtaButtons'
 import type { CtaConfig } from '../CtaButtons'
-import { Container, SectionWrap, SectionHeading } from './primitives'
+import { Container, SectionWrap, SectionHeading, normalizeHeadingLevel } from './primitives'
 
 type Common = { props: Record<string, unknown> }
 type WithCta = Common & { cta: CtaConfig }
@@ -25,7 +25,7 @@ export function Pricing({ props, cta }: WithCta) {
   return (
     <SectionWrap bg="white">
       <Container>
-        <SectionHeading heading={heading} subheading={subheading} />
+        <SectionHeading heading={heading} subheading={subheading} level={normalizeHeadingLevel(props.heading_level)} />
         <div className={`grid gap-5 ${tiers.length === 1 ? 'max-w-md mx-auto' : tiers.length === 2 ? 'md:grid-cols-2 max-w-3xl mx-auto' : 'md:grid-cols-3'}`}>
           {tiers.map((tier, i) => {
             const highlighted = b(tier.highlighted)

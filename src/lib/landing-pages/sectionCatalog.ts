@@ -98,7 +98,7 @@ const STATS_DEFAULT = [
   { value: 'AED 0', label: 'Penalties paid by clients' },
 ]
 
-export const SECTION_CATALOG: SectionCatalogEntry[] = [
+const RAW_SECTION_CATALOG: SectionCatalogEntry[] = [
   {
     type: 'hero',
     label: 'Hero',
@@ -581,6 +581,38 @@ export const SECTION_CATALOG: SectionCatalogEntry[] = [
     ],
   },
 ]
+
+// FIX-072: editor-controllable heading level (SEO). Appended once to every
+// section that renders a <SectionHeading>, so the field surfaces in the studio
+// Inspector automatically. The hero owns the page <h1>, so it is excluded.
+const HEADING_LEVEL_FIELD: SectionFieldDef = {
+  name: 'heading_level',
+  label: 'Heading level (SEO)',
+  type: 'select',
+  options: ['h2', 'h3', 'h4'],
+  defaultValue: 'h2',
+  description: 'Semantic tag for this section heading. The hero is the page H1 — keep most sections at H2 and nest with H3/H4.',
+}
+
+const HEADING_LEVEL_SECTIONS = new Set<LandingPageSectionType>([
+  'stats-row',
+  'testimonials-carousel',
+  'feature-grid',
+  'process-steps',
+  'comparison-table',
+  'pricing',
+  'faq',
+])
+
+export const SECTION_CATALOG: SectionCatalogEntry[] = RAW_SECTION_CATALOG.map((entry) =>
+  HEADING_LEVEL_SECTIONS.has(entry.type)
+    ? {
+        ...entry,
+        defaultProps: { heading_level: 'h2', ...entry.defaultProps },
+        fields: [...entry.fields, HEADING_LEVEL_FIELD],
+      }
+    : entry
+)
 
 const CATALOG_MAP = new Map<string, SectionCatalogEntry>(
   SECTION_CATALOG.map((s) => [s.type, s])

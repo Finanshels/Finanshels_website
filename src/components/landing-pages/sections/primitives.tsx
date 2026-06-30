@@ -36,12 +36,32 @@ export function SectionWrap({
   return <section className={`${bgClass} ${padClass}`}>{children}</section>
 }
 
-export function SectionHeading({ heading, subheading, dark }: { heading?: string; subheading?: string; dark?: boolean }) {
+// FIX-072: editor-controllable heading level for SEO structure. The hero owns
+// the page <h1>; section headings default to <h2> and can drop to <h3>/<h4>.
+export type HeadingLevel = 'h1' | 'h2' | 'h3' | 'h4'
+const HEADING_LEVELS: readonly HeadingLevel[] = ['h1', 'h2', 'h3', 'h4']
+
+export function normalizeHeadingLevel(value: unknown, fallback: HeadingLevel = 'h2'): HeadingLevel {
+  return HEADING_LEVELS.includes(value as HeadingLevel) ? (value as HeadingLevel) : fallback
+}
+
+export function SectionHeading({
+  heading,
+  subheading,
+  dark,
+  level = 'h2',
+}: {
+  heading?: string
+  subheading?: string
+  dark?: boolean
+  level?: HeadingLevel
+}) {
   if (!heading && !subheading) return null
+  const Tag = level
   return (
     <div className="text-center mb-10 max-w-3xl mx-auto">
       {heading ? (
-        <h2 className={`text-2xl sm:text-4xl font-display font-semibold tracking-tight ${dark ? 'text-white' : 'text-slate-900'}`}>{heading}</h2>
+        <Tag className={`text-2xl sm:text-4xl font-display font-semibold tracking-tight ${dark ? 'text-white' : 'text-slate-900'}`}>{heading}</Tag>
       ) : null}
       {subheading ? (
         <p className={`mt-3 text-base sm:text-lg ${dark ? 'text-slate-300' : 'text-slate-600'}`}>{subheading}</p>

@@ -2,7 +2,7 @@
 
 import * as Lucide from 'lucide-react'
 import { jsonArray, s } from '@/lib/landing-pages/safeProps'
-import { Container, SectionWrap, SectionHeading } from './primitives'
+import { Container, SectionWrap, SectionHeading, normalizeHeadingLevel } from './primitives'
 
 type Common = { props: Record<string, unknown> }
 
@@ -14,7 +14,7 @@ export function TestimonialsCarousel({ props }: Common) {
   return (
     <SectionWrap>
       <Container>
-        <SectionHeading heading={heading} subheading={subheading} />
+        <SectionHeading heading={heading} subheading={subheading} level={normalizeHeadingLevel(props.heading_level)} />
         <div className="grid md:grid-cols-2 gap-5">
           {items.slice(0, 4).map((item, i) => (
             <figure key={i} className="rounded-2xl border border-slate-200 bg-white p-6">

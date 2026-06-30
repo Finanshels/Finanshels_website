@@ -76,8 +76,10 @@ export default async function EbookLandingPage({ params }: Props) {
           All resources
         </Link>
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
-          {/* Left: cover + copy */}
+        {/* FIX-070: cover moved below the description (was in the right rail);
+            the right column now carries only the lead-capture form. */}
+        <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_380px] lg:gap-16">
+          {/* Left: copy + cover */}
           <div>
             <div className="flex flex-wrap items-center gap-2">
               {badges.map((badge) => (
@@ -101,6 +103,20 @@ export default async function EbookLandingPage({ params }: Props) {
               </div>
             ) : null}
 
+            {/* FIX-070: cover image sits directly below the description. */}
+            {ebook.coverImage ? (
+              <div className="relative mt-8 aspect-[3/4] w-full max-w-xs overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-lg">
+                <Image
+                  src={ebook.coverImage}
+                  alt={ebook.title}
+                  fill
+                  sizes="(min-width: 1024px) 320px, 80vw"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            ) : null}
+
             {ebook.topics.length > 0 ? (
               <div className="mt-8">
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -120,21 +136,8 @@ export default async function EbookLandingPage({ params }: Props) {
             ) : null}
           </div>
 
-          {/* Right: cover image + download */}
+          {/* Right: download form only (sticky) */}
           <div className="lg:sticky lg:top-24 lg:self-start">
-            {ebook.coverImage ? (
-              <div className="relative mx-auto mb-6 aspect-[3/4] w-full max-w-xs overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-lg">
-                <Image
-                  src={ebook.coverImage}
-                  alt={ebook.title}
-                  fill
-                  sizes="(min-width: 1024px) 320px, 80vw"
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            ) : null}
-
             {ebook.gated ? (
               <EbookDownloadForm ebookSlug={ebook.slug} ebookTitle={ebook.title} />
             ) : ebook.fileUrl ? (

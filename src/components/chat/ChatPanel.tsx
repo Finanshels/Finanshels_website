@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2, Send, X } from 'lucide-react'
 import { ChatMessage } from './ChatMessage'
 import { LeadForm, type LeadDetails } from './LeadForm'
+import { whatsappHref } from '@/lib/whatsapp'
 
 interface ChatPanelProps {
   onClose: () => void
@@ -17,13 +18,9 @@ interface CapturedLead {
   sessionId: string
 }
 
-const WHATSAPP_NUMBER = '971521549572'
 const CONTACT_PATH = '/contact'
 
-function whatsappHref(service: string): string {
-  const message = `Hi Finanshels team, I'd like to talk to someone about ${service}.`
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
-}
+// FIX-079: whatsappHref now lives in @/lib/whatsapp with per-service templates.
 
 const CHIP_CLASS =
   'rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-orange-400 hover:text-orange-600'

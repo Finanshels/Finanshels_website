@@ -59,6 +59,8 @@ export default function EbookDownloadForm({
   const [state, setState] = useState<FormState>('idle')
   const [error, setError] = useState<string | null>(null)
   const [fileUrl, setFileUrl] = useState<string | null>(null)
+  // FIX-071: when true, the download link was emailed (not served in-browser).
+  const [emailedTo, setEmailedTo] = useState<string | null>(null)
   const [attribution, setAttribution] = useState<LeadAttribution>({ landing_url: '' })
   const [turnstileToken, setTurnstileToken] = useState<string>('')
   const turnstileMountRef = useRef<HTMLDivElement | null>(null)
@@ -168,8 +170,9 @@ export default function EbookDownloadForm({
           throw new Error(humaniseError(errBody?.error, res.status))
         }
 
-        const okBody = (await res.json()) as { file_url?: string }
+        const okBody = (await res.json()) as { file_url?: string; emailed?: boolean }
         setFileUrl(okBody.file_url ?? null)
+        setEmailedTo(okBody.emailed ? email : null)
         setState('success')
         form.reset()
         const api = getTurnstile()
@@ -177,6 +180,8 @@ export default function EbookDownloadForm({
           api.reset(turnstileWidgetId.current)
           setTurnstileToken('')
         }
+        // Only auto-open when we fell back to an in-browser URL; when emailed,
+        // the link lives in the inbox (anti-spam) and there is nothing to open.
         if (okBody.file_url) {
           window.open(okBody.file_url, '_blank', 'noopener,noreferrer')
         }
@@ -197,20 +202,33 @@ export default function EbookDownloadForm({
           <div className="size-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl">
             ✓
           </div>
-          <h3 className="text-lg font-semibold text-slate-900">Your download is ready</h3>
-          <p className="text-slate-600 text-sm">
-            {ebookTitle} should be opening in a new tab. If it didn&apos;t, use the button below.
-          </p>
-          {fileUrl ? (
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 transition"
-            >
-              Download now
-            </a>
-          ) : null}
+          {emailedTo ? (
+            <>
+              <h3 className="text-lg font-semibold text-slate-900">Check your inbox</h3>
+              <p className="text-slate-600 text-sm">
+                We&apos;ve emailed your download link for {ebookTitle} to{' '}
+                <span className="font-medium text-slate-900">{emailedTo}</span>. It should arrive
+                within a minute — check spam if you don&apos;t see it.
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-semibold text-slate-900">Your download is ready</h3>
+              <p className="text-slate-600 text-sm">
+                {ebookTitle} should be opening in a new tab. If it didn&apos;t, use the button below.
+              </p>
+              {fileUrl ? (
+                <a
+                  href={fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 transition"
+                >
+                  Download now
+                </a>
+              ) : null}
+            </>
+          )}
         </div>
       </div>
     )

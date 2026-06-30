@@ -2,7 +2,7 @@
 
 import * as Lucide from 'lucide-react'
 import { jsonArray, n, s } from '@/lib/landing-pages/safeProps'
-import { Container, SectionWrap, SectionHeading } from './primitives'
+import { Container, SectionWrap, SectionHeading, normalizeHeadingLevel } from './primitives'
 
 type Common = { props: Record<string, unknown> }
 
@@ -16,7 +16,7 @@ export function ComparisonTable({ props }: Common) {
   return (
     <SectionWrap bg="white">
       <Container>
-        <SectionHeading heading={heading} subheading={subheading} />
+        <SectionHeading heading={heading} subheading={subheading} level={normalizeHeadingLevel(props.heading_level)} />
         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="w-full text-sm">
             <thead>

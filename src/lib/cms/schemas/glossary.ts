@@ -10,6 +10,8 @@ export const glossaryTermSchema = z.object({
   bodyHtml: z.string().optional(),
   term_category: z.string().optional(),
   alphabet_letter: z.string().optional(),
+  // FIX-077: drives RTL rendering for Arabic terms.
+  language: z.string().optional(),
   relatedSlugs: z.array(z.string()).optional(),
   updatedAt: z.coerce.date().optional(),
   // FIX-035: surface SEO/index controls + AEO FAQ items so the canonical

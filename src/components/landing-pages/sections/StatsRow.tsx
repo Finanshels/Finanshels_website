@@ -1,7 +1,7 @@
 'use client'
 
 import { jsonArray, s } from '@/lib/landing-pages/safeProps'
-import { Container, SectionWrap, SectionHeading } from './primitives'
+import { Container, SectionWrap, SectionHeading, normalizeHeadingLevel } from './primitives'
 
 type Common = { props: Record<string, unknown> }
 
@@ -12,7 +12,7 @@ export function StatsRow({ props }: Common) {
   return (
     <SectionWrap bg="slate" pad="md">
       <Container>
-        <SectionHeading heading={heading} />
+        <SectionHeading heading={heading} level={normalizeHeadingLevel(props.heading_level)} />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-10">
           {items.map((item, i) => (
             <div key={i} className="text-center">

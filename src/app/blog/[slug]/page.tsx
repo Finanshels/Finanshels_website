@@ -13,6 +13,7 @@ import { ArticleToc } from '@/components/cms/blog/ArticleToc'
 import { ShareRow } from '@/components/cms/blog/ShareRow'
 import { getSiteUrl } from '@/lib/cms/config'
 import { getBlogPostBySlug } from '@/lib/cms/blogRepository'
+import { htmlDirFromLanguage, htmlLangFromLanguage } from '@/lib/cms/textDirection'
 import { resolveFaqAccordionItems } from '@/lib/cms/faqsRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { buildArticleToc } from '@/lib/cms/articleToc'
@@ -89,6 +90,9 @@ export default async function BlogArticlePage({ params }: Props) {
 
   const authorName = post.author ?? post.authorName ?? null
   const authorProfile = post.authorProfile
+  // FIX-077: Arabic posts render right-to-left.
+  const dir = htmlDirFromLanguage(post.language)
+  const lang = htmlLangFromLanguage(post.language)
   const categoryLabel = blogCategoryLabel(post.blog_category)
   const tags = post.blog_tags ?? []
   const heroImage = post.featured_image ?? post.heroImageUrl ?? null
@@ -267,7 +271,7 @@ export default async function BlogArticlePage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: safeJsonLd(faqLd) }}
         />
       ) : null}
-      <article className="bg-[#faf8f4] pb-24 pt-32 sm:pt-36">
+      <article dir={dir} lang={lang} className="bg-[#faf8f4] pb-24 pt-32 sm:pt-36">
         {hasToc ? (
           <div className="mx-auto flex max-w-6xl justify-center gap-10 px-6 sm:px-8 lg:gap-16">
             <aside className="hidden w-[200px] shrink-0 lg:block">

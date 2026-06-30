@@ -13,6 +13,7 @@ export type CmsCollectionKey =
   | 'customer_stories'
   | 'ebooks'
   | 'webinars'
+  | 'events'
   | 'glossary_terms'
   | 'blog_posts'
   | 'team_members'
@@ -584,6 +585,15 @@ const RELATIONSHIPS: Record<CmsCollectionKey, CollectionRelationshipDescriptor> 
       { name: 'relatedWebinarRefs', label: 'Related webinars', target: 'webinars' },
     ],
   },
+  // events: physical/in-person counterpart of webinars. Same relation shape —
+  // speakers (team_members), related blogs, and event-to-event cross-links.
+  events: {
+    multiReferences: [
+      { name: 'speakerRefs', label: 'Speakers', target: 'team_members' },
+      { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
+      { name: 'relatedEventRefs', label: 'Related events', target: 'events' },
+    ],
+  },
   tools: {
     multiReferences: [
       { name: 'relatedBlogRefs', label: 'Related blog posts', target: 'blog_posts' },
@@ -1082,6 +1092,136 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
     },
   },
   {
+    key: 'events',
+    label: 'Events',
+    singularLabel: 'Event',
+    description: 'In-person / physical events. Cloned from the webinar template — platform replaced with a physical location.',
+    template: 'Physical event template',
+    // events (2026-06-30): clone of the webinars shape for PHYSICAL events. The
+    // generic /content/[collection]/[slug] route resolves it (no bespoke page for
+    // the MVP — a richer event page with map embed + register form is a follow-up).
+    // routePattern + listingRoute auto-wire revalidation + sitemap + llms.txt.
+    titleField: 'event_title',
+    slugField: 'slug',
+    routePattern: '/events/[slug]',
+    listingRoute: '/events',
+    defaultSchemaType: 'Event',
+    sections: {
+      // Grouped for the editor: identity → schedule → location → post-event →
+      // content. `speakers` lives in the Relations tab as `speakerRefs`
+      // (canonical); related blogs/events too.
+      publish: [
+        { name: 'slug', label: 'Slug', type: 'text', required: true },
+        {
+          name: 'event_status',
+          label: 'Event status',
+          type: 'select',
+          options: ['upcoming', 'live', 'completed'],
+          required: true,
+          defaultValue: 'upcoming',
+          description: 'Drives the page lifecycle. upcoming/live → promo; completed → recap + optional recording on the SAME URL.',
+        },
+        { name: 'event_title', label: 'Event title', type: 'text', required: true },
+        { name: 'banner_image', label: 'Banner image', type: 'image' },
+        { name: 'summary', label: 'Summary', type: 'textarea', placeholder: 'One-line hook for the hub card and hero subheading.' },
+        { name: 'description', label: 'Description', type: 'textarea', placeholder: 'What attendees will experience. Basic HTML allowed (sanitized).' },
+        { name: 'start_datetime', label: 'Start datetime', type: 'datetime', required: true },
+        { name: 'end_datetime', label: 'End datetime', type: 'datetime' },
+        {
+          name: 'timezone',
+          label: 'Timezone',
+          type: 'select',
+          required: true,
+          defaultValue: 'Asia/Dubai',
+          // IANA zone ids — the value drives date display so the public page shows
+          // the start/end time in the right zone (real offsets, not free text).
+          // UAE/GCC first, then common attendee zones.
+          options: [
+            'Asia/Dubai',
+            'Asia/Riyadh',
+            'Asia/Qatar',
+            'Asia/Kuwait',
+            'Asia/Bahrain',
+            'Asia/Muscat',
+            'Asia/Kolkata',
+            'Asia/Karachi',
+            'Asia/Singapore',
+            'Europe/London',
+            'Europe/Paris',
+            'America/New_York',
+            'America/Los_Angeles',
+            'UTC',
+          ],
+          optionLabels: {
+            'Asia/Dubai': 'Dubai — GST (UTC+4)',
+            'Asia/Riyadh': 'Riyadh — AST (UTC+3)',
+            'Asia/Qatar': 'Doha — AST (UTC+3)',
+            'Asia/Kuwait': 'Kuwait — AST (UTC+3)',
+            'Asia/Bahrain': 'Manama — AST (UTC+3)',
+            'Asia/Muscat': 'Muscat — GST (UTC+4)',
+            'Asia/Kolkata': 'India — IST (UTC+5:30)',
+            'Asia/Karachi': 'Pakistan — PKT (UTC+5)',
+            'Asia/Singapore': 'Singapore — SGT (UTC+8)',
+            'Europe/London': 'London — GMT/BST',
+            'Europe/Paris': 'Central Europe — CET/CEST',
+            'America/New_York': 'US Eastern — ET',
+            'America/Los_Angeles': 'US Pacific — PT',
+            UTC: 'UTC',
+          },
+          description: 'Drives how the start/end time is displayed to visitors.',
+        },
+        // LOCATION — replaces the webinar `platform` (digital) select. A physical
+        // event happens at a place, so we capture venue + address + map + city.
+        { name: 'venue_name', label: 'Venue name', type: 'text', placeholder: 'e.g. Museum of the Future' },
+        { name: 'venue_address', label: 'Venue address', type: 'textarea', placeholder: 'Full street address shown on the page.' },
+        { name: 'venue_map_url', label: 'Map URL', type: 'url', placeholder: 'Optional Google Maps link to the venue.' },
+        { name: 'city', label: 'City', type: 'text', placeholder: 'e.g. Dubai' },
+        { name: 'host_partner_name', label: 'Co-host / partner name', type: 'text', placeholder: 'Only for collab events', description: 'Single collab partner. For multiple co-hosts, use the Co-hosts field below instead.' },
+        { name: 'host_partner_logo', label: 'Co-host / partner logo', type: 'image' },
+        {
+          name: 'co_hosts',
+          label: 'Co-hosts / partners (multiple)',
+          type: 'rows',
+          rowFormat: ['name', 'logo_url', 'role'],
+          placeholder: 'Alain | https://logo.png | Co-host',
+          description: 'One co-host per line: Name | logo URL (from the media library) | role. Overrides the single co-host fields above when set.',
+        },
+        // Registration
+        {
+          name: 'registration_mode',
+          label: 'Registration mode',
+          type: 'select',
+          options: ['native', 'external'],
+          defaultValue: 'native',
+          description: 'native = capture the lead on our page (Zoho CRM + confirmation email). external = send visitors to a partner-hosted registration URL.',
+        },
+        { name: 'registration_url', label: 'External registration URL', type: 'url', placeholder: 'Used only when registration mode is External' },
+        {
+          name: 'service_interest',
+          label: 'Service interest (CRM)',
+          type: 'select',
+          options: CONTENT_CATEGORY_OPTIONS,
+          optionLabels: CONTENT_CATEGORY_LABELS,
+          description: 'Tags the Zoho CRM lead created on registration.',
+        },
+        // Post-event
+        { name: 'recording_url', label: 'Recording URL', type: 'url', placeholder: 'Optional post-event recap video (shown when Completed).' },
+        { name: 'post_event_summary', label: 'Post-event summary', type: 'textarea', placeholder: 'A short recap shown after the event. Basic HTML allowed (sanitized).' },
+        {
+          name: 'downloadable_resources',
+          label: 'Downloadable resources',
+          type: 'multi_reference',
+          referenceCollection: 'ebooks',
+          description: 'Gated slides/templates — reuses the resources download gate (email required). Add them as Resources first.',
+        },
+        // Content
+        { name: 'agenda_items', label: 'Agenda items', type: 'json', placeholder: '["09:00 — Doors open", "09:30 — Keynote"]' },
+        { name: 'key_topics', label: 'Key topics', type: 'tags' },
+        { name: 'featured', label: 'Featured', type: 'boolean' },
+      ],
+    },
+  },
+  {
     key: 'team_members',
     // FIX-068: renamed "Team Members" → "Authors" (June-29 stakeholder review).
     // The Firestore collection KEY stays `team_members` (no data migration);
@@ -1397,6 +1537,19 @@ const HIDDEN_FIELDS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsHiddenFie
       ...PROFILE_LAYOUT_STRIP,
     ],
   },
+  // events: mirrors the webinars strip exactly (same global editorial noise is
+  // irrelevant to a physical-event page). `event_title` is the title; the global
+  // `title` is auto-dropped by the custom-titleField rule below.
+  events: {
+    legacyAliases: ['title'],
+    strip: [
+      'excerpt', 'short_description', 'featured_image', 'thumbnail_image', 'icon',
+      'author', 'published_at', 'updated_at', 'categories', 'related_content',
+      'cta_label', 'cta_link', 'tags', 'sort_order', 'status',
+      'twitter_creator_handle',
+      ...PROFILE_LAYOUT_STRIP,
+    ],
+  },
   team_members: {
     legacyAliases: ['name', 'role', 'bio', 'photoUrl', 'linkedinUrl', 'twitterUrl'],
     // From TEAM-003: keeps full_name / short_bio / photo / linkedin_url etc.
@@ -1488,6 +1641,9 @@ const SUPPRESSED_SECTIONS_BY_COLLECTION: Partial<Record<CmsCollectionKey, CmsSec
   // custom sections below the structured webinar content (rendered by
   // PageBlocksRenderer at the foot of /webinars/[slug]).
   webinars: ['card', 'listing', 'detail', 'aeo', 'geo'],
+  // events: same surface as webinars — publish fields + relations + SEO + blocks
+  // carry the page; card/listing chrome, detail_* knobs and AEO/GEO tabs add nothing.
+  events: ['card', 'listing', 'detail', 'aeo', 'geo'],
 }
 
 /**
@@ -1508,6 +1664,9 @@ const SCHEMA_OVERRIDE_OPTIONS_BY_COLLECTION: Partial<Record<CmsCollectionKey, st
   tools: ['SoftwareApplication', 'Product', 'WebPage'],
   podcasts: ['PodcastEpisode', 'VideoObject', 'Article'],
   webinars: ['Event', 'VideoObject', 'Course'],
+  // events: a physical event is an Event; BusinessEvent/EducationEvent are the
+  // common schema.org subtypes for in-person gatherings.
+  events: ['Event', 'BusinessEvent', 'EducationEvent'],
   // ebook-trim (2026-06-28): ebooks suppress the blocks section (no public page),
   // so the schema-type override never renders — omitted like media_assets/team_members.
   team_members: ['Person'],

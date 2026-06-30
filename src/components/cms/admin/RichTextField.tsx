@@ -221,6 +221,17 @@ export default function RichTextField({ name, initialValue, placeholder, aiConte
     if (!editor) return
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
   }
+  // FIX-075: insert an inline CTA shortcode. Stored as plain text and expanded
+  // to a styled button by sanitizeCmsHtml on render — fluid in-flow placement.
+  const insertCta = () => {
+    if (!editor || typeof window === 'undefined') return
+    const label = window.prompt('Button text', 'Book a free consultation')
+    if (!label) return
+    const url = promptUrl('/contact', 'Button link URL')
+    if (!url) return
+    const safeLabel = label.replace(/"/g, '').trim()
+    editor.chain().focus().insertContent(`[cta label="${safeLabel}" url="${url}"]`).run()
+  }
   const applySource = (next: string) => {
     if (!editor) return
     editor.commands.setContent(next, { emitUpdate: true })
@@ -374,6 +385,9 @@ export default function RichTextField({ name, initialValue, placeholder, aiConte
                     </IconBtn>
                     <IconBtn label="Table" onClick={insertTable}>
                       <TableIcon className="h-3.5 w-3.5" />
+                    </IconBtn>
+                    <IconBtn label="CTA button" onClick={insertCta}>
+                      CTA
                     </IconBtn>
                   </ToolbarRow>
                 </ToolbarGroup>
