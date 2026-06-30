@@ -113,6 +113,7 @@ export const COLLECTIONS = {
   customerStories: 'customer_stories',
   ebooks: 'ebooks',
   webinars: 'webinars',
+  events: 'events',
   blogPosts: 'blog_posts',
   glossaryTerms: 'glossary_terms',
   teamMembers: 'team_members',

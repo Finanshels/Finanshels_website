@@ -3,8 +3,10 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ArticleBody } from '@/components/cms/ArticleBody'
 import { DevCmsBanner } from '@/components/cms/DevCmsBanner'
+import { FaqSection } from '@/components/cms/FaqSection'
 import { getSiteUrl } from '@/lib/cms/config'
 import { getGlossaryTermBySlug } from '@/lib/cms/glossaryRepository'
+import { htmlDirFromLanguage, htmlLangFromLanguage } from '@/lib/cms/textDirection'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { buildBreadcrumbList } from '@/lib/seo/breadcrumbList'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
@@ -78,6 +80,9 @@ export default async function GlossaryTermPage({ params }: Props) {
   const defHtml = sanitizeCmsHtml(term.definition)
   const bodyHtml = term.bodyHtml ? sanitizeCmsHtml(term.bodyHtml) : ''
   const canonical = term.canonical_url || `${getSiteUrl()}/glossary/${term.slug}`
+  // FIX-077: Arabic terms render right-to-left.
+  const dir = htmlDirFromLanguage(term.language)
+  const lang = htmlLangFromLanguage(term.language)
 
   // FIX-035: DefinedTerm JSON-LD + optional FAQPage when faqItems present.
   const definedTermLd: Record<string, unknown> = {
@@ -130,7 +135,7 @@ export default async function GlossaryTermPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: safeJsonLd(faqLd) }}
         />
       ) : null}
-      <article className="border-b border-slate-100">
+      <article dir={dir} lang={lang} className="border-b border-slate-100">
         <div className="mx-auto max-w-3xl px-6 pb-16 pt-28 sm:px-10 lg:px-16 lg:pt-32">
           <Link href="/glossary" className="text-sm font-semibold text-[#f16610] hover:text-[#c14e0d]">
             ← Glossary
@@ -144,6 +149,8 @@ export default async function GlossaryTermPage({ params }: Props) {
               <ArticleBody html={bodyHtml} />
             </div>
           ) : null}
+          {/* FIX-071: render the FAQs that back the FAQPage schema above. */}
+          <FaqSection items={faqItems} className="mt-14" />
         </div>
       </article>
 

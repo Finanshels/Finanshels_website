@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { ArticleBody } from '@/components/cms/ArticleBody'
 import { PageBlocksRenderer } from '@/components/cms/PageBlocksRenderer'
+import { FaqSection } from '@/components/cms/FaqSection'
+import { htmlDirFromLanguage, htmlLangFromLanguage } from '@/lib/cms/textDirection'
 import { getSiteUrl } from '@/lib/cms/config'
 import {
   CMS_COLLECTION_DEFINITION_MAP,
@@ -23,6 +25,7 @@ function resolveTitle(doc: Record<string, unknown>, fallback: string): string {
     (typeof doc.title === 'string' && doc.title) ||
     (typeof doc.story_title === 'string' && doc.story_title) ||
     (typeof doc.webinar_title === 'string' && doc.webinar_title) ||
+    (typeof doc.event_title === 'string' && doc.event_title) ||
     (typeof doc.ebook_title === 'string' && doc.ebook_title) ||
     (typeof doc.episode_title === 'string' && doc.episode_title) ||
     (typeof doc.topic_name === 'string' && doc.topic_name) ||
@@ -38,6 +41,7 @@ function resolveTitle(doc: Record<string, unknown>, fallback: string): string {
           doc.title ??
           doc.story_title ??
           doc.webinar_title ??
+          doc.event_title ??
           doc.ebook_title ??
           doc.episode_title ??
           doc.topic_name ??
@@ -315,6 +319,92 @@ function renderTemplate(
     )
   }
 
+  // events (2026-06-30): MVP physical-event page. Renders the structured event
+  // fields directly (NO <pre>JSON dump — that would leak every field, FIX-037).
+  // A richer page (map embed, register form) is a follow-up; this is read-only.
+  if (collection === 'events') {
+    const banner = typeof doc.banner_image === 'string' ? doc.banner_image.trim() : ''
+    const summary = typeof doc.summary === 'string' ? doc.summary.trim() : ''
+    const description = sanitizeCmsHtml(String(doc.description ?? ''))
+    const postRecap = sanitizeCmsHtml(String(doc.post_event_summary ?? ''))
+    const venueName = typeof doc.venue_name === 'string' ? doc.venue_name.trim() : ''
+    const venueAddress = typeof doc.venue_address === 'string' ? doc.venue_address.trim() : ''
+    const venueMapUrl = typeof doc.venue_map_url === 'string' ? doc.venue_map_url.trim() : ''
+    const city = typeof doc.city === 'string' ? doc.city.trim() : ''
+    const recordingUrl = typeof doc.recording_url === 'string' ? doc.recording_url.trim() : ''
+    const startRaw = typeof doc.start_datetime === 'string' ? doc.start_datetime.trim() : ''
+    const locationLine = [venueName, city].filter(Boolean).join('  ·  ')
+    const topics = (Array.isArray(doc.key_topics) ? doc.key_topics : []).filter(
+      (t): t is string => typeof t === 'string' && t.trim().length > 0
+    )
+    return (
+      <article className="mx-auto max-w-3xl px-6 pb-16 pt-28 sm:px-10 sm:pt-32">
+        {banner ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={banner} alt={title} className="mb-8 w-full rounded-2xl border border-slate-200 object-cover" />
+        ) : null}
+        <h1 className="text-balance text-4xl font-bold tracking-tight text-slate-900">{title}</h1>
+        {summary ? <p className="mt-4 text-lg text-slate-600">{summary}</p> : null}
+
+        <dl className="mt-8 grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700 sm:grid-cols-2">
+          {startRaw ? (
+            <div>
+              <dt className="font-semibold uppercase tracking-[0.18em] text-slate-500">When</dt>
+              <dd className="mt-1">{startRaw}</dd>
+            </div>
+          ) : null}
+          {locationLine || venueAddress ? (
+            <div>
+              <dt className="font-semibold uppercase tracking-[0.18em] text-slate-500">Where</dt>
+              <dd className="mt-1">
+                {locationLine ? <span className="block">{locationLine}</span> : null}
+                {venueAddress ? <span className="block whitespace-pre-wrap text-slate-600">{venueAddress}</span> : null}
+                {venueMapUrl ? (
+                  <a href={venueMapUrl} className="mt-1 inline-block font-medium text-[#b3470a] underline" target="_blank" rel="noopener noreferrer">
+                    View on map
+                  </a>
+                ) : null}
+              </dd>
+            </div>
+          ) : null}
+        </dl>
+
+        {description ? (
+          <div className="mt-10">
+            <ArticleBody html={description} />
+          </div>
+        ) : null}
+
+        {topics.length ? (
+          <div className="mt-8 flex flex-wrap gap-2">
+            {topics.map((t) => (
+              <span key={t} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700">
+                {t}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        {recordingUrl ? (
+          <p className="mt-10">
+            <a href={recordingUrl} className="font-medium text-[#b3470a] underline" target="_blank" rel="noopener noreferrer">
+              Watch the recap
+            </a>
+          </p>
+        ) : null}
+
+        {postRecap ? (
+          <div className="mt-10">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Recap</h2>
+            <div className="mt-4">
+              <ArticleBody html={postRecap} />
+            </div>
+          </div>
+        ) : null}
+      </article>
+    )
+  }
+
   return (
     <section className="mx-auto max-w-4xl px-6 pb-16 pt-28 sm:px-10 sm:pt-32">
       <h1 className="text-4xl font-semibold tracking-tight text-slate-900">{title}</h1>
@@ -457,22 +547,28 @@ export default async function CmsCollectionContentPage({ params }: Props) {
     notFound()
   }
 
-  const faqItems = Array.isArray(doc.faqItems) ? doc.faqItems : []
+  // FIX-071: normalise the FAQ list once, then drive BOTH the visible accordion
+  // and the FAQPage schema from it — no hidden-FAQ schema (black-hat SEO risk).
+  const faqSectionItems = (Array.isArray(doc.faqItems) ? doc.faqItems : [])
+    .filter(
+      (item): item is { question: string; answer: string } =>
+        Boolean(item) &&
+        typeof item === 'object' &&
+        typeof (item as Record<string, unknown>).question === 'string' &&
+        typeof (item as Record<string, unknown>).answer === 'string' &&
+        ((item as Record<string, unknown>).question as string).trim().length > 0
+    )
+    .map((item) => ({ question: item.question, answer: item.answer }))
   const faqSchema =
-    faqItems.length > 0
+    faqSectionItems.length > 0
       ? {
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
-          mainEntity: faqItems
-            .filter((item) => item && typeof item === 'object')
-            .map((item) => ({
-              '@type': 'Question',
-              name: String((item as Record<string, unknown>).question ?? ''),
-              acceptedAnswer: {
-                '@type': 'Answer',
-                text: String((item as Record<string, unknown>).answer ?? ''),
-              },
-            })),
+          mainEntity: faqSectionItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: { '@type': 'Answer', text: item.answer },
+          })),
         }
       : null
 
@@ -528,10 +624,22 @@ export default async function CmsCollectionContentPage({ params }: Props) {
     { name: resolveTitle(doc, definition.singularLabel), path: canonical },
   ])
 
+  // FIX-077: Arabic documents render right-to-left.
+  const dir = htmlDirFromLanguage(doc.language)
+  const lang = htmlLangFromLanguage(doc.language)
+
   return (
     <>
-      {renderTemplate(definition.key, doc, { storyTestimonials })}
-      {blocks.length > 0 ? <PageBlocksRenderer blocks={blocks} /> : null}
+      <div dir={dir} lang={lang}>
+        {renderTemplate(definition.key, doc, { storyTestimonials })}
+        {blocks.length > 0 ? <PageBlocksRenderer blocks={blocks} /> : null}
+        {/* FIX-071: render the FAQs that back the FAQPage schema below. */}
+        {faqSectionItems.length > 0 ? (
+          <div className="mx-auto max-w-3xl px-6 py-14 sm:px-10 lg:px-16">
+            <FaqSection items={faqSectionItems} />
+          </div>
+        ) : null}
+      </div>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(baseSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }} />
       {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }} /> : null}

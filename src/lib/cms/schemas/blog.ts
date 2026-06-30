@@ -12,6 +12,8 @@ export const blogPostSchema = z.object({
   updatedAt: z.coerce.date().optional(),
   author: z.string().optional(),
   authorName: z.string().optional(),
+  // FIX-077: drives RTL rendering for Arabic posts.
+  language: z.string().optional(),
   featured_image: z.string().optional(),
   // FIX-048: editors set `featured_image_alt` in admin (a11y/SEO); thread it
   // through so the public blog page can render a descriptive alt text.
