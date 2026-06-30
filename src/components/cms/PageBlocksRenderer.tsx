@@ -1,17 +1,27 @@
+import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { ArticleBody } from '@/components/cms/ArticleBody'
+import { PageOverlays } from '@/components/cms/PageOverlays'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { getCmsDocument, listCmsDocuments } from '@/lib/cms/collectionRepository'
 import { resolveFaqAccordionItems } from '@/lib/cms/faqsRepository'
+import { getLucideIcon } from '@/lib/cms/lucideIcon'
 import {
   CMS_COLLECTION_DEFINITION_MAP,
   type CmsCollectionKey,
 } from '@/lib/cms/collectionDefinitions'
+import { OVERLAY_BLOCK_TYPES } from '@/lib/cms/definitions/blocks'
+import { safeUrl } from '@/lib/cms/safeUrl'
 
-type Block = Record<string, unknown> & { type: string }
+export type Block = Record<string, unknown> & { type: string }
 
 function readString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+/** URL field reader that strips XSS schemes (returns '' when unsafe/empty). */
+function safeUrlStr(value: unknown): string {
+  return safeUrl(value) ?? ''
 }
 
 function readArray(value: unknown): unknown[] {
@@ -46,9 +56,9 @@ function HeroBlock({ block }: { block: Block }) {
   const eyebrow = readString(block.eyebrow)
   const imageUrl = readString(block.imageUrl)
   const ctaLabel = readString(block.ctaLabel)
-  const ctaUrl = readString(block.ctaUrl)
+  const ctaUrl = safeUrlStr(block.ctaUrl)
   const secondaryCtaLabel = readString(block.secondaryCtaLabel)
-  const secondaryCtaUrl = readString(block.secondaryCtaUrl)
+  const secondaryCtaUrl = safeUrlStr(block.secondaryCtaUrl)
   const variant = readString(block.variant) || 'default'
   const hasPrimary = ctaLabel && ctaUrl
   const hasSecondary = secondaryCtaLabel && secondaryCtaUrl
@@ -119,12 +129,12 @@ function CtaBlock({ block }: { block: Block }) {
   const heading = readString(block.heading)
   const subheading = readString(block.subheading)
   const primaryLabel = readString(block.primaryLabel)
-  const primaryUrl = readString(block.primaryUrl)
+  const primaryUrl = safeUrlStr(block.primaryUrl)
   // FIX-048: secondary button + tone were defined in the block schema but
   // never rendered. `tone` maps to a background colour; default keeps the
   // existing brand-soft cream so legacy blocks render unchanged.
   const secondaryLabel = readString(block.secondaryLabel)
-  const secondaryUrl = readString(block.secondaryUrl)
+  const secondaryUrl = safeUrlStr(block.secondaryUrl)
   const tone = readString(block.tone)
   const sectionTone =
     tone === 'brand'
@@ -228,7 +238,7 @@ function StatsBlock({ block }: { block: Block }) {
 }
 
 function VideoEmbedBlock({ block }: { block: Block }) {
-  const url = readString(block.videoUrl)
+  const url = safeUrlStr(block.videoUrl)
   if (!url) return null
   return (
     <section className="bg-white py-12">
@@ -252,7 +262,7 @@ function VideoEmbedBlock({ block }: { block: Block }) {
 function DownloadBlock({ block }: { block: Block }) {
   const heading = readString(block.heading)
   const description = readString(block.description)
-  const fileUrl = readString(block.fileUrl)
+  const fileUrl = safeUrlStr(block.fileUrl)
   const cover = readString(block.coverImageUrl)
   const gated = block.gated === true || block.gated === 'true'
   const formId = readString(block.formId)
@@ -436,7 +446,7 @@ async function safeGetCmsDocument(
 async function ToolEmbedBlock({ block }: { block: Block }) {
   let heading = readString(block.heading)
   let description = readString(block.description)
-  const toolUrl = readString(block.toolUrl)
+  const toolUrl = safeUrlStr(block.toolUrl)
   const toolRefId = readRefIds(block.toolRef)[0]
 
   let toolHref: string | null = null
@@ -477,7 +487,7 @@ async function ToolEmbedBlock({ block }: { block: Block }) {
 function FormBlock({ block }: { block: Block }) {
   const heading = readString(block.heading)
   const subheading = readString(block.subheading)
-  const embedUrl = readString(block.embedUrl)
+  const embedUrl = safeUrlStr(block.embedUrl)
   const submitLabel = readString(block.submitLabel) || 'Get in touch'
 
   if (!heading && !subheading && !embedUrl) return null
@@ -655,54 +665,403 @@ async function RelatedContentBlock({ block }: { block: Block }) {
   )
 }
 
+// ---- Content blocks (added 2026-06-30) ----
+
+const CALLOUT_TONES: Record<string, { wrap: string; icon: string; defaultIcon: string }> = {
+  info: { wrap: 'border-sky-200 bg-sky-50', icon: 'text-sky-600', defaultIcon: 'info' },
+  tip: { wrap: 'border-violet-200 bg-violet-50', icon: 'text-violet-600', defaultIcon: 'lightbulb' },
+  success: { wrap: 'border-emerald-200 bg-emerald-50', icon: 'text-emerald-600', defaultIcon: 'circle-check' },
+  warning: { wrap: 'border-amber-200 bg-amber-50', icon: 'text-amber-600', defaultIcon: 'triangle-alert' },
+}
+
+function CalloutBlock({ block }: { block: Block }) {
+  const tone = readString(block.tone) || 'info'
+  const cfg = CALLOUT_TONES[tone] ?? CALLOUT_TONES.info
+  const title = readString(block.title)
+  const body = readString(block.body)
+  if (!title && !body) return null
+  const Icon = getLucideIcon(readString(block.icon) || cfg.defaultIcon)
+  return (
+    <section className="bg-white py-6">
+      <div className="mx-auto max-w-3xl px-6">
+        <div className={`flex gap-3 rounded-2xl border p-4 ${cfg.wrap}`}>
+          <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${cfg.icon}`} />
+          <div className="min-w-0">
+            {title ? <p className="text-sm font-semibold text-slate-900">{title}</p> : null}
+            {body ? <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-slate-700">{body}</p> : null}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function MediaTextBlock({ block }: { block: Block }) {
+  const eyebrow = readString(block.eyebrow)
+  const heading = readString(block.heading)
+  const body = readString(block.body)
+  const imageUrl = readString(block.imageUrl)
+  const ctaLabel = readString(block.ctaLabel)
+  const ctaUrl = safeUrlStr(block.ctaUrl)
+  const mediaRight = readString(block.mediaSide) === 'right'
+  if (!heading && !body && !imageUrl) return null
+
+  const textCol = (
+    <div>
+      {eyebrow ? <p className="text-xs font-semibold uppercase tracking-[0.28em] text-brand-primary">{eyebrow}</p> : null}
+      {heading ? <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+      {body ? <p className="mt-3 whitespace-pre-line leading-relaxed text-slate-700">{body}</p> : null}
+      {ctaLabel && ctaUrl ? (
+        <a href={ctaUrl} className="mt-5 inline-flex rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-brand-dark hover:brightness-110">
+          {ctaLabel}
+        </a>
+      ) : null}
+    </div>
+  )
+  const imageCol = imageUrl ? (
+    <Image src={imageUrl} alt={readString(block.imageAlt)} width={640} height={480} className="w-full rounded-2xl border border-slate-200 object-cover" />
+  ) : null
+
+  return (
+    <section className="bg-white py-12">
+      <div className="mx-auto grid max-w-5xl items-center gap-8 px-6 md:grid-cols-2">
+        {mediaRight ? (
+          <>
+            {textCol}
+            {imageCol}
+          </>
+        ) : (
+          <>
+            {imageCol}
+            {textCol}
+          </>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function FeatureGridBlock({ block }: { block: Block }) {
+  const heading = readString(block.heading)
+  const subheading = readString(block.subheading)
+  const cols = readString(block.columns)
+  const colClass =
+    cols === '2' ? 'sm:grid-cols-2' : cols === '4' ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3'
+  const items = readArray(block.items).filter(
+    (item): item is { icon?: string; title?: string; description?: string } => Boolean(item) && typeof item === 'object'
+  )
+  if (items.length === 0 && !heading) return null
+  return (
+    <section className="bg-white py-12">
+      <div className="mx-auto max-w-5xl px-6">
+        {heading ? <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {subheading ? <p className="mt-2 max-w-2xl text-slate-600">{subheading}</p> : null}
+        <div className={`mt-6 grid gap-5 ${colClass}`}>
+          {items.map((item, idx) => {
+            const Icon = getLucideIcon(item.icon)
+            return (
+              <div key={idx} className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary/10 text-brand-primary">
+                  <Icon className="h-5 w-5" />
+                </span>
+                {item.title ? <p className="mt-3 text-base font-semibold text-slate-900">{item.title}</p> : null}
+                {item.description ? <p className="mt-1 text-sm text-slate-600">{item.description}</p> : null}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function StepsBlock({ block }: { block: Block }) {
+  const heading = readString(block.heading)
+  const subheading = readString(block.subheading)
+  const horizontal = readString(block.layout) === 'horizontal'
+  const items = readArray(block.items).filter(
+    (item): item is { title?: string; description?: string } => Boolean(item) && typeof item === 'object'
+  )
+  if (items.length === 0) return null
+  return (
+    <section className="bg-white py-12">
+      <div className="mx-auto max-w-5xl px-6">
+        {heading ? <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {subheading ? <p className="mt-2 max-w-2xl text-slate-600">{subheading}</p> : null}
+        <ol className={`mt-6 ${horizontal ? 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3' : 'space-y-4'}`}>
+          {items.map((item, idx) => (
+            <li key={idx} className="flex gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-primary text-sm font-bold text-brand-dark">
+                {idx + 1}
+              </span>
+              <div>
+                {item.title ? <p className="text-base font-semibold text-slate-900">{item.title}</p> : null}
+                {item.description ? <p className="mt-1 text-sm text-slate-600">{item.description}</p> : null}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  )
+}
+
+function PricingBlock({ block }: { block: Block }) {
+  const heading = readString(block.heading)
+  const subheading = readString(block.subheading)
+  const plans = readArray(block.plans).filter(
+    (
+      p
+    ): p is {
+      name?: string
+      price?: string
+      period?: string
+      features?: unknown
+      ctaLabel?: string
+      ctaUrl?: string
+      featured?: boolean
+    } => Boolean(p) && typeof p === 'object'
+  )
+  if (plans.length === 0) return null
+  return (
+    <section className="bg-white py-12">
+      <div className="mx-auto max-w-5xl px-6">
+        {heading ? <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {subheading ? <p className="mt-2 max-w-2xl text-slate-600">{subheading}</p> : null}
+        <div className="mt-6 grid gap-5 md:grid-cols-3">
+          {plans.map((plan, idx) => {
+            const features = Array.isArray(plan.features) ? plan.features.map((f) => String(f)) : []
+            const featured = plan.featured === true
+            const planCtaUrl = safeUrlStr(plan.ctaUrl)
+            return (
+              <div
+                key={idx}
+                className={`flex flex-col rounded-2xl border p-6 ${
+                  featured ? 'border-brand-primary bg-brand-primary/5 shadow-sm' : 'border-slate-200 bg-white'
+                }`}
+              >
+                {plan.name ? <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">{plan.name}</p> : null}
+                <p className="mt-2 flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-slate-900">{plan.price ?? ''}</span>
+                  {plan.period ? <span className="text-sm text-slate-500">{plan.period}</span> : null}
+                </p>
+                {features.length > 0 ? (
+                  <ul className="mt-4 space-y-2 text-sm text-slate-700">
+                    {features.map((f, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="text-brand-primary">✓</span>
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {plan.ctaLabel && planCtaUrl ? (
+                  <a
+                    href={planCtaUrl}
+                    className={`mt-6 inline-flex justify-center rounded-xl px-4 py-2.5 text-sm font-semibold ${
+                      featured
+                        ? 'bg-brand-primary text-brand-dark hover:brightness-110'
+                        : 'border border-slate-300 text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    {plan.ctaLabel}
+                  </a>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ---- Promo blocks: in-flow (inline) variants. Overlay-mode rendering lives in
+// PageOverlays (client). ----
+
+function NudgeInline({ block }: { block: Block }) {
+  const heading = readString(block.heading)
+  const text = readString(block.text)
+  const ctaLabel = readString(block.ctaLabel)
+  const ctaUrl = safeUrlStr(block.ctaUrl)
+  const image = readString(block.imageUrl)
+  const tone = readString(block.tone) || 'light'
+  if (!heading && !text) return null
+  const toneClass =
+    tone === 'dark'
+      ? 'bg-slate-950 text-white'
+      : tone === 'brand'
+        ? 'bg-brand-primary text-brand-dark'
+        : 'bg-white text-slate-900 ring-1 ring-slate-200'
+  return (
+    <section className="bg-white py-6">
+      <div className="mx-auto max-w-3xl px-6">
+        <div className={`flex items-start gap-3 rounded-2xl p-4 ${toneClass}`}>
+          {image ? <Image src={image} alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-full object-cover" /> : null}
+          <div className="min-w-0 flex-1">
+            {heading ? <p className="text-sm font-semibold">{heading}</p> : null}
+            {text ? <p className="mt-0.5 text-sm opacity-80">{text}</p> : null}
+          </div>
+          {ctaLabel && ctaUrl ? (
+            <a href={ctaUrl} className="shrink-0 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
+              {ctaLabel}
+            </a>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function OfferBannerInline({ block }: { block: Block }) {
+  const text = readString(block.text)
+  const ctaLabel = readString(block.ctaLabel)
+  const ctaUrl = safeUrlStr(block.ctaUrl)
+  const tone = readString(block.tone) || 'brand'
+  if (!text) return null
+  const toneClass =
+    tone === 'dark'
+      ? 'bg-slate-950 text-white'
+      : tone === 'light'
+        ? 'bg-white text-slate-900 ring-1 ring-slate-200'
+        : 'bg-brand-primary text-brand-dark'
+  return (
+    <section className="py-4">
+      <div className="mx-auto max-w-5xl px-6">
+        <div className={`flex flex-wrap items-center justify-center gap-3 rounded-xl px-5 py-3 text-center ${toneClass}`}>
+          <p className="text-sm font-semibold">{text}</p>
+          {ctaLabel && ctaUrl ? (
+            <a href={ctaUrl} className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">
+              {ctaLabel}
+            </a>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function PopupInline({ block }: { block: Block }) {
+  const heading = readString(block.heading)
+  const body = readString(block.body)
+  const image = readString(block.imageUrl)
+  const ctaLabel = readString(block.ctaLabel)
+  const ctaUrl = safeUrlStr(block.ctaUrl)
+  const secondaryLabel = readString(block.secondaryCtaLabel)
+  const secondaryUrl = safeUrlStr(block.secondaryCtaUrl)
+  if (!heading && !body) return null
+  return (
+    <section className="bg-white py-12">
+      <div className="mx-auto max-w-2xl px-6">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+          {image ? <Image src={image} alt="" width={800} height={320} className="h-44 w-full object-cover" /> : null}
+          <div className="px-6 py-6 text-center">
+            {heading ? <h2 className="text-xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+            {body ? <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600">{body}</p> : null}
+            {(ctaLabel && ctaUrl) || (secondaryLabel && secondaryUrl) ? (
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                {ctaLabel && ctaUrl ? (
+                  <a href={ctaUrl} className="inline-flex rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-brand-dark hover:brightness-110">
+                    {ctaLabel}
+                  </a>
+                ) : null}
+                {secondaryLabel && secondaryUrl ? (
+                  <a href={secondaryUrl} className="inline-flex rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                    {secondaryLabel}
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const OVERLAY_DISPLAY_MODE = 'overlay'
+
+/** A promo block configured to float over the page rather than sit in-flow. */
+function isOverlayBlock(block: Block): boolean {
+  return OVERLAY_BLOCK_TYPES.has(block.type) && readString(block.display_mode) === OVERLAY_DISPLAY_MODE
+}
+
+/**
+ * Render one block as in-flow content. Shared by the page-builder (`page_blocks`)
+ * and the Notion-style body interleave so the two surfaces never drift. Promo
+ * blocks always render their inline variant here; overlay-mode rendering is
+ * handled separately by <PageOverlays>.
+ */
+export function renderInlineBlock(block: Block, key: string): ReactNode {
+  switch (block.type) {
+    case 'hero':
+      return <HeroBlock key={key} block={block} />
+    case 'rich_text':
+      return (
+        <section key={key} className="bg-white py-12">
+          <div className="mx-auto max-w-3xl px-6">
+            <ArticleBody html={sanitizeCmsHtml(readString(block.html))} />
+          </div>
+        </section>
+      )
+    case 'cta':
+      return <CtaBlock key={key} block={block} />
+    case 'testimonial':
+      return <TestimonialBlock key={key} block={block} />
+    case 'faq_accordion':
+      return <FaqAccordionBlock key={key} block={block} />
+    case 'stats':
+      return <StatsBlock key={key} block={block} />
+    case 'logo_wall':
+      return <LogoWallBlock key={key} block={block} />
+    case 'video_embed':
+      return <VideoEmbedBlock key={key} block={block} />
+    case 'tool_embed':
+      return <ToolEmbedBlock key={key} block={block} />
+    case 'form':
+      return <FormBlock key={key} block={block} />
+    case 'download':
+      return <DownloadBlock key={key} block={block} />
+    case 'speaker':
+      return <SpeakerBlock key={key} block={block} />
+    case 'related_content':
+      return <RelatedContentBlock key={key} block={block} />
+    case 'table':
+      return <TableBlock key={key} block={block} />
+    case 'timeline':
+      return <TimelineBlock key={key} block={block} />
+    case 'callout':
+      return <CalloutBlock key={key} block={block} />
+    case 'media_text':
+      return <MediaTextBlock key={key} block={block} />
+    case 'feature_grid':
+      return <FeatureGridBlock key={key} block={block} />
+    case 'steps':
+      return <StepsBlock key={key} block={block} />
+    case 'pricing':
+      return <PricingBlock key={key} block={block} />
+    case 'nudge':
+      return <NudgeInline key={key} block={block} />
+    case 'offer_banner':
+      return <OfferBannerInline key={key} block={block} />
+    case 'popup':
+      return <PopupInline key={key} block={block} />
+    default:
+      return null
+  }
+}
+
 export function PageBlocksRenderer({ blocks }: { blocks: unknown }) {
   const list = readArray(blocks) as Block[]
   if (list.length === 0) return null
+  const inline = list.filter((block) => !isOverlayBlock(block))
+  const overlays = list.filter(isOverlayBlock)
   return (
     <>
-      {list.map((block, index) => {
-        const key = `${block.type}-${typeof block.id === 'string' ? block.id : index}`
-        switch (block.type) {
-          case 'hero':
-            return <HeroBlock key={key} block={block} />
-          case 'rich_text':
-            return (
-              <section key={key} className="bg-white py-12">
-                <div className="mx-auto max-w-3xl px-6">
-                  <ArticleBody html={sanitizeCmsHtml(readString(block.html))} />
-                </div>
-              </section>
-            )
-          case 'cta':
-            return <CtaBlock key={key} block={block} />
-          case 'testimonial':
-            return <TestimonialBlock key={key} block={block} />
-          case 'faq_accordion':
-            return <FaqAccordionBlock key={key} block={block} />
-          case 'stats':
-            return <StatsBlock key={key} block={block} />
-          case 'logo_wall':
-            return <LogoWallBlock key={key} block={block} />
-          case 'video_embed':
-            return <VideoEmbedBlock key={key} block={block} />
-          case 'tool_embed':
-            return <ToolEmbedBlock key={key} block={block} />
-          case 'form':
-            return <FormBlock key={key} block={block} />
-          case 'download':
-            return <DownloadBlock key={key} block={block} />
-          case 'speaker':
-            return <SpeakerBlock key={key} block={block} />
-          case 'related_content':
-            return <RelatedContentBlock key={key} block={block} />
-          case 'table':
-            return <TableBlock key={key} block={block} />
-          case 'timeline':
-            return <TimelineBlock key={key} block={block} />
-          default:
-            return null
-        }
-      })}
+      {inline.map((block, index) =>
+        renderInlineBlock(block, `${block.type}-${typeof block.id === 'string' ? block.id : index}`)
+      )}
+      {overlays.length > 0 ? <PageOverlays blocks={overlays} /> : null}
     </>
   )
 }

@@ -133,6 +133,7 @@ export function FieldEditor({
             initialValue={value}
             placeholder={field.placeholder}
             aiContext={aiContext}
+            referenceOptions={referenceOptions}
           />
         </Suspense>
       )

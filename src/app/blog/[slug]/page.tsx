@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ArrowLeft } from 'lucide-react'
-import { ArticleBody } from '@/components/cms/ArticleBody'
+import { ArticleBodyWithBlocks } from '@/components/cms/ArticleBodyWithBlocks'
 import { DevCmsBanner } from '@/components/cms/DevCmsBanner'
 import { PageBlocksRenderer } from '@/components/cms/PageBlocksRenderer'
 import { AuthorByline } from '@/components/cms/blog/AuthorByline'
@@ -213,7 +213,7 @@ export default async function BlogArticlePage({ params }: Props) {
         </aside>
       ) : null}
 
-      <ArticleBody html={bodyHtml} className="fin-article mt-10" />
+      <ArticleBodyWithBlocks html={bodyHtml} className="fin-article mt-10" />
 
       <footer className="mt-14 border-t border-slate-200 pt-8">
         {tags.length > 0 ? (

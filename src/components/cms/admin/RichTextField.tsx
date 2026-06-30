@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -44,13 +44,26 @@ import {
 
 import { AiBodyButton } from '@/components/cms/admin/ai/AiBodyButton'
 import type { AiContext } from '@/lib/cms/ai/fieldMap'
+import { CMS_BLOCK_TYPES, type CmsBlockType } from '@/lib/cms/collectionDefinitions'
+import { CmsBlockNode, CMS_BLOCK_NODE_NAME } from '@/components/cms/admin/blocks/CmsBlockNode'
+import { defaultBlockProps } from '@/components/cms/admin/blocks/blockDefaults'
+import type { ReferenceOptionMap } from '@/components/cms/admin/blocks/BlockFields'
+import { SlashMenu, type SlashMenuState } from '@/components/cms/admin/blocks/slashMenuExtension'
 
 type Props = {
   name: string
   initialValue: string
   placeholder?: string
   aiContext?: AiContext
+  /** Reference suggestions for block fields inserted inline via the `/` menu. */
+  referenceOptions?: ReferenceOptionMap
 }
+
+// Block types offered in the `/` menu — excludes page-top hero and the body's
+// own rich_text. Stable module-level list so the menu order is deterministic.
+const SLASH_BLOCK_TYPES: CmsBlockType[] = CMS_BLOCK_TYPES.filter(
+  (t) => t.type !== 'hero' && t.type !== 'rich_text'
+)
 
 /**
  * FIX-052: allow only safe URL schemes for editor-inserted links/images.
@@ -120,10 +133,13 @@ function Sep() {
   return <span aria-hidden className="mx-0.5 h-4 w-px bg-cms-soft" />
 }
 
-export default function RichTextField({ name, initialValue, placeholder, aiContext }: Props) {
+export default function RichTextField({ name, initialValue, placeholder, aiContext, referenceOptions }: Props) {
   const [html, setHtml] = useState(initialValue || '')
   const [showSource, setShowSource] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  // Notion-style `/` block menu. The plugin reports the trigger; React owns the UI.
+  const [slash, setSlash] = useState<SlashMenuState | null>(null)
+  const [slashIndex, setSlashIndex] = useState(0)
 
   const extensions = useMemo(
     () => [
@@ -144,10 +160,17 @@ export default function RichTextField({ name, initialValue, placeholder, aiConte
       TableRow,
       TableCell,
       TableHeader,
+      CmsBlockNode.configure({ referenceOptions: referenceOptions ?? {} }),
+      SlashMenu.configure({ onStateChange: setSlash }),
       Placeholder.configure({
-        placeholder: placeholder || 'Write content…',
+        placeholder: placeholder || "Write content, or press '/' to insert a block…",
       }),
     ],
+    // Construct the editor once per mount. RichTextField is keyed per document in
+    // FieldEditor, so placeholder/referenceOptions are stable for its lifetime.
+    // Keeping referenceOptions out of deps guarantees a stable extensions array so
+    // useEditor never tears down and recreates the editor (which would drop edits).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [placeholder]
   )
 
@@ -165,6 +188,92 @@ export default function RichTextField({ name, initialValue, placeholder, aiConte
     },
     immediatelyRender: false,
   })
+
+  const slashItems = useMemo(() => {
+    if (!slash) return []
+    const q = slash.query.trim().toLowerCase()
+    if (!q) return SLASH_BLOCK_TYPES
+    const matches = SLASH_BLOCK_TYPES.filter(
+      (t) =>
+        t.label.toLowerCase().includes(q) ||
+        t.type.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q)
+    )
+    return [...matches].sort(
+      (a, b) => Number(b.label.toLowerCase().startsWith(q)) - Number(a.label.toLowerCase().startsWith(q))
+    )
+  }, [slash])
+
+  const slashOpen = !showSource && !!slash && slashItems.length > 0 && !!slash.rect
+
+  const slashMenuRef = useRef<HTMLDivElement | null>(null)
+  const slashItemsRef = useRef(slashItems)
+  slashItemsRef.current = slashItems
+  const slashIndexRef = useRef(slashIndex)
+  slashIndexRef.current = slashIndex
+  const slashRef = useRef(slash)
+  slashRef.current = slash
+
+  // Reset the highlight to the top whenever the query changes.
+  useEffect(() => {
+    setSlashIndex(0)
+  }, [slash?.query])
+
+  const pickSlashBlock = useCallback(
+    (type: CmsBlockType) => {
+      const current = slashRef.current
+      if (!editor || !current) return
+      editor
+        .chain()
+        .focus()
+        .deleteRange(current.range)
+        .insertContent({
+          type: CMS_BLOCK_NODE_NAME,
+          attrs: { blockType: type.type, props: defaultBlockProps(type) },
+        })
+        .run()
+      setSlash(null)
+      setHtml(editor.getHTML())
+    },
+    [editor]
+  )
+
+  // While the menu is open, capture navigation keys before ProseMirror sees
+  // them, and close on an outside click.
+  useEffect(() => {
+    if (!slashOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      const items = slashItemsRef.current
+      if (items.length === 0) return
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        e.stopPropagation()
+        setSlashIndex((i) => (i + 1) % items.length)
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        e.stopPropagation()
+        setSlashIndex((i) => (i - 1 + items.length) % items.length)
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault()
+        e.stopPropagation()
+        pickSlashBlock(items[Math.min(slashIndexRef.current, items.length - 1)])
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        setSlash(null)
+      }
+    }
+    const onDown = (e: MouseEvent) => {
+      if (slashMenuRef.current?.contains(e.target as Node)) return
+      setSlash(null)
+    }
+    document.addEventListener('keydown', onKey, true)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey, true)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [slashOpen, pickSlashBlock])
 
   const plain = editor?.getText() ?? ''
   const wordCount = plain.trim() ? plain.trim().split(/\s+/).length : 0
@@ -440,6 +549,37 @@ export default function RichTextField({ name, initialValue, placeholder, aiConte
           </div>
         </div>
       </div>
+
+      {slashOpen && slash?.rect ? (
+        <div
+          ref={slashMenuRef}
+          style={{ position: 'fixed', left: slash.rect.left, top: slash.rect.bottom + 6, zIndex: 50 }}
+          className="w-72 overflow-hidden rounded-xl border border-cms-rule bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]"
+        >
+          <p className="border-b border-cms-rule px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+            Insert block
+          </p>
+          <div className="max-h-72 overflow-y-auto p-1">
+            {slashItems.map((type, i) => (
+              <button
+                key={type.type}
+                type="button"
+                onMouseEnter={() => setSlashIndex(i)}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  pickSlashBlock(type)
+                }}
+                className={`flex w-full flex-col items-start rounded-lg px-3 py-2 text-left ${
+                  i === slashIndex ? 'bg-brand-primary/10' : 'hover:bg-cms-soft'
+                }`}
+              >
+                <span className="text-sm font-semibold text-slate-900">{type.label}</span>
+                <span className="mt-0.5 line-clamp-1 text-xs text-slate-500">{type.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
