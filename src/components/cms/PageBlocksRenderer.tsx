@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { ArticleBody } from '@/components/cms/ArticleBody'
+import { ResponsiveImage } from '@/components/cms/ResponsiveImage'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { getCmsDocument, listCmsDocuments } from '@/lib/cms/collectionRepository'
 import { resolveFaqAccordionItems } from '@/lib/cms/faqsRepository'
@@ -12,6 +14,30 @@ type Block = Record<string, unknown> & { type: string }
 
 function readString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+// FIX-072: editor-controllable heading tag for page-builder blocks (SEO). The
+// host page owns the <h1> (blog title / hero), so blocks default to <h2> and
+// can nest with <h3>/<h4> via the block's `heading_level` field.
+type BlockHeadingLevel = 'h2' | 'h3' | 'h4'
+const BLOCK_HEADING_LEVELS: readonly BlockHeadingLevel[] = ['h2', 'h3', 'h4']
+
+function blockHeadingLevel(block: Block): BlockHeadingLevel {
+  const v = readString(block.heading_level)
+  return BLOCK_HEADING_LEVELS.includes(v as BlockHeadingLevel) ? (v as BlockHeadingLevel) : 'h2'
+}
+
+function BlockHeading({
+  level,
+  className,
+  children,
+}: {
+  level: BlockHeadingLevel
+  className?: string
+  children: ReactNode
+}) {
+  const Tag = level
+  return <Tag className={className}>{children}</Tag>
 }
 
 function readArray(value: unknown): unknown[] {
@@ -45,6 +71,7 @@ function HeroBlock({ block }: { block: Block }) {
   const subheading = readString(block.subheading)
   const eyebrow = readString(block.eyebrow)
   const imageUrl = readString(block.imageUrl)
+  const imageMobileUrl = readString(block.imageMobileUrl)
   const ctaLabel = readString(block.ctaLabel)
   const ctaUrl = readString(block.ctaUrl)
   const secondaryCtaLabel = readString(block.secondaryCtaLabel)
@@ -73,7 +100,7 @@ function HeroBlock({ block }: { block: Block }) {
       {eyebrow ? (
         <p className={`text-xs font-semibold uppercase tracking-[0.32em] ${eyebrowClass}`}>{eyebrow}</p>
       ) : null}
-      {heading ? <h2 className="mt-3 text-4xl font-semibold tracking-tight">{heading}</h2> : null}
+      {heading ? <BlockHeading level={blockHeadingLevel(block)} className="mt-3 text-4xl font-semibold tracking-tight">{heading}</BlockHeading> : null}
       {subheading ? <p className={`mt-4 max-w-2xl text-lg ${subheadingClass}`}>{subheading}</p> : null}
       {hasPrimary || hasSecondary ? (
         <div className="mt-8 flex flex-wrap gap-3">
@@ -97,7 +124,15 @@ function HeroBlock({ block }: { block: Block }) {
       <section className={sectionClass}>
         <div className="mx-auto grid max-w-5xl gap-8 px-6 py-16 sm:px-10 md:grid-cols-2 md:items-center">
           <div>{textContent}</div>
-          <Image src={imageUrl} alt={readString(block.imageAlt)} width={600} height={400} className="w-full rounded-2xl object-cover" />
+          <ResponsiveImage
+            desktopSrc={imageUrl}
+            mobileSrc={imageMobileUrl}
+            alt={readString(block.imageAlt)}
+            width={600}
+            height={400}
+            priority
+            className="w-full rounded-2xl object-cover"
+          />
         </div>
       </section>
     )
@@ -108,7 +143,15 @@ function HeroBlock({ block }: { block: Block }) {
       <div className="mx-auto max-w-5xl px-6 py-16 sm:px-10">
         {textContent}
         {imageUrl ? (
-          <Image src={imageUrl} alt={readString(block.imageAlt)} width={1200} height={630} className="mt-8 w-full rounded-2xl object-cover" />
+          <ResponsiveImage
+            desktopSrc={imageUrl}
+            mobileSrc={imageMobileUrl}
+            alt={readString(block.imageAlt)}
+            width={1200}
+            height={630}
+            priority
+            className="mt-8 w-full rounded-2xl object-cover"
+          />
         ) : null}
       </div>
     </section>
@@ -144,7 +187,7 @@ function CtaBlock({ block }: { block: Block }) {
   return (
     <section className={`${sectionTone} py-12`}>
       <div className="mx-auto max-w-3xl px-6 text-center">
-        {heading ? <h2 className="text-3xl font-semibold tracking-tight">{heading}</h2> : null}
+        {heading ? <BlockHeading level={blockHeadingLevel(block)} className="text-3xl font-semibold tracking-tight">{heading}</BlockHeading> : null}
         {subheading ? <p className={`mt-3 text-base ${subheadingTone}`}>{subheading}</p> : null}
         {hasPrimary || hasSecondary ? (
           <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -186,7 +229,7 @@ async function FaqAccordionBlock({ block }: { block: Block }) {
   return (
     <section className="bg-white py-12">
       <div className="mx-auto max-w-3xl px-6">
-        {heading ? <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {heading ? <BlockHeading level={blockHeadingLevel(block)} className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</BlockHeading> : null}
         {subheading ? <p className="mt-2 text-base text-slate-600">{subheading}</p> : null}
         <dl className="mt-6 space-y-3">
           {items.map((item, idx) => (
@@ -213,7 +256,7 @@ function StatsBlock({ block }: { block: Block }) {
   return (
     <section className="bg-white py-12">
       <div className="mx-auto max-w-5xl px-6">
-        {heading ? <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {heading ? <BlockHeading level={blockHeadingLevel(block)} className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</BlockHeading> : null}
         <dl className="mt-6 grid gap-6 sm:grid-cols-3">
           {items.map((item, idx) => (
             <div key={idx} className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
@@ -269,7 +312,7 @@ function DownloadBlock({ block }: { block: Block }) {
           />
         ) : null}
         <div>
-          {heading ? <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+          {heading ? <BlockHeading level={blockHeadingLevel(block)} className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</BlockHeading> : null}
           {description ? <p className="mt-2 text-slate-700">{description}</p> : null}
           {gated && formId ? (
             <p className="mt-4 text-sm text-slate-500">
@@ -360,7 +403,7 @@ function TableBlock({ block }: { block: Block }) {
     <section className="bg-white py-12">
       <div className="mx-auto max-w-5xl px-6">
         {readString(block.heading) ? (
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{readString(block.heading)}</h2>
+          <BlockHeading level={blockHeadingLevel(block)} className="text-2xl font-semibold tracking-tight text-slate-900">{readString(block.heading)}</BlockHeading>
         ) : null}
         <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-left text-sm">
@@ -402,7 +445,7 @@ function TimelineBlock({ block }: { block: Block }) {
     <section className="bg-white py-12">
       <div className="mx-auto max-w-3xl px-6">
         {readString(block.heading) ? (
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{readString(block.heading)}</h2>
+          <BlockHeading level={blockHeadingLevel(block)} className="text-2xl font-semibold tracking-tight text-slate-900">{readString(block.heading)}</BlockHeading>
         ) : null}
         <ol className="mt-6 space-y-4 border-l border-slate-200 pl-5">
           {items.map((item, idx) => (
@@ -455,7 +498,7 @@ async function ToolEmbedBlock({ block }: { block: Block }) {
   return (
     <section className="bg-white py-12">
       <div className="mx-auto max-w-4xl px-6">
-        {heading ? <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {heading ? <BlockHeading level={blockHeadingLevel(block)} className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</BlockHeading> : null}
         {description ? <p className="mt-2 text-slate-700">{description}</p> : null}
         {toolUrl ? (
           <div className="mt-6 aspect-video overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
@@ -485,7 +528,7 @@ function FormBlock({ block }: { block: Block }) {
   return (
     <section className="bg-[#fff8f1] py-12">
       <div className="mx-auto max-w-3xl px-6 text-center">
-        {heading ? <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {heading ? <BlockHeading level={blockHeadingLevel(block)} className="text-3xl font-semibold tracking-tight text-slate-900">{heading}</BlockHeading> : null}
         {subheading ? <p className="mt-3 text-base text-slate-600">{subheading}</p> : null}
         {embedUrl ? (
           <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -520,7 +563,7 @@ async function SpeakerBlock({ block }: { block: Block }) {
   return (
     <section className="bg-white py-12">
       <div className="mx-auto max-w-5xl px-6">
-        {heading ? <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {heading ? <BlockHeading level={blockHeadingLevel(block)} className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</BlockHeading> : null}
         <div className="mt-6 grid gap-6 sm:grid-cols-2">
           {members.map((member, idx) => {
             const name = readString(member.full_name)
@@ -637,7 +680,7 @@ async function RelatedContentBlock({ block }: { block: Block }) {
   return (
     <section className="bg-white py-12">
       <div className="mx-auto max-w-5xl px-6">
-        {heading ? <h2 className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</h2> : null}
+        {heading ? <BlockHeading level={blockHeadingLevel(block)} className="text-2xl font-semibold tracking-tight text-slate-900">{heading}</BlockHeading> : null}
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => (
             <a

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import * as Lucide from 'lucide-react'
 import { jsonArray, s } from '@/lib/landing-pages/safeProps'
-import { Container, SectionWrap, SectionHeading } from './primitives'
+import { Container, SectionWrap, SectionHeading, normalizeHeadingLevel } from './primitives'
 
 type Common = { props: Record<string, unknown> }
 
@@ -16,7 +16,7 @@ export function Faq({ props }: Common) {
   return (
     <SectionWrap bg="white">
       <Container>
-        <SectionHeading heading={heading} subheading={subheading} />
+        <SectionHeading heading={heading} subheading={subheading} level={normalizeHeadingLevel(props.heading_level)} />
         <div className="max-w-3xl mx-auto divide-y divide-slate-200 border-y border-slate-200">
           {items.map((item, i) => {
             const isOpen = openIndex === i

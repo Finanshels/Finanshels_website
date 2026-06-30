@@ -1,7 +1,7 @@
 'use client'
 
 import { jsonArray, n, s } from '@/lib/landing-pages/safeProps'
-import { Container, SectionWrap, SectionHeading, getLucideIcon } from './primitives'
+import { Container, SectionWrap, SectionHeading, getLucideIcon, normalizeHeadingLevel } from './primitives'
 
 type Common = { props: Record<string, unknown> }
 
@@ -15,7 +15,7 @@ export function FeatureGrid({ props }: Common) {
   return (
     <SectionWrap bg="white">
       <Container>
-        <SectionHeading heading={heading} subheading={subheading} />
+        <SectionHeading heading={heading} subheading={subheading} level={normalizeHeadingLevel(props.heading_level)} />
         <div className={`grid grid-cols-1 ${gridCols} gap-5`}>
           {items.map((item, i) => {
             const Icon = getLucideIcon(item.icon)
