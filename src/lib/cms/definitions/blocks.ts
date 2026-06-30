@@ -13,6 +13,61 @@ export type CmsBlockType = {
   fields: CmsBlockField[]
 }
 
+/**
+ * Promo blocks (`nudge`, `offer_banner`, `popup`) can render two ways:
+ *  - `inline`  → composed in the page/body flow like any other block.
+ *  - `overlay` → pulled out of flow into the page-level overlay layer
+ *                (sticky bar / floating toast / modal) with a trigger.
+ * These are the shared fields that drive the overlay behaviour.
+ */
+function promoDisplayFields(placements: string[]): CmsBlockField[] {
+  const fields: CmsBlockField[] = [
+    {
+      name: 'display_mode',
+      label: 'Display mode',
+      type: 'select',
+      options: ['inline', 'overlay'],
+      description:
+        'Inline renders in the page flow. Overlay floats over the page with a trigger (page-builder only).',
+    },
+  ]
+  if (placements.length > 0) {
+    fields.push({
+      name: 'placement',
+      label: 'Placement (overlay)',
+      type: 'select',
+      options: placements,
+    })
+  }
+  fields.push(
+    {
+      name: 'trigger',
+      label: 'Trigger (overlay)',
+      type: 'select',
+      options: ['load', 'delay', 'scroll', 'exit'],
+      description: 'On load, after a delay, after a scroll %, or on exit intent.',
+    },
+    {
+      name: 'triggerValue',
+      label: 'Trigger value (overlay)',
+      type: 'number',
+      min: 0,
+      description: 'Seconds for "delay", or scroll percentage (0–100) for "scroll".',
+    },
+    {
+      name: 'frequency',
+      label: 'Show frequency (overlay)',
+      type: 'select',
+      options: ['always', 'session', 'once'],
+      description: 'always = every visit · session = once per tab · once = once ever (remembered).',
+    }
+  )
+  return fields
+}
+
+/** Block types that support a page-level overlay rendering (vs in-flow). */
+export const OVERLAY_BLOCK_TYPES: ReadonlySet<string> = new Set(['nudge', 'offer_banner', 'popup'])
+
 export const CMS_BLOCK_TYPES: CmsBlockType[] = [
   {
     type: 'hero',
@@ -258,6 +313,168 @@ export const CMS_BLOCK_TYPES: CmsBlockType[] = [
         type: 'json',
         placeholder: '[{"date":"2025-01","title":"...","description":"..."}]',
       },
+    ],
+  },
+  // ---- Content blocks added 2026-06-30 ----
+  {
+    type: 'callout',
+    label: 'Callout',
+    description: 'A highlighted note / tip / warning box.',
+    icon: 'info',
+    fields: [
+      {
+        name: 'tone',
+        label: 'Tone',
+        type: 'select',
+        options: ['info', 'tip', 'success', 'warning'],
+      },
+      { name: 'title', label: 'Title', type: 'text' },
+      { name: 'body', label: 'Body', type: 'textarea' },
+      {
+        name: 'icon',
+        label: 'Icon (lucide name)',
+        type: 'icon',
+        placeholder: 'lightbulb',
+        description: 'Optional lucide icon name (kebab-case). Defaults to a tone-matched icon.',
+      },
+    ],
+  },
+  {
+    type: 'media_text',
+    label: 'Media + text',
+    description: 'An image beside a block of copy with an optional CTA.',
+    icon: 'image',
+    fields: [
+      { name: 'eyebrow', label: 'Eyebrow', type: 'text' },
+      { name: 'heading', label: 'Heading', type: 'text' },
+      { name: 'body', label: 'Body', type: 'textarea' },
+      { name: 'imageUrl', label: 'Image URL', type: 'image' },
+      { name: 'imageAlt', label: 'Image alt text', type: 'text' },
+      {
+        name: 'mediaSide',
+        label: 'Image side',
+        type: 'select',
+        options: ['left', 'right'],
+      },
+      { name: 'ctaLabel', label: 'CTA label', type: 'text' },
+      { name: 'ctaUrl', label: 'CTA URL', type: 'url' },
+    ],
+  },
+  {
+    type: 'feature_grid',
+    label: 'Feature grid',
+    description: 'A grid of icon + title + description cards.',
+    icon: 'grid',
+    fields: [
+      { name: 'heading', label: 'Heading', type: 'text' },
+      { name: 'subheading', label: 'Subheading', type: 'textarea' },
+      {
+        name: 'columns',
+        label: 'Columns',
+        type: 'select',
+        options: ['2', '3', '4'],
+      },
+      {
+        name: 'items',
+        label: 'Items JSON',
+        type: 'json',
+        placeholder: '[{"icon":"shield","title":"...","description":"..."}]',
+      },
+    ],
+  },
+  {
+    type: 'steps',
+    label: 'Steps / how-it-works',
+    description: 'A numbered list of steps or a process.',
+    icon: 'list-ordered',
+    fields: [
+      { name: 'heading', label: 'Heading', type: 'text' },
+      { name: 'subheading', label: 'Subheading', type: 'textarea' },
+      {
+        name: 'layout',
+        label: 'Layout',
+        type: 'select',
+        options: ['vertical', 'horizontal'],
+      },
+      {
+        name: 'items',
+        label: 'Steps JSON',
+        type: 'json',
+        placeholder: '[{"title":"...","description":"..."}]',
+      },
+    ],
+  },
+  {
+    type: 'pricing',
+    label: 'Pricing',
+    description: 'A row of pricing plans / packages.',
+    icon: 'badge-dollar-sign',
+    fields: [
+      { name: 'heading', label: 'Heading', type: 'text' },
+      { name: 'subheading', label: 'Subheading', type: 'textarea' },
+      {
+        name: 'plans',
+        label: 'Plans JSON',
+        type: 'json',
+        placeholder:
+          '[{"name":"Starter","price":"AED 0","period":"/mo","features":["..."],"ctaLabel":"Start","ctaUrl":"/signup","featured":false}]',
+      },
+    ],
+  },
+  // ---- Promo blocks (inline OR page-level overlay) ----
+  {
+    type: 'nudge',
+    label: 'Nudge',
+    description: 'A small dismissible promo — inline card or floating toast.',
+    icon: 'bell',
+    fields: [
+      { name: 'heading', label: 'Heading', type: 'text' },
+      { name: 'text', label: 'Text', type: 'textarea' },
+      { name: 'ctaLabel', label: 'CTA label', type: 'text' },
+      { name: 'ctaUrl', label: 'CTA URL', type: 'url' },
+      { name: 'imageUrl', label: 'Image / avatar URL', type: 'image' },
+      {
+        name: 'tone',
+        label: 'Tone',
+        type: 'select',
+        options: ['brand', 'dark', 'light'],
+      },
+      ...promoDisplayFields(['bottom-right', 'bottom-left', 'top-right', 'top-left']),
+    ],
+  },
+  {
+    type: 'offer_banner',
+    label: 'Offer banner',
+    description: 'A wide promo bar — inline strip or sticky page banner.',
+    icon: 'megaphone',
+    fields: [
+      { name: 'text', label: 'Text', type: 'text', required: true },
+      { name: 'ctaLabel', label: 'CTA label', type: 'text' },
+      { name: 'ctaUrl', label: 'CTA URL', type: 'url' },
+      {
+        name: 'tone',
+        label: 'Tone',
+        type: 'select',
+        options: ['brand', 'dark', 'light'],
+      },
+      { name: 'dismissible', label: 'Dismissible', type: 'boolean' },
+      ...promoDisplayFields(['top', 'bottom']),
+    ],
+  },
+  {
+    type: 'popup',
+    label: 'Pop-up',
+    description: 'A modal dialog — inline card or triggered overlay.',
+    icon: 'message-square',
+    fields: [
+      { name: 'heading', label: 'Heading', type: 'text' },
+      { name: 'body', label: 'Body', type: 'textarea' },
+      { name: 'imageUrl', label: 'Image URL', type: 'image' },
+      { name: 'ctaLabel', label: 'Primary CTA label', type: 'text' },
+      { name: 'ctaUrl', label: 'Primary CTA URL', type: 'url' },
+      { name: 'secondaryCtaLabel', label: 'Secondary CTA label', type: 'text' },
+      { name: 'secondaryCtaUrl', label: 'Secondary CTA URL', type: 'url' },
+      ...promoDisplayFields([]),
     ],
   },
 ]
