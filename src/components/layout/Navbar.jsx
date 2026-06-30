@@ -181,11 +181,6 @@ export default function Navbar({ navTools = [] }) {
     return pathname.startsWith(path)
   }
 
-  const isOnHome2 = pathname === '/home2'
-  const homeToggleItem = isOnHome2
-    ? { name: 'Home', path: '/' }
-    : { name: 'Why?', path: '/home2' }
-
   const resourcesSections = useMemo(
     () => [...RESOURCES_STATIC_SECTIONS, buildToolsSection(navTools)],
     [navTools]
@@ -193,7 +188,6 @@ export default function Navbar({ navTools = [] }) {
 
   const navItems = useMemo(
     () => [
-      homeToggleItem,
       {
         name: 'Services',
         dropdown: SERVICES_SECTIONS,
@@ -235,7 +229,7 @@ export default function Navbar({ navTools = [] }) {
         }
       }
     ],
-    [homeToggleItem, resourcesSections]
+    [resourcesSections]
   )
 
   const renderDropdown = (sections, cta, options = {}) => {

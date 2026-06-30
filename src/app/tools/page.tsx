@@ -12,7 +12,9 @@ const HUB_DESCRIPTION =
   'Free UAE finance and tax tools — VAT calculator, gratuity calculator, corporate tax deadline checker, and more.'
 
 export const metadata: Metadata = {
-  title: HUB_TITLE,
+  // FIX-082: title already ends in "| Finanshels"; mark absolute so the root
+  // layout's `%s | Finanshels` template doesn't append the brand a second time.
+  title: { absolute: HUB_TITLE },
   description: HUB_DESCRIPTION,
   alternates: { canonical: `${getSiteUrl()}/tools` },
   openGraph: {

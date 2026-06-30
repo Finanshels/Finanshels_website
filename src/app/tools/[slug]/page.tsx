@@ -24,7 +24,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = tool.metaDescription || tool.shortDescription
   const url = tool.canonicalUrl || `${getSiteUrl()}/tools/${tool.slug}`
   return {
-    title,
+    // FIX-082: `title` already carries the brand (seoTitle or "<tool> | Finanshels");
+    // mark absolute so the root `%s | Finanshels` template doesn't double it.
+    title: { absolute: title },
     description,
     alternates: { canonical: url },
     openGraph: {
