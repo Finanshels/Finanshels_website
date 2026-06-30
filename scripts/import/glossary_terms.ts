@@ -5,6 +5,7 @@ import type { ReferenceMap } from './lib/referenceMap'
 import type { ImportReport } from './lib/report'
 import { transformDirect, transformSlug } from './lib/transform/primitives'
 import { transformRichText } from './lib/transform/richText'
+import { backfillSeoAeoGeo } from './lib/transform/seoBackfill'
 
 const WEBFLOW_COLLECTION_ID = '6478e2307e71b5438f247af8'
 const SHORT_DEF_FALLBACK_CHARS = 200
@@ -61,6 +62,8 @@ export async function importGlossaryTerms(ctx: ImportContext): Promise<void> {
       const definitionShort = shortFromWebflow || deriveShortDefinition(definitionFull)
 
       const data: Record<string, unknown> = {
+        // FIX-080: deterministic SEO/AEO/GEO backfill from the imported content.
+        ...backfillSeoAeoGeo({ title: term, excerpt: definitionShort, body: definitionFull }),
         term,
         definition_short: definitionShort,
         definition_full: definitionFull,

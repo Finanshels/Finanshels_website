@@ -11,6 +11,7 @@ import {
 } from './lib/transform/primitives'
 import { transformImage } from './lib/transform/image'
 import { transformRichText } from './lib/transform/richText'
+import { backfillSeoAeoGeo } from './lib/transform/seoBackfill'
 import { slugifyForCms } from '../../src/lib/cms/slugify'
 
 const WEBFLOW_BLOG_COLLECTION_ID = '6478e2307e71b5438f247af6'
@@ -163,6 +164,9 @@ export async function importBlogPosts(ctx: ImportContext): Promise<void> {
           : undefined) ?? ''
 
       const data: Record<string, unknown> = {
+        // FIX-080: deterministic SEO/AEO/GEO backfill from the imported content
+        // (spread first so any explicit field below wins).
+        ...backfillSeoAeoGeo({ title, excerpt, body }),
         title,
         excerpt,
         body,
