@@ -5,6 +5,8 @@ import AppChrome from '../components/layout/AppChrome'
 import CookieConsent from '../components/layout/CookieConsent'
 import { safeJsonLd } from '@/lib/seo/safeJsonLd'
 import { getNavTools } from '@/lib/cms/toolsRepository'
+import { getAnnouncement } from '@/lib/cms/siteSettingsRepository'
+import { EMPTY_ANNOUNCEMENT, type SiteAnnouncement } from '@/lib/cms/siteAnnouncementTypes'
 import type { NavTool } from '@/lib/tools/types'
 
 // Inter is the single brand typeface — used for both body and headings. The
@@ -107,6 +109,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     navTools = []
   }
 
+  // FIX-078: site-wide announcement nudge (degrade to none on any failure).
+  let announcement: SiteAnnouncement = EMPTY_ANNOUNCEMENT
+  try {
+    announcement = await getAnnouncement()
+  } catch {
+    announcement = EMPTY_ANNOUNCEMENT
+  }
+
   return (
     <html lang="en" className={`${fontSans.variable}`}>
       <body className="font-sans antialiased bg-white text-slate-900">
@@ -114,7 +124,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationSchema) }}
         />
-        <AppChrome navTools={navTools}>{children}</AppChrome>
+        <AppChrome navTools={navTools} announcement={announcement}>{children}</AppChrome>
         <CookieConsent />
       </body>
     </html>

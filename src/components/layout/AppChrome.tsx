@@ -2,9 +2,11 @@
 
 import { usePathname } from 'next/navigation'
 import { ChatWidget } from '../chat/ChatWidget'
+import { AnnouncementBar } from './AnnouncementBar'
 import Footer from './Footer'
 import Navbar from './Navbar'
 import type { NavTool } from '@/lib/tools/types'
+import { EMPTY_ANNOUNCEMENT, type SiteAnnouncement } from '@/lib/cms/siteAnnouncementTypes'
 
 /**
  * Admin routes render without the marketing shell (nav + footer), which was
@@ -23,9 +25,11 @@ import type { NavTool } from '@/lib/tools/types'
 export default function AppChrome({
   children,
   navTools = [],
+  announcement = EMPTY_ANNOUNCEMENT,
 }: {
   children: React.ReactNode
   navTools?: NavTool[]
+  announcement?: SiteAnnouncement
 }) {
   const pathname = usePathname()
   const isAdmin = pathname.startsWith('/admin')
@@ -39,6 +43,7 @@ export default function AppChrome({
     return (
       <div className="min-h-screen bg-white">
         {children}
+        <AnnouncementBar announcement={announcement} />
         <ChatWidget />
       </div>
     )
@@ -57,6 +62,7 @@ export default function AppChrome({
       */}
       <main className="flex-1 pt-6 sm:pt-8">{children}</main>
       <Footer />
+      <AnnouncementBar announcement={announcement} />
       <ChatWidget />
     </div>
   )

@@ -3,6 +3,7 @@ import { getSiteUrl } from '@/lib/cms/config'
 import { NON_RESOURCE_STATIC_PAGE_PATHS } from '@/lib/staticPageRoutes'
 import { CMS_COLLECTION_DEFINITIONS } from '@/lib/cms/collectionDefinitions'
 import { listCmsDocuments } from '@/lib/cms/collectionRepository'
+import { getActiveRedirects } from '@/lib/cms/redirectsRepository'
 
 export const revalidate = 3600
 
@@ -15,10 +16,30 @@ function detailUrl(routePattern: string, slug: string): string | null {
   return routePattern.replace('[slug]', encodeURIComponent(slug))
 }
 
+/** Match the redirect-table normalisation so a redirected path is recognised. */
+function normalizeForRedirect(path: string): string {
+  if (!path) return '/'
+  const p = path.startsWith('/') ? path : `/${path}`
+  return p.length > 1 ? p.replace(/\/+$/, '') : p
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl()
 
-  const staticRoutes: MetadataRoute.Sitemap = NON_RESOURCE_STATIC_PAGE_PATHS.map((path) => ({
+  // FIX-073: sunsetting — a URL that now 301s must NOT appear in the sitemap.
+  // Pull the active redirect sources and skip any matching route below.
+  let redirectedPaths = new Set<string>()
+  try {
+    const rules = await getActiveRedirects()
+    redirectedPaths = new Set(rules.map((r) => normalizeForRedirect(r.from)))
+  } catch {
+    // Non-fatal: emit the full sitemap if the redirect table is unavailable.
+  }
+  const isRedirected = (path: string): boolean => redirectedPaths.has(normalizeForRedirect(path))
+
+  const staticRoutes: MetadataRoute.Sitemap = NON_RESOURCE_STATIC_PAGE_PATHS.filter(
+    (path) => !isRedirected(path)
+  ).map((path) => ({
     url: `${base}${path}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
@@ -34,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // Listing route (deduped — several collections share `/faq`).
     const listingUrl = `${base}${listingRoute}`
-    if (!seen.has(listingUrl)) {
+    if (!seen.has(listingUrl) && !isRedirected(listingRoute)) {
       seen.add(listingUrl)
       dynamicRoutes.push({
         url: listingUrl,
@@ -60,6 +81,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (doc.status !== 'published') continue
       const path = detailUrl(routePattern, doc.slug)
       if (!path) continue
+      if (isRedirected(path)) continue
       const url = `${base}${path}`
       if (seen.has(url)) continue
       seen.add(url)

@@ -98,6 +98,24 @@ export function AdminSidebar({ activeKey, collectionCounts, session }: AdminSide
         >
           Lead inbox
         </Link>
+        {/* FIX-073: CMS redirect manager (admin-only) for the Webflow migration. */}
+        {canManageUsers ? (
+          <Link
+            href="/admin/redirects"
+            className="flex items-center rounded-lg px-3 py-2 text-[13px] font-medium text-slate-500 transition hover:bg-gray-50 hover:text-slate-900"
+          >
+            Redirects
+          </Link>
+        ) : null}
+        {/* FIX-078: site-wide announcement / countdown nudge (admin-only). */}
+        {canManageUsers ? (
+          <Link
+            href="/admin/announcement"
+            className="flex items-center rounded-lg px-3 py-2 text-[13px] font-medium text-slate-500 transition hover:bg-gray-50 hover:text-slate-900"
+          >
+            Announcement
+          </Link>
+        ) : null}
       </nav>
 
       {/* Settings */}

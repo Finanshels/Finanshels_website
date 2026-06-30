@@ -33,3 +33,23 @@ export function getSiteUrl(): string {
 export function getRevalidateSecret(): string | undefined {
   return process.env.REVALIDATE_SECRET
 }
+
+/**
+ * FIX-076: is this the real production site (vs. a staging/preview deploy)?
+ * Drives noindex + the optional staging password gate so only production is
+ * crawlable. Resolution order:
+ *   1. NEXT_PUBLIC_SITE_ENV (explicit override: "production" | "staging" | …)
+ *   2. VERCEL_ENV (auto: "production" | "preview" | "development")
+ *   3. NODE_ENV === 'production' AND a canonical NEXT_PUBLIC_SITE_URL is set
+ * Anything without a clear production signal is treated as NON-production, so a
+ * new environment never gets indexed by accident.
+ */
+export function isProductionSite(): boolean {
+  const explicit = (process.env.NEXT_PUBLIC_SITE_ENV || '').trim().toLowerCase()
+  if (explicit) return explicit === 'production'
+
+  const vercelEnv = (process.env.VERCEL_ENV || '').trim().toLowerCase()
+  if (vercelEnv) return vercelEnv === 'production'
+
+  return process.env.NODE_ENV === 'production' && Boolean(process.env.NEXT_PUBLIC_SITE_URL)
+}
