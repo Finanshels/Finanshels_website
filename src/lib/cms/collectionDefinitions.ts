@@ -1030,8 +1030,18 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
           description: 'Drives how the start/end time is displayed to visitors.',
         },
         { name: 'platform', label: 'Platform', type: 'select', options: ['zoho', 'zoom', 'meet', 'teams', 'other'] },
-        { name: 'host_partner_name', label: 'Co-host / partner name', type: 'text', placeholder: 'Only for collab webinars' },
+        { name: 'host_partner_name', label: 'Co-host / partner name', type: 'text', placeholder: 'Only for collab webinars', description: 'Single collab partner. For multiple co-hosts, use the Co-hosts field below instead.' },
         { name: 'host_partner_logo', label: 'Co-host / partner logo', type: 'image' },
+        // FIX-068: multiple co-hosts/partners. One per line — `Name | logoUrl | Role`.
+        // When any rows exist they SUPERSEDE the single host_partner_* fields above.
+        {
+          name: 'co_hosts',
+          label: 'Co-hosts / partners (multiple)',
+          type: 'rows',
+          rowFormat: ['name', 'logo_url', 'role'],
+          placeholder: 'Alain | https://logo.png | Co-host',
+          description: 'One co-host per line: Name | logo URL (from the media library) | role. Overrides the single co-host fields above when set.',
+        },
         // Registration
         {
           name: 'registration_mode',
@@ -1052,7 +1062,11 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
           description: 'Tags the Zoho CRM lead created on registration.',
         },
         // Post-event
-        { name: 'recording_url', label: 'Recording URL', type: 'url', placeholder: 'On-demand replay (shown when Completed). Plays openly.' },
+        { name: 'recording_url', label: 'Recording URL', type: 'url', placeholder: 'On-demand replay (shown when Completed). Plays openly unless gated below.' },
+        // FIX-068: short promo clip, optional gating of the full replay, written recap.
+        { name: 'teaser_video_url', label: 'Teaser video URL', type: 'url', placeholder: 'Short 30–60s promo clip (YouTube/Vimeo/MP4)' },
+        { name: 'replay_gated', label: 'Gate the recording', type: 'boolean', description: 'Require registration (email) before the replay plays. Applies when Completed.' },
+        { name: 'post_event_summary', label: 'Post-event summary', type: 'textarea', placeholder: 'A short recap shown on the replay page. Basic HTML allowed (sanitized).' },
         {
           name: 'downloadable_resources',
           label: 'Downloadable resources',
@@ -1069,13 +1083,20 @@ const CMS_COLLECTION_DEFINITIONS_BASE: BaseCollectionDefinition[] = [
   },
   {
     key: 'team_members',
-    label: 'Team Members',
-    singularLabel: 'Team Member',
-    description: 'People profiles for leadership and team pages.',
-    template: 'Team card/profile template',
-    // FIX-048: dedicated `/team/[slug]` route does not exist; collection is
-    // blocklisted from the generic /content/ route to avoid leaking
-    // contact PII. Admin-editable only.
+    // FIX-068: renamed "Team Members" → "Authors" (June-29 stakeholder review).
+    // The Firestore collection KEY stays `team_members` (no data migration);
+    // only the display label changed. These profiles author blog posts,
+    // webinars, etc., and now have public pages at `/author/[slug]`.
+    label: 'Authors',
+    singularLabel: 'Author',
+    description: 'Author profiles — byline, bio, and socials for blog posts, webinars, and other content. Public pages live at /author/[slug].',
+    template: 'Author card/profile template',
+    // FIX-068: dedicated public surface is `/author/[slug]` + `/authors`
+    // (src/app/author, src/app/authors) which whitelist ONLY safe fields. The
+    // collection stays blocklisted from the generic /content/ route — that page
+    // dumps every field and would leak email/phone PII.
+    routePattern: '/author/[slug]',
+    listingRoute: '/authors',
     titleField: 'full_name',
     slugField: 'slug',
     defaultSchemaType: 'Person',

@@ -83,6 +83,31 @@ function readAgenda(value: unknown): WebinarAgendaItem[] {
   return out
 }
 
+/**
+ * FIX-068: co-hosts. `co_hosts` is a `rows` field — an array of
+ * `{ name, logo_url, role }`. When present it SUPERSEDES the legacy single
+ * `host_partner_name`/`host_partner_logo` pair; otherwise we synthesize one
+ * entry from those legacy fields so existing collab webinars keep rendering.
+ */
+function readCoHosts(d: Record<string, unknown>): WebinarCoHost[] {
+  const rows = Array.isArray(d.co_hosts) ? d.co_hosts : []
+  const fromRows: WebinarCoHost[] = []
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue
+    const o = row as Record<string, unknown>
+    const name = asString(o.name)
+    if (!name) continue
+    fromRows.push({ name, logoUrl: asOptionalString(o.logo_url), role: asOptionalString(o.role) })
+  }
+  if (fromRows.length > 0) return fromRows
+
+  const legacyName = asString(d.host_partner_name)
+  if (legacyName) {
+    return [{ name: legacyName, logoUrl: asOptionalString(d.host_partner_logo), role: null }]
+  }
+  return []
+}
+
 export type WebinarSpeaker = {
   name: string
   title: string | null
@@ -96,6 +121,13 @@ export type WebinarResource = {
   title: string
   coverImage: string | null
   gated: boolean
+}
+
+/** FIX-068: a single co-host / partner org (logo is a media-library URL). */
+export type WebinarCoHost = {
+  name: string
+  logoUrl: string | null
+  role: string | null
 }
 
 export type WebinarRelatedPost = {
@@ -127,6 +159,11 @@ export type WebinarDetail = WebinarCardData & {
   serviceInterest: string | null
   recordingUrl: string | null
   hostPartnerLogo: string | null
+  // FIX-068: multiple co-hosts, teaser clip, optional replay gate, written recap.
+  coHosts: WebinarCoHost[]
+  teaserVideoUrl: string | null
+  replayGated: boolean
+  postEventSummary: string
   agenda: WebinarAgendaItem[]
   keyTopics: string[]
   speakers: WebinarSpeaker[]
@@ -269,6 +306,10 @@ export async function getPublishedWebinarBySlug(slug: string): Promise<WebinarDe
     serviceInterest: asOptionalString(d.service_interest),
     recordingUrl: asOptionalString(d.recording_url),
     hostPartnerLogo: asOptionalString(d.host_partner_logo),
+    coHosts: readCoHosts(d),
+    teaserVideoUrl: asOptionalString(d.teaser_video_url),
+    replayGated: d.replay_gated === true,
+    postEventSummary: asString(d.post_event_summary),
     agenda: readAgenda(d.agenda_items),
     keyTopics: asStringArray(d.key_topics),
     speakers,

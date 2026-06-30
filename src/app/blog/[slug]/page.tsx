@@ -6,12 +6,14 @@ import { ArrowLeft } from 'lucide-react'
 import { ArticleBodyWithBlocks } from '@/components/cms/ArticleBodyWithBlocks'
 import { DevCmsBanner } from '@/components/cms/DevCmsBanner'
 import { PageBlocksRenderer } from '@/components/cms/PageBlocksRenderer'
-import { AuthorAvatar } from '@/components/cms/blog/AuthorAvatar'
+import { AuthorByline } from '@/components/cms/blog/AuthorByline'
+import { AuthorBioCard } from '@/components/cms/blog/AuthorBioCard'
 import { ReadingProgress } from '@/components/cms/blog/ReadingProgress'
 import { ArticleToc } from '@/components/cms/blog/ArticleToc'
 import { ShareRow } from '@/components/cms/blog/ShareRow'
 import { getSiteUrl } from '@/lib/cms/config'
 import { getBlogPostBySlug } from '@/lib/cms/blogRepository'
+import { resolveFaqAccordionItems } from '@/lib/cms/faqsRepository'
 import { sanitizeCmsHtml } from '@/lib/cms/sanitize'
 import { buildArticleToc } from '@/lib/cms/articleToc'
 import { estimateReadingMinutes } from '@/lib/cms/readingTime'
@@ -86,6 +88,7 @@ export default async function BlogArticlePage({ params }: Props) {
   const hasToc = toc.length >= 2
 
   const authorName = post.author ?? post.authorName ?? null
+  const authorProfile = post.authorProfile
   const categoryLabel = blogCategoryLabel(post.blog_category)
   const tags = post.blog_tags ?? []
   const heroImage = post.featured_image ?? post.heroImageUrl ?? null
@@ -100,6 +103,15 @@ export default async function BlogArticlePage({ params }: Props) {
   // FIX-034: emit BlogPosting JSON-LD.
   const ogImage = pickOgImage(post)
   const canonical = post.canonical_url || `${getSiteUrl()}/blog/${post.slug}`
+  // FIX-068: enrich the author node with the public profile URL + photo when resolved.
+  const authorLd = authorName
+    ? {
+        '@type': 'Person',
+        name: authorName,
+        ...(authorProfile ? { url: `${getSiteUrl()}/author/${authorProfile.slug}` } : {}),
+        ...(authorProfile?.photo ? { image: authorProfile.photo } : {}),
+      }
+    : undefined
   const jsonLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': post.schema_type_override || post.schema_type || 'BlogPosting',
@@ -108,9 +120,29 @@ export default async function BlogArticlePage({ params }: Props) {
     datePublished: post.publishedAt.toISOString(),
     dateModified: (post.updatedAt ?? post.publishedAt).toISOString(),
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
-    author: authorName ? { '@type': 'Person', name: authorName } : undefined,
+    author: authorLd,
     image: ogImage ? [ogImage] : undefined,
   }
+
+  // FIX-068: derive FAQPage JSON-LD strictly from the FAQs VISIBLE on the page
+  // (faq_accordion blocks) — never a hidden field. No FAQ block → no schema.
+  const faqBlocks = blocks.filter(
+    (b) => Boolean(b) && typeof b === 'object' && (b as Record<string, unknown>).type === 'faq_accordion'
+  )
+  const faqItems = (await Promise.all(faqBlocks.map((b) => resolveFaqAccordionItems(b)))).flat()
+  const faqLd =
+    faqItems.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: { '@type': 'Answer', text: item.answer },
+          })),
+        }
+      : null
+
   const breadcrumbLd = buildBreadcrumbList([
     { name: 'Blog', path: '/blog' },
     { name: post.title, path: `/blog/${post.slug}` },
@@ -147,12 +179,7 @@ export default async function BlogArticlePage({ params }: Props) {
         </h1>
 
         <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-slate-200/80 pt-5">
-          {authorName ? (
-            <span className="flex items-center gap-2.5">
-              <AuthorAvatar name={authorName} />
-              <span className="text-sm font-semibold text-slate-700">{authorName}</span>
-            </span>
-          ) : null}
+          {authorName ? <AuthorByline name={authorName} profile={authorProfile} /> : null}
           <span className="font-mono text-[12px] text-slate-400">{dateLabel}</span>
           {updatedLabel ? (
             <span className="font-mono text-[12px] text-slate-400">
@@ -214,15 +241,7 @@ export default async function BlogArticlePage({ params }: Props) {
           </Link>
         </div>
 
-        {authorName ? (
-          <div className="mt-8 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-            <AuthorAvatar name={authorName} size="md" />
-            <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-400">Written by</p>
-              <p className="text-sm font-semibold text-slate-800">{authorName}</p>
-            </div>
-          </div>
-        ) : null}
+        {authorName ? <AuthorBioCard name={authorName} profile={authorProfile} /> : null}
       </footer>
     </div>
   )
@@ -241,6 +260,13 @@ export default async function BlogArticlePage({ params }: Props) {
         // eslint-disable-next-line react/no-danger -- emitting JSON-LD for crawlers
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
       />
+      {faqLd ? (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger -- emitting JSON-LD for crawlers
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(faqLd) }}
+        />
+      ) : null}
       <article className="bg-[#faf8f4] pb-24 pt-32 sm:pt-36">
         {hasToc ? (
           <div className="mx-auto flex max-w-6xl justify-center gap-10 px-6 sm:px-8 lg:gap-16">

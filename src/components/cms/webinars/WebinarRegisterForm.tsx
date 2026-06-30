@@ -47,6 +47,8 @@ export type WebinarRegisterFormProps = {
   webinarTitle: string
   submitLabel?: string
   className?: string
+  /** FIX-068: fired once registration succeeds — used by GatedReplay to reveal the video. */
+  onRegistered?: () => void
 }
 
 export function WebinarRegisterForm({
@@ -54,6 +56,7 @@ export function WebinarRegisterForm({
   webinarTitle,
   submitLabel = 'Save my seat',
   className,
+  onRegistered,
 }: WebinarRegisterFormProps) {
   const baseId = useId()
   const [state, setState] = useState<FormState>('idle')
@@ -173,6 +176,7 @@ export function WebinarRegisterForm({
         const okBody = (await res.json()) as { join_url?: string | null }
         setJoinUrl(okBody.join_url ?? null)
         setState('success')
+        onRegistered?.()
         form.reset()
         const api = getTurnstile()
         if (turnstileWidgetId.current && api) {
@@ -184,7 +188,7 @@ export function WebinarRegisterForm({
         setState('error')
       }
     },
-    [attribution, webinarSlug, state, turnstileSiteKey, turnstileToken]
+    [attribution, webinarSlug, state, turnstileSiteKey, turnstileToken, onRegistered]
   )
 
   const shell = `rounded-2xl border border-slate-200 bg-white shadow-xl p-6 sm:p-7 ${className ?? ''}`
