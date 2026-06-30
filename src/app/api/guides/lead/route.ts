@@ -11,14 +11,20 @@ import { verifyTurnstile } from '@/lib/landing-pages/turnstile'
 import { leadToZohoPayload, pushLeadToZoho } from '@/lib/landing-pages/zohoClient'
 import { getEbookDownload } from '@/lib/cms/ebooksRepository'
 import { sendEmail } from '@/lib/email/resend'
+import { buildEbookDownloadEmail } from '@/lib/email/templates/ebookDownload'
+import { getSiteUrl } from '@/lib/cms/config'
 
 /**
  * Gated ebook lead capture for `/guides/[slug]`.
  *
  * Reuses the landing-page lead pipeline (Firestore lead store + Cloudflare
- * Turnstile + rate-limit + Zoho CRM push). On a valid submit it returns the
- * actual `file_url` so the browser can start the download — that URL is NEVER
- * rendered into the public page for gated ebooks (FIX-048).
+ * Turnstile + rate-limit + Zoho CRM push). The download URL is NEVER rendered
+ * into the public page for gated ebooks (FIX-048).
+ *
+ * FIX-071: on a valid submit the download link is delivered by EMAIL (anti-spam
+ * — a reachable inbox is required to get the resource). `file_url` is returned
+ * to the browser only as a fallback when email delivery is unavailable, so a
+ * misconfigured/down mailer never blocks a legitimate download.
  */
 
 export const runtime = 'nodejs'
@@ -212,7 +218,35 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // 3) Internal email notification (best-effort; only when recipients configured)
+  // 3) Lead-facing email carrying the download link (anti-spam: deliver by email).
+  let emailedToLead = false
+  try {
+    const rendered = buildEbookDownloadEmail({
+      recipientName: input.name.trim(),
+      ebookTitle: ebook.title,
+      downloadUrl: ebook.fileUrl,
+      ebookUrl: `${getSiteUrl()}/guides/${ebook.slug}`,
+    })
+    const result = await sendEmail({
+      to: input.email.trim().toLowerCase(),
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+    })
+    emailedToLead = result.ok
+    await updateLeadSyncState(
+      leadId,
+      result.ok
+        ? { resend_email_sent_at: new Date(), resend_email_error: null }
+        : { resend_email_error: result.message }
+    )
+  } catch (err) {
+    await updateLeadSyncState(leadId, {
+      resend_email_error: err instanceof Error ? err.message : 'unknown_resend_error',
+    })
+  }
+
+  // 4) Internal team notification (best-effort; only when recipients configured).
   try {
     await notifyEbookLead({
       name: input.name.trim(),
@@ -222,15 +256,18 @@ export async function POST(req: NextRequest) {
       ebookTitle: ebook.title,
       slug: ebook.slug,
     })
-    await updateLeadSyncState(leadId, { resend_email_sent_at: new Date(), resend_email_error: null })
-  } catch (err) {
-    await updateLeadSyncState(leadId, {
-      resend_email_error: err instanceof Error ? err.message : 'unknown_resend_error',
-    })
+  } catch {
+    // Lead is already captured; an internal-notification failure is non-fatal.
   }
 
-  // The download URL is returned ONLY through this captured flow.
-  return NextResponse.json({ ok: true, lead_id: leadId, file_url: ebook.fileUrl })
+  // When the email went out, withhold the URL from the browser so the resource
+  // is obtainable only via the inbox. Fall back to a direct URL otherwise.
+  return NextResponse.json({
+    ok: true,
+    lead_id: leadId,
+    emailed: emailedToLead,
+    file_url: emailedToLead ? undefined : ebook.fileUrl,
+  })
 }
 
 export async function GET() {
