@@ -134,6 +134,7 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: S
   const showRateLimited = errorReason === 'rate_limited'
   const showInvitePending = errorReason === 'invite_pending'
   const showInviteAccepted = (params.ok ?? '') === 'invite-accepted'
+  const showPasswordReset = (params.ok ?? '') === 'password-reset'
   const prefillEmail = params.email ?? ''
   const userCount = await getUserCount().catch(() => 0)
   const allowEnvOnly = isLegacyEnvAuthEnabled()
@@ -155,6 +156,11 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: S
         {showInviteAccepted ? (
           <Alert variant="success" className="mt-5">
             Password set. Sign in below to enter the CMS.
+          </Alert>
+        ) : null}
+        {showPasswordReset ? (
+          <Alert variant="success" className="mt-5">
+            Your password has been reset. Sign in with your new password.
           </Alert>
         ) : null}
         {showError ? (
@@ -196,6 +202,12 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: S
             Sign in
           </Button>
         </form>
+
+        <p className="mt-4 text-center text-sm text-slate-500">
+          <a href="/admin/forgot" className="font-medium text-brand-primary underline hover:text-admin-brand-hover">
+            Forgot your password?
+          </a>
+        </p>
 
         {allowEnvOnly && userCount === 0 ? (
           <p className="mt-6 text-xs leading-relaxed text-slate-500">

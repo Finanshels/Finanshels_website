@@ -32,6 +32,7 @@ import { renderInviteEmail } from '@/lib/email/templates/invite'
 import { Alert, Button } from '@/components/cms/admin/ui'
 import { RolePill } from '@/components/cms/admin/settings/MemberBadges'
 import { MemberRoster } from '@/components/cms/admin/settings/MemberRoster'
+import { InviteLinkCard } from '@/components/cms/admin/settings/InviteLinkCard'
 import type { MemberView } from '@/components/cms/admin/settings/memberTypes'
 
 export const dynamic = 'force-dynamic'
@@ -40,10 +41,12 @@ type SearchParams = Promise<{
   ok?: string
   error?: string
   msg?: string
-  /** Optional invite URL to surface when email delivery wasn't possible. */
+  /** Invite URL surfaced so the admin can copy/share it directly. */
   inviteUrl?: string
   /** Email associated with the surfaced inviteUrl. */
   inviteEmail?: string
+  /** Role associated with the surfaced inviteUrl (labels what the link grants). */
+  inviteRole?: string
 }>
 
 const SETTINGS_PATH = '/admin/settings/users'
@@ -56,6 +59,27 @@ function safeRedirect(qs: string): never {
 
 function buildAcceptInviteUrl(rawToken: string): string {
   return `${getSiteUrl()}/admin/accept-invite?token=${encodeURIComponent(rawToken)}`
+}
+
+/**
+ * Redirect back to the settings page carrying the invite link so the admin can
+ * always copy/share it — regardless of whether the email also went out.
+ */
+function redirectWithInviteLink(params: {
+  ok: string
+  url: string
+  email: string
+  role: CmsUserRole
+  msg?: string
+}): never {
+  const qs = new URLSearchParams({
+    ok: params.ok,
+    inviteUrl: params.url,
+    inviteEmail: params.email,
+    inviteRole: params.role,
+  })
+  if (params.msg) qs.set('msg', params.msg)
+  redirect(`${SETTINGS_PATH}?${qs.toString()}`)
 }
 
 async function sendInviteEmailFor(params: {
@@ -144,19 +168,26 @@ async function inviteUserAction(formData: FormData) {
 
   revalidatePath(SETTINGS_PATH)
 
+  // Always surface the copyable link; the `ok` code drives the wording/tone.
   if (send.delivered) {
-    return safeRedirect(`ok=invited&msg=${encodeURIComponent(email)}`)
+    return redirectWithInviteLink({
+      ok: 'invited',
+      url: send.url,
+      email: issued.userEmail,
+      role: role as CmsUserRole,
+      msg: email,
+    })
   }
 
-  // Email couldn't be sent — surface the URL so the admin can copy/paste it.
-  console.warn('[cms-invite] Email send failed:', send.reason, '→ accept URL:', send.url)
-  const qs = new URLSearchParams({
+  // Log the reason + recipient only — never the raw token URL (admin-credential hygiene).
+  console.warn('[cms-invite] Email send failed for', issued.userEmail, '—', send.reason)
+  return redirectWithInviteLink({
     ok: 'invited_no_email',
+    url: send.url,
+    email: issued.userEmail,
+    role: role as CmsUserRole,
     msg: send.reason ?? 'Email send failed',
-    inviteUrl: send.url,
-    inviteEmail: issued.userEmail,
   })
-  redirect(`${SETTINGS_PATH}?${qs.toString()}`)
 }
 
 async function resendInviteAction(formData: FormData) {
@@ -196,17 +227,60 @@ async function resendInviteAction(formData: FormData) {
   revalidatePath(SETTINGS_PATH)
 
   if (send.delivered) {
-    return safeRedirect(`ok=invite-resent&msg=${encodeURIComponent(target.email)}`)
+    return redirectWithInviteLink({
+      ok: 'invite-resent',
+      url: send.url,
+      email: target.email,
+      role: target.role,
+      msg: target.email,
+    })
   }
 
-  console.warn('[cms-invite] Resend failed:', send.reason, '→ accept URL:', send.url)
-  const qs = new URLSearchParams({
+  // Log the reason + recipient only — never the raw token URL (admin-credential hygiene).
+  console.warn('[cms-invite] Resend failed for', target.email, '—', send.reason)
+  return redirectWithInviteLink({
     ok: 'invited_no_email',
+    url: send.url,
+    email: target.email,
+    role: target.role,
     msg: send.reason ?? 'Email send failed',
-    inviteUrl: send.url,
-    inviteEmail: target.email,
   })
-  redirect(`${SETTINGS_PATH}?${qs.toString()}`)
+}
+
+/**
+ * Generate a fresh invite link for a pending user and surface it for copy/paste
+ * (no email sent). Mirrors `resendInviteAction`'s guards but skips delivery.
+ */
+async function copyInviteLinkAction(formData: FormData) {
+  'use server'
+  const session = await requireAdminAuth('admin')
+  const actorRole = sessionRole(session)
+
+  const id = String(formData.get('userId') ?? '')
+  if (!id) return safeRedirect(`error=invalid-input`)
+
+  const target = await getUserById(id)
+  if (!target) return safeRedirect(`error=not-found`)
+  if (target.status === 'active') return safeRedirect(`error=already-accepted`)
+  if (target.role === 'owner' && actorRole !== 'owner') {
+    return safeRedirect(`error=only-owner-can-modify-owner`)
+  }
+
+  let issued: { rawToken: string; expiresAt: Date }
+  try {
+    issued = await regenerateInviteToken(id)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to generate invite link'
+    return safeRedirect(`error=create-failed&msg=${encodeURIComponent(msg)}`)
+  }
+
+  revalidatePath(SETTINGS_PATH)
+  return redirectWithInviteLink({
+    ok: 'invite-link',
+    url: buildAcceptInviteUrl(issued.rawToken),
+    email: target.email,
+    role: target.role,
+  })
 }
 
 async function updateRoleAction(formData: FormData) {
@@ -353,6 +427,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
   const msg = params.msg
   const inviteUrl = params.inviteUrl
   const inviteEmail = params.inviteEmail
+  const inviteRole = params.inviteRole
   const emailReady = isEmailConfigured()
 
   if (!dbConfigured) {
@@ -401,9 +476,14 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
     'already-accepted': 'This user has already accepted their invite.',
   }
   const okMessages: Record<string, string> = {
-    invited: msg ? `Invitation sent to ${msg}.` : 'Invitation sent.',
+    invited: msg
+      ? `Invitation emailed to ${msg}. You can also copy the link below to share it directly.`
+      : 'Invitation sent. Copy the link below to share it directly.',
     invited_no_email: 'User created — but the invite email could not be sent. Copy the link below and share it directly.',
-    'invite-resent': msg ? `Fresh invite sent to ${msg}.` : 'Invite resent.',
+    'invite-resent': msg
+      ? `Fresh invite emailed to ${msg}. Copy the link below to share it directly too.`
+      : 'Invite resent. Copy the link below to share it directly.',
+    'invite-link': 'Fresh invite link generated. Copy it below and share it over a secure channel.',
     'role-updated': 'Role updated.',
     'status-updated': 'Status updated.',
     'password-reset': 'Password reset.',
@@ -462,27 +542,14 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
             ) : null}
             {error ? <Alert variant="error">{errorMessages[error] ?? `Action failed: ${error}`}</Alert> : null}
 
-            {inviteUrl ? (
-              <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em]">Manual invite link</p>
-                <p className="mt-1 text-sm">
-                  Share this link with <strong>{inviteEmail}</strong> over a secure channel — it expires in 7 days.
-                  {msg ? <span className="ml-1 text-amber-800/80">({msg})</span> : null}
-                </p>
-                <div className="mt-3 flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-3 py-2">
-                  <code className="flex-1 truncate text-xs text-slate-700" title={inviteUrl}>
-                    {inviteUrl}
-                  </code>
-                  <a
-                    href={inviteUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-lg border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200"
-                  >
-                    Open
-                  </a>
-                </div>
-              </div>
+            {inviteUrl && inviteEmail ? (
+              <InviteLinkCard
+                url={inviteUrl}
+                email={inviteEmail}
+                role={inviteRole}
+                tone={ok === 'invited_no_email' ? 'warning' : 'success'}
+                note={ok === 'invited_no_email' ? msg : undefined}
+              />
             ) : null}
 
             {!emailReady ? (
@@ -571,6 +638,7 @@ export default async function UsersSettingsPage({ searchParams }: { searchParams
                     updateRole: updateRoleAction,
                     updateStatus: updateStatusAction,
                     resendInvite: resendInviteAction,
+                    copyInviteLink: copyInviteLinkAction,
                     resetPassword: resetPasswordAction,
                     deleteUser: deleteUserAction,
                   }}

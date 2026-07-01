@@ -31,6 +31,8 @@ export interface MemberActions {
   updateRole: MemberAction
   updateStatus: MemberAction
   resendInvite: MemberAction
+  /** Regenerates a fresh invite token and surfaces a copyable link (no email sent). */
+  copyInviteLink: MemberAction
   resetPassword: MemberAction
   deleteUser: MemberAction
 }

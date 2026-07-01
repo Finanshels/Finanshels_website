@@ -34,6 +34,8 @@ export type CmsUserPublic = {
   tokenVersion: number
   inviteSentAt?: Date
   inviteExpiresAt?: Date
+  resetSentAt?: Date
+  resetExpiresAt?: Date
 }
 
 type CmsUserRecord = CmsUserPublic & {
@@ -41,6 +43,7 @@ type CmsUserRecord = CmsUserPublic & {
   passwordSalt: string
   passwordIterations: number
   inviteTokenHash?: string | null
+  resetTokenHash?: string | null
 }
 
 const PBKDF2_ITERATIONS = 200_000
@@ -49,6 +52,11 @@ const PBKDF2_DIGEST = 'sha256'
 
 const INVITE_TOKEN_BYTES = 32
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 7 // 7 days
+
+// Password-reset tokens are short-lived (1h) — much shorter than the 7-day
+// invite window — because they let anyone with the link take over an *active*
+// account. Same 32-byte random token, SHA-256-hashed at rest.
+const RESET_TTL_MS = 1000 * 60 * 60 // 1 hour
 
 export function generateInviteToken(): { raw: string; hash: string } {
   const raw = randomBytes(INVITE_TOKEN_BYTES).toString('hex')
@@ -110,6 +118,9 @@ function readUserDoc(id: string, raw: Record<string, unknown>): CmsUserRecord | 
     inviteTokenHash: typeof raw.inviteTokenHash === 'string' ? raw.inviteTokenHash : null,
     inviteSentAt: raw.inviteSentAt instanceof Date ? raw.inviteSentAt : undefined,
     inviteExpiresAt: raw.inviteExpiresAt instanceof Date ? raw.inviteExpiresAt : undefined,
+    resetTokenHash: typeof raw.resetTokenHash === 'string' ? raw.resetTokenHash : null,
+    resetSentAt: raw.resetSentAt instanceof Date ? raw.resetSentAt : undefined,
+    resetExpiresAt: raw.resetExpiresAt instanceof Date ? raw.resetExpiresAt : undefined,
   }
 }
 
@@ -404,6 +415,111 @@ export async function resetUserPassword(id: string, newPassword: string): Promis
     },
     { merge: true }
   )
+}
+
+export type PasswordResetIssue =
+  | { ok: true; user: CmsUserPublic; rawToken: string; expiresAt: Date }
+  // `no_account` covers "email not found" and "account not eligible" (invited /
+  // disabled). Callers MUST treat this the same as success in user-facing copy
+  // to avoid leaking which emails have accounts (account enumeration).
+  | { ok: false; reason: 'no_account' }
+
+/**
+ * Issue a self-serve password-reset token for an ACTIVE user. Invited users
+ * finish onboarding via the invite flow, and disabled accounts cannot reset —
+ * both collapse to `no_account` so the caller can respond identically.
+ */
+export async function createPasswordResetToken(email: string): Promise<PasswordResetIssue> {
+  const db = getDb()
+  if (!db) return { ok: false, reason: 'no_account' }
+
+  const record = await getUserByEmail(email)
+  if (!record || record.status !== 'active') return { ok: false, reason: 'no_account' }
+
+  // Reuses the invite-token primitive (32-byte CSPRNG + SHA-256 at rest); the
+  // name is invite-specific but the crypto is a generic secure token. Stored in
+  // the separate `resetTokenHash` field so it never collides with invites.
+  const { raw, hash } = generateInviteToken()
+  const expiresAt = new Date(Date.now() + RESET_TTL_MS)
+  const now = Timestamp.now()
+
+  await db.collection(USERS_COLLECTION).doc(record.id).set(
+    {
+      resetTokenHash: hash,
+      resetSentAt: now,
+      resetExpiresAt: Timestamp.fromDate(expiresAt),
+      updatedAt: now,
+    },
+    { merge: true }
+  )
+
+  return { ok: true, user: toPublicUser(record), rawToken: raw, expiresAt }
+}
+
+export type ResetLookup =
+  | { ok: true; user: CmsUserPublic }
+  | { ok: false; reason: 'invalid' | 'expired' }
+
+export async function getUserByResetToken(rawToken: string): Promise<ResetLookup> {
+  const db = getDb()
+  if (!db) return { ok: false, reason: 'invalid' }
+  if (!rawToken || rawToken.length < 32) return { ok: false, reason: 'invalid' }
+
+  const tokenHash = hashInviteToken(rawToken)
+  const snap = await db
+    .collection(USERS_COLLECTION)
+    .where('resetTokenHash', '==', tokenHash)
+    .limit(1)
+    .get()
+  if (snap.empty) return { ok: false, reason: 'invalid' }
+
+  const doc = snap.docs[0]
+  const record = readUserDoc(doc.id, normalizeFirestoreTimestamps(doc.data() as Record<string, unknown>))
+  if (!record) return { ok: false, reason: 'invalid' }
+  // Only active accounts can complete a reset; a status change since the token
+  // was issued (e.g. account disabled) voids the link.
+  if (record.status !== 'active') return { ok: false, reason: 'invalid' }
+  if (record.resetExpiresAt && record.resetExpiresAt.getTime() < Date.now()) {
+    return { ok: false, reason: 'expired' }
+  }
+  return { ok: true, user: toPublicUser(record) }
+}
+
+/**
+ * Consume a reset token: set the new password, bump `tokenVersion` (invalidating
+ * every existing session — including any the attacker may hold) and clear the
+ * single-use token fields.
+ */
+export async function completePasswordReset(rawToken: string, newPassword: string): Promise<CmsUserPublic> {
+  const db = getDb()
+  if (!db) throw new Error('Database is not configured')
+  if (newPassword.length < 8) throw new Error('Password must be at least 8 characters')
+
+  const lookup = await getUserByResetToken(rawToken)
+  if (!lookup.ok) {
+    if (lookup.reason === 'expired') throw new Error('This reset link has expired')
+    throw new Error('Invalid reset link')
+  }
+
+  const { hash, salt, iterations } = hashPassword(newPassword)
+  const ref = db.collection(USERS_COLLECTION).doc(lookup.user.id)
+  await ref.set(
+    {
+      passwordHash: hash,
+      passwordSalt: salt,
+      passwordIterations: iterations,
+      tokenVersion: lookup.user.tokenVersion + 1,
+      resetTokenHash: null,
+      resetSentAt: null,
+      resetExpiresAt: null,
+      updatedAt: Timestamp.now(),
+    },
+    { merge: true }
+  )
+
+  const updated = await getUserById(lookup.user.id)
+  if (!updated) throw new Error('Failed to load updated user')
+  return updated
 }
 
 export async function deleteUser(id: string): Promise<void> {

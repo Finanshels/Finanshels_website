@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
-import { Ban, KeyRound, Mail, ShieldCheck, Trash2, UserCheck } from 'lucide-react'
+import { Ban, KeyRound, Link as LinkIcon, Mail, ShieldCheck, Trash2, UserCheck } from 'lucide-react'
 import { ROLE_LABEL, type CmsUserRole } from '@/lib/cms/roles'
 import { SlideOver } from '@/components/cms/admin/ui/SlideOver'
 import { InitialsAvatar, RolePill, StatusPill } from './MemberBadges'
@@ -99,17 +99,28 @@ function DrawerBody({
       {canEdit && member.status === 'invited' ? (
         <Section icon={<Mail size={14} />} title="Invite">
           <p className="mb-2 text-sm text-slate-500">
-            Invite sent — not accepted yet. Resend to issue a fresh 7-day link.
+            Invite sent — not accepted yet. Each action below issues a fresh 7-day link (older links stop working).
           </p>
-          <form action={actions.resendInvite}>
-            <input type="hidden" name="userId" value={member.id} />
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 transition hover:bg-amber-100"
-            >
-              <Mail size={15} /> Resend invite
-            </button>
-          </form>
+          <div className="flex flex-wrap items-center gap-2">
+            <form action={actions.copyInviteLink}>
+              <input type="hidden" name="userId" value={member.id} />
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                <LinkIcon size={15} /> Get invite link
+              </button>
+            </form>
+            <form action={actions.resendInvite}>
+              <input type="hidden" name="userId" value={member.id} />
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 transition hover:bg-amber-100"
+              >
+                <Mail size={15} /> Resend by email
+              </button>
+            </form>
+          </div>
         </Section>
       ) : null}
 

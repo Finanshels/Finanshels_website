@@ -6,10 +6,17 @@ const LOGIN_PATH = '/admin/login'
 // FIX-048: `/admin/accept-invite` is the unauthenticated invitation-acceptance
 // page — invitees must reach it without a session cookie. Previously
 // middleware redirected them to login, breaking the invite flow entirely.
-// `/admin/forgot` and `/admin/reset` were removed: no backing page exists
-// under src/app/admin/ and there is no self-serve password-reset flow yet
-// (admins reset other users' passwords from /admin/settings/users).
-const PUBLIC_ADMIN_PREFIXES = ['/admin/login', '/admin/logout', '/admin/accept-invite']
+// `/admin/forgot` (request a reset email) and `/admin/reset` (set a new password
+// from a token) are the self-serve password-reset pages — an unauthenticated
+// user by definition can't hold a session, so both must be public. Each still
+// validates its own single-use token server-side.
+const PUBLIC_ADMIN_PREFIXES = [
+  '/admin/login',
+  '/admin/logout',
+  '/admin/accept-invite',
+  '/admin/forgot',
+  '/admin/reset',
+]
 
 // FIX-012: defense-in-depth admin auth guard. Routes under /admin/* require a
 // session cookie. Per-page `requireAdminAuth()` still performs the full

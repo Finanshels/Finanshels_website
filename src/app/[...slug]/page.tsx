@@ -17,6 +17,7 @@ import {
 const EXISTING_APP_ROUTES = new Set<string>([
   '/',
   '/about',
+  '/community',
   '/contact',
   '/pricing',
   '/products',
